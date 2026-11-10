@@ -53,16 +53,16 @@ build_application() {
 
 stop_installed_application() {
     if ! pgrep -x DictaMac >/dev/null; then
-        return
+        return 0
     fi
 
     print "Fermeture de DictaMac…"
     osascript -e "tell application id \"${BUNDLE_IDENTIFIER}\" to quit" >/dev/null 2>&1 || true
     for _ in {1..20}; do
-        pgrep -x DictaMac >/dev/null || return
+        pgrep -x DictaMac >/dev/null || return 0
         sleep 0.25
     done
-    pkill -TERM -x DictaMac
+    pkill -TERM -x DictaMac || true
 }
 
 copy_application() {
