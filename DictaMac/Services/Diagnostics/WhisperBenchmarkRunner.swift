@@ -87,11 +87,9 @@ actor WhisperBenchmarkRunner {
                 let language = settings.configuredLanguage
                 let results = try await kit.transcribe(
                     audioPath: wavURL.path,
-                    decodeOptions: DecodingOptions(
+                    decodeOptions: WhisperKitTranscriptionService.decodingOptions(
                         language: language,
-                        detectLanguage: language == nil,
-                        skipSpecialTokens: true,
-                        withoutTimestamps: true
+                        promptTokens: nil
                     )
                 )
                 let duration = Self.seconds(start.duration(to: .now))

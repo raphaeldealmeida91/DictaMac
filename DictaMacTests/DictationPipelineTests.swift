@@ -41,16 +41,35 @@ final class DictationPipelineTests: XCTestCase {
         XCTAssertEqual(stageReporter.endStages, [.transcription])
     }
 
+    func testHistoryKeepsRawAndCleanedTextForComparison() async {
+        let history = PipelineFakeHistoryRecorder()
+        let pipeline = makePipeline(
+            cleanupService: SuccessfulCleanupService(output: "Texte nettoyé."),
+            injector: PipelineFakeInjector(),
+            stageReporter: PipelineFakeStageReporter(),
+            historyRecorder: history
+        )
+
+        _ = await pipeline.run(
+            samples: [0.1],
+            session: makeSession(transcriber: PipelineFakeTranscriber())
+        )
+
+        XCTAssertEqual(history.rawText, "texte brut")
+        XCTAssertEqual(history.text, "Texte nettoyé.")
+    }
+
     private func makePipeline(
         cleanupService: any TextCleanupService,
         injector: PipelineFakeInjector,
-        stageReporter: PipelineFakeStageReporter
+        stageReporter: PipelineFakeStageReporter,
+        historyRecorder: PipelineFakeHistoryRecorder = PipelineFakeHistoryRecorder()
     ) -> DictationPipeline {
         DictationPipeline(
             textCleanupService: cleanupService,
             textCleanupSettings: PipelineCleanupSettings(),
             textInjector: injector,
-            historyRecorder: PipelineFakeHistoryRecorder(),
+            historyRecorder: historyRecorder,
             metricsRecorder: PipelineFakeMetricsRecorder(),
             stageReporter: stageReporter,
             modelRecovery: PipelineFakeRecovery()
@@ -112,6 +131,16 @@ private actor FailingCleanupService: TextCleanupService {
     }
 }
 
+private actor SuccessfulCleanupService: TextCleanupService {
+    let output: String
+
+    init(output: String) {
+        self.output = output
+    }
+
+    func cleanup(_ text: String) async throws -> String { output }
+}
+
 private struct PipelineCleanupSettings: TextCleanupSettings {
     let configuredEngine = TextCleanupEngine.fast
     let isEnabled = true
@@ -134,7 +163,13 @@ private final class PipelineFakeInjector: TextInjector {
 
 @MainActor
 private final class PipelineFakeHistoryRecorder: DictationHistoryRecording {
-    func record(text: String, targetApplication: String) throws {}
+    private(set) var rawText: String?
+    private(set) var text: String?
+
+    func record(rawText: String, text: String, targetApplication: String) throws {
+        self.rawText = rawText
+        self.text = text
+    }
 }
 
 @MainActor

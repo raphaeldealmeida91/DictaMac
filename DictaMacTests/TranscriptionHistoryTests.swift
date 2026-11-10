@@ -52,4 +52,29 @@ final class TranscriptionHistoryTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
     }
 
+    func testPersistsRawAndCleanedTextForComparison() throws {
+        let settingsStore = InMemorySettingsStore(values: [.historyEnabled: .bool(true)])
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fileURL = directory.appendingPathComponent("history.json")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TranscriptionHistoryStore(
+            fileURL: fileURL,
+            settings: StoredHistorySettings(store: settingsStore)
+        )
+
+        try store.add(
+            text: "Texte nettoyé.",
+            rawText: "texte brut",
+            targetApplication: "Tests"
+        )
+
+        let reloaded = TranscriptionHistoryStore(
+            fileURL: fileURL,
+            settings: StoredHistorySettings(store: settingsStore)
+        )
+        XCTAssertEqual(reloaded.entries.first?.text, "Texte nettoyé.")
+        XCTAssertEqual(reloaded.entries.first?.rawText, "texte brut")
+    }
+
 }

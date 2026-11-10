@@ -95,11 +95,8 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         language: String?,
         vocabulary: String
     ) async throws -> String {
-        let options = DecodingOptions(
+        let options = Self.decodingOptions(
             language: language,
-            detectLanguage: language == nil,
-            skipSpecialTokens: true,
-            withoutTimestamps: true,
             promptTokens: promptTokens(for: vocabulary, whisperKit: whisperKit)
         )
         let results = try await whisperKit.transcribe(audioArray: samples, decodeOptions: options)
@@ -107,15 +104,38 @@ actor WhisperKitTranscriptionService: TranscriptionService {
     }
 
     private func promptTokens(for vocabulary: String, whisperKit: WhisperKit) -> [Int]? {
+        guard let prompt = Self.vocabularyPrompt(for: vocabulary),
+              let tokenizer = whisperKit.tokenizer else { return nil }
+        let tokens = tokenizer.encode(text: prompt)
+            .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
+        return tokens.isEmpty ? nil : tokens
+    }
+
+    static func decodingOptions(language: String?, promptTokens: [Int]?) -> DecodingOptions {
+        DecodingOptions(
+            language: language,
+            temperature: 0,
+            temperatureIncrementOnFallback: 0.2,
+            temperatureFallbackCount: 5,
+            usePrefillPrompt: true,
+            detectLanguage: language == nil,
+            skipSpecialTokens: true,
+            withoutTimestamps: false,
+            promptTokens: promptTokens,
+            compressionRatioThreshold: 2.4,
+            logProbThreshold: -1,
+            firstTokenLogProbThreshold: -1.5,
+            noSpeechThreshold: 0.6,
+            chunkingStrategy: nil
+        )
+    }
+
+    static func vocabularyPrompt(for vocabulary: String) -> String? {
         let words = vocabulary
             .split(whereSeparator: { $0 == "," || $0 == "\n" })
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        guard !words.isEmpty, let tokenizer = whisperKit.tokenizer else { return nil }
-        let prompt = "Vocabulaire : " + words.joined(separator: ", ") + "."
-        let tokens = tokenizer.encode(text: prompt)
-            .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
-        return tokens.isEmpty ? nil : tokens
+        return words.isEmpty ? nil : words.joined(separator: ", ")
     }
 
     private func prepare(requestedModel: String) async throws {

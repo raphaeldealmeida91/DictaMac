@@ -34,14 +34,18 @@ protocol RecordingSessionBuilding: AnyObject {
 
 @MainActor
 final class RecordingSession: RecordingSessionManaging {
+    typealias PostRollWaiter = @MainActor (TimeInterval) -> Void
+
     private enum Constants {
         static let audioFeedPeriod = Duration.milliseconds(50)
+        static let postRollDuration: TimeInterval = 0.15
     }
 
     private let audioRecorder: any AudioRecording
     private let transcriber: any SegmentedTranscribing
     private let maximumDuration: TimeInterval
     private let onMaximumDuration: @MainActor () -> Void
+    private let postRollWaiter: PostRollWaiter
     private var audioFeedTask: Task<Void, Never>?
     private var maximumDurationTask: Task<Void, Never>?
     private var isRecording = false
@@ -54,12 +58,16 @@ final class RecordingSession: RecordingSessionManaging {
         audioRecorder: any AudioRecording,
         transcriber: any SegmentedTranscribing,
         maximumDuration: TimeInterval,
-        onMaximumDuration: @escaping @MainActor () -> Void
+        onMaximumDuration: @escaping @MainActor () -> Void,
+        postRollWaiter: @escaping PostRollWaiter = { duration in
+            Thread.sleep(forTimeInterval: duration)
+        }
     ) {
         self.audioRecorder = audioRecorder
         self.transcriber = transcriber
         self.maximumDuration = maximumDuration
         self.onMaximumDuration = onMaximumDuration
+        self.postRollWaiter = postRollWaiter
     }
 
     func start() throws {
@@ -71,6 +79,7 @@ final class RecordingSession: RecordingSessionManaging {
 
     func finish() -> RecordingSessionResult {
         cancelTasks()
+        postRollWaiter(Constants.postRollDuration)
         isRecording = false
         return RecordingSessionResult(
             samples: audioRecorder.stop(),

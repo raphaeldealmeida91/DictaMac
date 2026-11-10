@@ -4,12 +4,20 @@ import Foundation
 struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Sendable {
     let id: UUID
     let text: String
+    let rawText: String?
     let date: Date
     let targetApplication: String
 
-    init(id: UUID = UUID(), text: String, date: Date, targetApplication: String) {
+    init(
+        id: UUID = UUID(),
+        text: String,
+        rawText: String? = nil,
+        date: Date,
+        targetApplication: String
+    ) {
         self.id = id
         self.text = text
+        self.rawText = rawText
         self.date = date
         self.targetApplication = targetApplication
     }
@@ -36,10 +44,16 @@ final class TranscriptionHistoryStore: ObservableObject {
         entries = loadEntries()
     }
 
-    func add(text: String, date: Date = Date(), targetApplication: String) throws {
+    func add(
+        text: String,
+        rawText: String? = nil,
+        date: Date = Date(),
+        targetApplication: String
+    ) throws {
         guard settings.isEnabled, !text.isEmpty else { return }
         entries.insert(TranscriptionHistoryEntry(
             text: text,
+            rawText: rawText,
             date: date,
             targetApplication: targetApplication
         ), at: 0)
@@ -89,7 +103,7 @@ final class TranscriptionHistoryStore: ObservableObject {
 }
 
 extension TranscriptionHistoryStore: DictationHistoryRecording {
-    func record(text: String, targetApplication: String) throws {
-        try add(text: text, targetApplication: targetApplication)
+    func record(rawText: String, text: String, targetApplication: String) throws {
+        try add(text: text, rawText: rawText, targetApplication: targetApplication)
     }
 }

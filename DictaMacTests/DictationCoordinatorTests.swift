@@ -68,6 +68,27 @@ final class DictationCoordinatorTests: XCTestCase {
         XCTAssertEqual(fixture.audio.startCount, 0)
         XCTAssertTrue(fixture.overlay.events.isEmpty)
     }
+
+    func testRecordingSessionCapturesPostRollBeforeStoppingAudio() throws {
+        let audio = FakeAudioRecorder()
+        let session = RecordingSession(
+            audioRecorder: audio,
+            transcriber: FakeSegmentedTranscriber(),
+            maximumDuration: 60,
+            onMaximumDuration: {},
+            postRollWaiter: { duration in
+                XCTAssertEqual(duration, 0.15)
+                XCTAssertEqual(audio.stopCount, 0)
+                audio.samples.append(0.9)
+            }
+        )
+
+        try session.start()
+        let result = session.finish()
+
+        XCTAssertEqual(audio.stopCount, 1)
+        XCTAssertEqual(result.samples.last, 0.9)
+    }
 }
 
 @MainActor
@@ -179,7 +200,8 @@ private final class FakeRecordingSessionFactory: RecordingSessionBuilding {
             audioRecorder: audio,
             transcriber: FakeSegmentedTranscriber(),
             maximumDuration: 60,
-            onMaximumDuration: onMaximumDuration
+            onMaximumDuration: onMaximumDuration,
+            postRollWaiter: { _ in }
         )
     }
 

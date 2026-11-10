@@ -1,4 +1,5 @@
 import ApplicationServices
+import WhisperKit
 import XCTest
 @testable import DictaMac
 
@@ -65,5 +66,45 @@ final class SettingsTests: XCTestCase {
         let cleanup = StoredTextCleanupSettings(store: store)
         XCTAssertEqual(cleanup.configuredEngine, .fast)
         XCTAssertEqual(cleanup.configuredLocalModel, StoredTextCleanupSettings.lightLocalModel)
+    }
+
+    func testFrenchDecodingOptionsFavorDeterministicQuality() {
+        let options = WhisperKitTranscriptionService.decodingOptions(
+            language: "fr",
+            promptTokens: [41, 42]
+        )
+
+        XCTAssertEqual(options.language, "fr")
+        XCTAssertFalse(options.detectLanguage)
+        XCTAssertEqual(options.temperature, 0)
+        XCTAssertEqual(options.temperatureIncrementOnFallback, 0.2)
+        XCTAssertEqual(options.temperatureFallbackCount, 5)
+        XCTAssertTrue(options.usePrefillPrompt)
+        XCTAssertTrue(options.skipSpecialTokens)
+        XCTAssertFalse(options.withoutTimestamps)
+        XCTAssertEqual(options.promptTokens, [41, 42])
+        XCTAssertEqual(options.compressionRatioThreshold, 2.4)
+        XCTAssertEqual(options.logProbThreshold, -1)
+        XCTAssertEqual(options.noSpeechThreshold, 0.6)
+        XCTAssertNil(options.chunkingStrategy)
+    }
+
+    func testAutomaticLanguageEnablesDetection() {
+        let options = WhisperKitTranscriptionService.decodingOptions(
+            language: nil,
+            promptTokens: nil
+        )
+
+        XCTAssertNil(options.language)
+        XCTAssertTrue(options.detectLanguage)
+    }
+
+    func testVocabularyPromptContainsOnlyNormalizedTerms() {
+        let prompt = WhisperKitTranscriptionService.vocabularyPrompt(
+            for: " WhisperKit,\n DictaMac ,, SwiftUI "
+        )
+
+        XCTAssertEqual(prompt, "WhisperKit, DictaMac, SwiftUI")
+        XCTAssertNil(WhisperKitTranscriptionService.vocabularyPrompt(for: " \n, "))
     }
 }

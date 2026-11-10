@@ -86,6 +86,12 @@ struct MenuBarContent: View {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xSmall) {
                     Text(excerpt(for: entry))
                         .lineLimit(1)
+                    if let rawText = entry.rawText, rawText != entry.text {
+                        Text("Brut : \(excerpt(rawText))")
+                            .font(Theme.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                     Text("\(entry.date.formatted(date: .omitted, time: .shortened)) · \(entry.targetApplication)")
                         .font(Theme.Typography.caption)
                         .foregroundStyle(.secondary)
@@ -133,7 +139,11 @@ struct MenuBarContent: View {
     }
 
     private func excerpt(for entry: TranscriptionHistoryEntry) -> String {
-        let oneLine = entry.text.replacingOccurrences(of: "\n", with: " ")
+        excerpt(entry.text)
+    }
+
+    private func excerpt(_ text: String) -> String {
+        let oneLine = text.replacingOccurrences(of: "\n", with: " ")
         guard oneLine.count > Theme.MenuBar.excerptLimit else { return oneLine }
         return String(oneLine.prefix(Theme.MenuBar.excerptLimit)) + "…"
     }

@@ -56,6 +56,7 @@ final class DictationPipeline: DictationPipelineRunning {
     }
 
     private struct ProcessedText {
+        let rawValue: String
         let value: String
         let finishResult: SegmentedTranscriber.FinishResult
         let transcriptionDuration: TimeInterval
@@ -97,7 +98,7 @@ final class DictationPipeline: DictationPipelineRunning {
         do {
             let processed = try await processText(samples: samples, session: session)
             let injection = try await inject(processed.value, processed: processed, session: session)
-            recordHistory(processed.value, targetApplication: session.targetApplication)
+            recordHistory(processed, targetApplication: session.targetApplication)
             recordMetrics(processed: processed, injectionDuration: injection.duration, session: session)
             return outcome(for: processed, injectionOutcome: injection.outcome)
         } catch is CancellationError {
@@ -126,6 +127,7 @@ final class DictationPipeline: DictationPipelineRunning {
         let text = try await cleanup(result.text, result: result, session: session)
         try Task.checkCancellation()
         return ProcessedText(
+            rawValue: result.text,
             value: text,
             finishResult: result,
             transcriptionDuration: transcriptionDuration,
@@ -198,10 +200,14 @@ final class DictationPipeline: DictationPipelineRunning {
         return (outcome, Self.seconds(startedAt.duration(to: .now)))
     }
 
-    private func recordHistory(_ text: String, targetApplication: String) {
-        guard !text.isEmpty else { return }
+    private func recordHistory(_ processed: ProcessedText, targetApplication: String) {
+        guard !processed.value.isEmpty else { return }
         do {
-            try historyRecorder.record(text: text, targetApplication: targetApplication)
+            try historyRecorder.record(
+                rawText: processed.rawValue,
+                text: processed.value,
+                targetApplication: targetApplication
+            )
         } catch {
             logger.error("Enregistrement de l’historique impossible")
         }
