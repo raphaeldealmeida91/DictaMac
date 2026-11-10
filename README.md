@@ -15,6 +15,35 @@ WhisperKit, éventuellement nettoyée, puis collée dans le champ actif.
 - Historique local optionnel des 20 dernières dictées, lancement à la connexion et sons de feedback.
 - Indicateur flottant, mesures de latence, journaux rotatifs et benchmark Whisper en build Debug.
 
+## Architecture
+
+`AppEnvironment` est l'unique composition root : il crée les stores, services, modèles observables,
+pipeline et coordinateur, puis les injecte explicitement. L'interface comprend un panneau de barre de
+menus, un overlay non activant et des réglages à navigation latérale. Les vues de réglages délèguent
+leurs mutations à des view models `@MainActor`, eux-mêmes branchés sur des protocoles testables et sur
+`SettingsStoring`.
+
+```mermaid
+flowchart LR
+    UI[SwiftUI\nMenuBar · Settings · Overlay] --> VM[View models @MainActor]
+    VM --> P[Protocoles]
+    UI --> P
+    S[Services concrets] --> P
+    C[DictationCoordinator] --> P
+    C --> PL[DictationPipeline]
+    PL --> P
+    E[AppEnvironment\ncomposition root] --> UI
+    E --> VM
+    E --> S
+    E --> C
+    E --> PL
+```
+
+Les interfaces substituables de l'orchestration vivent dans `Coordination/Protocols`. Les tokens et
+composants visuels communs (`SettingsCard`, `SettingsRow`, badges, boutons et callouts) vivent dans
+`UI/DesignSystem`. Les chaînes SwiftUI sont extraites dans `Localizable.xcstrings`, avec le français
+comme langue source.
+
 ## Prérequis
 
 - Mac Apple Silicon sous macOS 14 ou plus récent.
@@ -46,7 +75,7 @@ taskpolicy -b xcodebuild \
 
 ## Première configuration
 
-Au premier lancement, ouvrez **DictaMac → Réglages…** depuis l'icône microphone de la barre de menus,
+Au premier lancement, ouvrez **Réglages…** depuis le panneau de la barre de menus,
 puis accordez les trois autorisations demandées :
 
 - **Microphone** pour enregistrer la voix ;

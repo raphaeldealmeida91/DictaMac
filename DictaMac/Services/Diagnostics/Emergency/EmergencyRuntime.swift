@@ -1,8 +1,7 @@
 import Foundation
 
+// Every mutable runtime field is read and written while holding lock.
 final class EmergencyRuntime: @unchecked Sendable {
-    static let shared = EmergencyRuntime()
-
     struct Snapshot: Sendable {
         let stateIsIdle: Bool
         let mainHeartbeat: TimeInterval
@@ -20,7 +19,7 @@ final class EmergencyRuntime: @unchecked Sendable {
     private var hotkeyDeadline: TimeInterval?
     private var hotkeyReason: String?
 
-    private init() {}
+    init() {}
 
     func heartbeat() {
         lock.withLock { mainHeartbeat = MonotonicClock.now }

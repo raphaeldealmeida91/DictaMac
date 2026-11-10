@@ -1,5 +1,6 @@
 import Foundation
 
+// File rotation and writes are serialized by the private lock; no mutable state escapes it.
 final class PersistentDiagnosticLog: @unchecked Sendable {
     static let shared = PersistentDiagnosticLog()
     static let maximumFileSize = 2 * 1_024 * 1_024

@@ -3,53 +3,77 @@ import Darwin
 import Foundation
 import OSLog
 
-enum EmergencyRecovery {
-    private static let logger = Logger(
+protocol EmergencyModelUnloading: Sendable {
+    func requestEmergencyUnload()
+}
+
+protocol EmergencyRecovering: Sendable {
+    func begin(reason: String, hotkey: Bool)
+    func exit(reason: String) -> Never
+}
+
+// The instance is immutable after initialization; injected collaborators own their synchronization.
+final class EmergencyRecovery: EmergencyRecovering, @unchecked Sendable {
+    private let diagnosticLog: PersistentDiagnosticLog
+    private let runtime: EmergencyRuntime
+    private let cancellationHub: EmergencyCancellationHub
+    private let audioRegistry: EmergencyAudioRegistry
+    private let transcriptionModel: any EmergencyModelUnloading
+    private let localModel: any EmergencyModelUnloading
+    private let alertPresenter: any UserAlertPresenting
+    private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "Emergency"
     )
 
-    static func begin(reason: String, hotkey: Bool = false) {
+    init(
+        diagnosticLog: PersistentDiagnosticLog,
+        runtime: EmergencyRuntime,
+        cancellationHub: EmergencyCancellationHub,
+        audioRegistry: EmergencyAudioRegistry,
+        transcriptionModel: any EmergencyModelUnloading,
+        localModel: any EmergencyModelUnloading,
+        alertPresenter: any UserAlertPresenting
+    ) {
+        self.diagnosticLog = diagnosticLog
+        self.runtime = runtime
+        self.cancellationHub = cancellationHub
+        self.audioRegistry = audioRegistry
+        self.transcriptionModel = transcriptionModel
+        self.localModel = localModel
+        self.alertPresenter = alertPresenter
+    }
+
+    func begin(reason: String, hotkey: Bool = false) {
         logger.fault("emergency recovery reason=\(reason, privacy: .public)")
-        PersistentDiagnosticLog.shared.emergencyRecovery(reason: reason)
-        if hotkey {
-            EmergencyRuntime.shared.armHotkeyExit(reason: reason)
-        }
-        EmergencyCancellationHub.shared.cancelAll()
-        let audioStopped = EmergencyAudioRegistry.shared.stop(timeout: 2)
-        WhisperKitTranscriptionService.shared.requestEmergencyUnload()
-        LocalCleanupModelManager.shared.requestEmergencyUnload()
-        if audioStopped { EmergencyRuntime.shared.setIdle(true) }
-        DispatchQueue.main.async {
+        diagnosticLog.emergencyRecovery(reason: reason)
+        if hotkey { runtime.armHotkeyExit(reason: reason) }
+        cancellationHub.cancelAll()
+        let audioStopped = audioRegistry.stop(timeout: 2)
+        transcriptionModel.requestEmergencyUnload()
+        localModel.requestEmergencyUnload()
+        if audioStopped { runtime.setIdle(true) }
+        DispatchQueue.main.async { [alertPresenter] in
             NotificationCenter.default.post(name: .emergencyStopRequested, object: nil)
-            EmergencyAlertPresenter.show(reason: reason)
+            let response = alertPresenter.present(UserAlert(
+                style: .critical,
+                title: "Arrêt d’urgence DictaMac",
+                message: "La dictée a été annulée et les modèles ont été déchargés (\(reason)).",
+                primaryButton: "OK",
+                secondaryButton: "Ouvrir le journal"
+            ))
+            if response == .secondary,
+               let directory = try? PersistentDiagnosticLog.logsDirectoryURL() {
+                NSWorkspace.shared.open(directory)
+            }
         }
     }
 
-    static func exit(reason: String) -> Never {
-        PersistentDiagnosticLog.shared.emergencyExitAndFlush(reason: reason)
+    func exit(reason: String) -> Never {
+        diagnosticLog.emergencyExitAndFlush(reason: reason)
         _exit(0)
     }
 }
 
-@MainActor
-private enum EmergencyAlertPresenter {
-    private static var isShowing = false
-
-    static func show(reason: String) {
-        guard !isShowing else { return }
-        isShowing = true
-        let alert = NSAlert()
-        alert.alertStyle = .critical
-        alert.messageText = "Arrêt d’urgence DictaMac"
-        alert.informativeText = "La dictée a été annulée et les modèles ont été déchargés (\(reason))."
-        alert.addButton(withTitle: "OK")
-        alert.addButton(withTitle: "Ouvrir le journal")
-        let response = alert.runModal()
-        isShowing = false
-        if response == .alertSecondButtonReturn,
-           let directory = try? PersistentDiagnosticLog.logsDirectoryURL() {
-            NSWorkspace.shared.open(directory)
-        }
-    }
-}
+extension LocalCleanupModelManager: EmergencyModelUnloading {}
+extension WhisperKitTranscriptionService: EmergencyModelUnloading {}

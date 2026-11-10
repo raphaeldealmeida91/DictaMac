@@ -20,11 +20,20 @@ final class HotkeyService: HotkeyProviding {
     ///   The default (300 ms) filters accidental Fn presses and recognises Fn+key combinations.
     init(
         triggerDelay: TimeInterval = 0.300,
-        emergencySettings: any EmergencyHotkeySettings = StoredEmergencyHotkeySettings()
+        emergencySettings: any EmergencyHotkeySettings,
+        emergencyRuntime: EmergencyRuntime,
+        emergencyRecovery: any EmergencyRecovering,
+        diagnosticLog: PersistentDiagnosticLog
     ) {
         precondition(triggerDelay >= 0, "triggerDelay must not be negative")
 
-        worker = EventTapWorker(triggerDelay: triggerDelay, emergencySettings: emergencySettings)
+        worker = EventTapWorker(
+            triggerDelay: triggerDelay,
+            emergencySettings: emergencySettings,
+            emergencyRuntime: emergencyRuntime,
+            emergencyRecovery: emergencyRecovery,
+            diagnosticLog: diagnosticLog
+        )
         worker.onPress = { [weak self] in
             Task { @MainActor [weak self] in
                 self?.onPress?()
@@ -66,6 +75,7 @@ final class HotkeyService: HotkeyProviding {
     }
 }
 
+// All mutable event-tap state is confined to workerQueue; cross-thread flags use LockedAtomic.
 private final class EventTapWorker: @unchecked Sendable {
     private struct EventSnapshot: Sendable {
         let type: CGEventType
@@ -75,6 +85,9 @@ private final class EventTapWorker: @unchecked Sendable {
 
     private let triggerDelay: TimeInterval
     private let emergencySettings: any EmergencyHotkeySettings
+    private let emergencyRuntime: EmergencyRuntime
+    private let emergencyRecovery: any EmergencyRecovering
+    private let diagnosticLog: PersistentDiagnosticLog
     private let lifecycleLock = NSLock()
     private let eventQueue = DispatchQueue(
         label: "com.raphaeldealmeida.DictaMac.fn-event-processing",
@@ -103,9 +116,18 @@ private final class EventTapWorker: @unchecked Sendable {
     var onRelease: (@Sendable () -> Void)?
     var onCancel: (@Sendable () -> Void)?
 
-    init(triggerDelay: TimeInterval, emergencySettings: any EmergencyHotkeySettings) {
+    init(
+        triggerDelay: TimeInterval,
+        emergencySettings: any EmergencyHotkeySettings,
+        emergencyRuntime: EmergencyRuntime,
+        emergencyRecovery: any EmergencyRecovering,
+        diagnosticLog: PersistentDiagnosticLog
+    ) {
         self.triggerDelay = triggerDelay
         self.emergencySettings = emergencySettings
+        self.emergencyRuntime = emergencyRuntime
+        self.emergencyRecovery = emergencyRecovery
+        self.diagnosticLog = diagnosticLog
     }
 
     func start() {
@@ -255,8 +277,8 @@ private final class EventTapWorker: @unchecked Sendable {
         let chordIsDown = !required.isEmpty && event.flags.intersection(required) == required
         if chordIsDown, !emergencyChordIsDown {
             emergencyChordIsDown = true
-            EmergencyRuntime.shared.setIdle(false)
-            EmergencyRecovery.begin(reason: "global_hotkey", hotkey: true)
+            emergencyRuntime.setIdle(false)
+            emergencyRecovery.begin(reason: "global_hotkey", hotkey: true)
         } else if !chordIsDown {
             emergencyChordIsDown = false
         }
@@ -270,7 +292,7 @@ private final class EventTapWorker: @unchecked Sendable {
             }
             let reason = event.type == .tapDisabledByTimeout ? "timeout" : "user-input"
             logger.error("event tap re-enabled after disable reason=\(reason, privacy: .public)")
-            PersistentDiagnosticLog.shared.eventTapDisabled(reason: reason)
+            diagnosticLog.eventTapDisabled(reason: reason)
 
         case .flagsChanged:
             handleFnTransition(isDown: event.flags.contains(.maskSecondaryFn))

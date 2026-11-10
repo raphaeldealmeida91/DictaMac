@@ -3,20 +3,20 @@ import Foundation
 
 @MainActor
 final class LocalCleanupModelState: ObservableObject {
-    static let shared = LocalCleanupModelState()
-
     @Published private(set) var status = "Modèle non téléchargé"
     @Published private(set) var downloadProgress: Double?
     @Published private(set) var isBusy = false
     @Published private(set) var isReady = false
+    @Published private(set) var hasError = false
 
-    private init() {}
+    init() {}
 
     func downloading(progress: Double) {
         status = "Téléchargement du modèle local…"
         downloadProgress = min(max(progress, 0), 1)
         isBusy = true
         isReady = false
+        hasError = false
     }
 
     func loading() {
@@ -24,6 +24,7 @@ final class LocalCleanupModelState: ObservableObject {
         downloadProgress = nil
         isBusy = true
         isReady = false
+        hasError = false
     }
 
     func loaded(model: String) {
@@ -31,6 +32,7 @@ final class LocalCleanupModelState: ObservableObject {
         downloadProgress = nil
         isBusy = true
         isReady = false
+        hasError = false
     }
 
     func ready(model: String) {
@@ -38,6 +40,7 @@ final class LocalCleanupModelState: ObservableObject {
         downloadProgress = nil
         isBusy = false
         isReady = true
+        hasError = false
     }
 
     func unloaded(_ message: String = "Modèle déchargé") {
@@ -45,6 +48,7 @@ final class LocalCleanupModelState: ObservableObject {
         downloadProgress = nil
         isBusy = false
         isReady = false
+        hasError = false
     }
 
     func failed(_ error: Error) {
@@ -52,5 +56,6 @@ final class LocalCleanupModelState: ObservableObject {
         downloadProgress = nil
         isBusy = false
         isReady = false
+        hasError = true
     }
 }

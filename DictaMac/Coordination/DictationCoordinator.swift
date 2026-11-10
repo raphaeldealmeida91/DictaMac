@@ -32,6 +32,7 @@ final class DictationCoordinator: DictationCoordinating {
     private let stageReporter: any DictationStageReporting
     private let modelPreparer: any DictationModelPreparing
     private let cancellationRegistry: any EmergencyCancellationRegistering
+    private let activityModel: AppActivityModel
     private let frontmostApplicationName: () -> String?
     private var sessionPolicy = DictationSessionPolicy()
     private var activeGeneration: Int?
@@ -45,28 +46,18 @@ final class DictationCoordinator: DictationCoordinating {
         category: "Dictation"
     )
 
-    init(
-        hotkeyProvider: any HotkeyProviding,
-        audioRecorder: any AudioRecording,
-        overlayPresenter: any OverlayPresenting,
-        feedbackSoundPlayer: any FeedbackSoundPlaying,
-        recordingSessionFactory: any RecordingSessionBuilding,
-        pipeline: any DictationPipelineRunning,
-        stageReporter: any DictationStageReporting,
-        modelPreparer: any DictationModelPreparing,
-        cancellationRegistry: any EmergencyCancellationRegistering,
-        frontmostApplicationName: @escaping () -> String?
-    ) {
-        self.hotkeyProvider = hotkeyProvider
-        self.audioRecorder = audioRecorder
-        self.overlayPresenter = overlayPresenter
-        self.feedbackSoundPlayer = feedbackSoundPlayer
-        self.recordingSessionFactory = recordingSessionFactory
-        self.pipeline = pipeline
-        self.stageReporter = stageReporter
-        self.modelPreparer = modelPreparer
-        self.cancellationRegistry = cancellationRegistry
-        self.frontmostApplicationName = frontmostApplicationName
+    init(dependencies: DictationCoordinatorDependencies) {
+        hotkeyProvider = dependencies.hotkeyProvider
+        audioRecorder = dependencies.audioRecorder
+        overlayPresenter = dependencies.overlayPresenter
+        feedbackSoundPlayer = dependencies.feedbackSoundPlayer
+        recordingSessionFactory = dependencies.recordingSessionFactory
+        pipeline = dependencies.pipeline
+        stageReporter = dependencies.stageReporter
+        modelPreparer = dependencies.modelPreparer
+        cancellationRegistry = dependencies.cancellationRegistry
+        activityModel = dependencies.activityModel
+        frontmostApplicationName = dependencies.frontmostApplicationName
         bindEvents()
     }
 
@@ -95,6 +86,7 @@ final class DictationCoordinator: DictationCoordinating {
         pipelineTask?.cancel()
         recordingSession?.cancel()
         _ = sessionPolicy.cancel()
+        synchronizeActivity()
         clearActiveSession()
         overlayPresenter.hide()
     }
@@ -142,6 +134,7 @@ final class DictationCoordinator: DictationCoordinating {
         guard let generation = sessionPolicy.beginRecording() else {
             throw CancellationError()
         }
+        synchronizeActivity()
         recordingSession = session
         activeGeneration = generation
         stageReporter.setRuntimeIdle(false)
@@ -191,6 +184,7 @@ final class DictationCoordinator: DictationCoordinating {
         releaseInstant: ContinuousClock.Instant
     ) {
         guard sessionPolicy.beginTranscription(for: generation, reason: reason) else { return }
+        synchronizeActivity()
         showTranscribing(reason: reason)
         let session = makePipelineSession(
             result: result,
@@ -220,7 +214,10 @@ final class DictationCoordinator: DictationCoordinating {
             releaseInstant: releaseInstant,
             targetApplication: targetApplication,
             beginInjection: { [weak self] in
-                self?.sessionPolicy.beginInjection(for: generation) == true
+                guard let self else { return false }
+                let didBegin = self.sessionPolicy.beginInjection(for: generation)
+                self.synchronizeActivity()
+                return didBegin
             }
         )
     }
@@ -251,6 +248,7 @@ final class DictationCoordinator: DictationCoordinating {
     private func cancelDictation() {
         let wasRecording = state == .recording
         guard sessionPolicy.cancel() else { return }
+        synchronizeActivity()
         recordingSession?.cancel()
         if wasRecording {
             stageReporter.report(.recording, phase: "cancelled", context: StageContext())
@@ -289,12 +287,14 @@ final class DictationCoordinator: DictationCoordinating {
         recordingSession?.cancel()
         pipelineTask?.cancel()
         _ = sessionPolicy.cancel()
+        synchronizeActivity()
         clearActiveSession()
         overlayPresenter.showError(error.localizedDescription)
     }
 
     private func completeSession(generation: Int) {
         sessionPolicy.complete(generation: generation)
+        synchronizeActivity()
         guard activeGeneration == generation else { return }
         clearActiveSession()
     }
@@ -318,6 +318,10 @@ final class DictationCoordinator: DictationCoordinating {
 
     private func estimatedSegmentCount(for duration: TimeInterval) -> Int {
         max(1, Int(ceil(duration / Constants.estimatedSegmentDuration)))
+    }
+
+    private func synchronizeActivity() {
+        activityModel.update(state)
     }
 
     private static func seconds(_ duration: Duration) -> Double {

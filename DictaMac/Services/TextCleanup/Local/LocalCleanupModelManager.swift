@@ -5,23 +5,24 @@ import MLXLMCommon
 import OSLog
 
 actor LocalCleanupModelManager: LocalTextGenerating {
-    static let shared = LocalCleanupModelManager()
-
     private var container: ModelContainer?
     private var loadedModelID: String?
     private var isWarmedUp = false
     private var activationTask: Task<Void, Never>?
     private let downloader = ResumableModelDownloader()
     private let settings: any TextCleanupSettings & TextCleanupSettingsWriting
+    private let modelState: LocalCleanupModelState
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "LocalCleanupModel"
     )
 
     init(
-        settings: any TextCleanupSettings & TextCleanupSettingsWriting = StoredTextCleanupSettings()
+        settings: any TextCleanupSettings & TextCleanupSettingsWriting,
+        modelState: LocalCleanupModelState
     ) {
         self.settings = settings
+        self.modelState = modelState
     }
 
     var isReady: Bool { container != nil && isWarmedUp }
@@ -52,7 +53,7 @@ actor LocalCleanupModelManager: LocalTextGenerating {
         activationTask?.cancel()
         activationTask = nil
         Task { @MainActor in
-            LocalCleanupModelState.shared.unloaded("Téléchargement annulé — reprise disponible")
+            modelState.unloaded("Téléchargement annulé — reprise disponible")
         }
     }
 
@@ -63,7 +64,7 @@ actor LocalCleanupModelManager: LocalTextGenerating {
         loadedModelID = nil
         isWarmedUp = false
         MLX.GPU.clearCache()
-        Task { @MainActor in LocalCleanupModelState.shared.unloaded(reason) }
+        Task { @MainActor [modelState] in modelState.unloaded(reason) }
         logger.info("local cleanup model unloaded")
         ProcessMemoryDiagnostics.logFootprint(.mlxUnloaded)
     }
@@ -92,7 +93,7 @@ actor LocalCleanupModelManager: LocalTextGenerating {
                 await self?.downloadAndLoadWithoutCompetition(modelID: modelID)
             }
         } catch {
-            await MainActor.run { LocalCleanupModelState.shared.failed(error) }
+            await MainActor.run { modelState.failed(error) }
         }
     }
 
@@ -119,11 +120,11 @@ actor LocalCleanupModelManager: LocalTextGenerating {
         } catch is CancellationError {
             activationTask = nil
             await MainActor.run {
-                LocalCleanupModelState.shared.unloaded("Téléchargement annulé — reprise disponible")
+                modelState.unloaded("Téléchargement annulé — reprise disponible")
             }
         } catch {
             activationTask = nil
-            await MainActor.run { LocalCleanupModelState.shared.failed(error) }
+            await MainActor.run { modelState.failed(error) }
             logger.error("local cleanup model load failed: \(error.localizedDescription, privacy: .private)")
         }
     }
@@ -131,12 +132,14 @@ actor LocalCleanupModelManager: LocalTextGenerating {
     private func loadModel(modelID: String) async throws {
         try FileManager.default.createDirectory(at: Self.modelsRoot, withIntermediateDirectories: true)
         let modelDirectory = Self.modelsRoot.appendingPathComponent(modelID, isDirectory: true)
-        await MainActor.run { LocalCleanupModelState.shared.downloading(progress: 0) }
+        await MainActor.run { modelState.downloading(progress: 0) }
         try await downloader.download(modelID: modelID, to: modelDirectory) { progress in
-            Task { @MainActor in LocalCleanupModelState.shared.downloading(progress: progress) }
+            Task { @MainActor [modelState = self.modelState] in
+                modelState.downloading(progress: progress)
+            }
         }
         try Task.checkCancellation()
-        await MainActor.run { LocalCleanupModelState.shared.loading() }
+        await MainActor.run { modelState.loading() }
         configureMemoryLimits()
         let model = try await LLMModelFactory.shared.loadContainer(
             configuration: ModelConfiguration(directory: modelDirectory)
@@ -156,7 +159,7 @@ actor LocalCleanupModelManager: LocalTextGenerating {
     }
 
     private func warmUp(modelID: String) async throws {
-        await MainActor.run { LocalCleanupModelState.shared.loaded(model: modelID) }
+        await MainActor.run { modelState.loaded(model: modelID) }
         let start = ContinuousClock.now
         _ = try await generate(
             text: "Bonjour, ceci est un test court.",
@@ -166,7 +169,7 @@ actor LocalCleanupModelManager: LocalTextGenerating {
         let duration = Self.seconds(start.duration(to: .now))
         isWarmedUp = true
         activationTask = nil
-        await MainActor.run { LocalCleanupModelState.shared.ready(model: modelID) }
+        await MainActor.run { modelState.ready(model: modelID) }
         logger.info("local cleanup warmup duration=\(duration, format: .fixed(precision: 3))s tokens=8")
     }
 

@@ -1,6 +1,7 @@
 import Foundation
 import OSLog
 
+// Lifecycle mutations are serialized on queue and callbacks capture only Sendable values.
 final class MainThreadWatchdog: @unchecked Sendable {
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",

@@ -24,6 +24,7 @@ enum AudioRecorderError: LocalizedError {
 }
 
 /// Captures microphone audio as mono, 16 kHz Float32 samples.
+// Engine mutations run on controlQueue; callbacks and captured samples cross queues through safe wrappers.
 final class AudioRecorder: AudioRecording, @unchecked Sendable {
     typealias LevelHandler = @MainActor @Sendable (Float) -> Void
     typealias ErrorHandler = @MainActor @Sendable (AudioRecorderError) -> Void
@@ -63,7 +64,7 @@ final class AudioRecorder: AudioRecording, @unchecked Sendable {
         category: "AudioRecorder"
     )
 
-    init() {
+    init(emergencyAudioRegistry: EmergencyAudioRegistry) {
         configurationQueue.name = "com.raphaeldealmeida.DictaMac.audio-configuration"
         configurationQueue.maxConcurrentOperationCount = 1
         permissionObserver = NotificationCenter.default.addObserver(
@@ -82,7 +83,7 @@ final class AudioRecorder: AudioRecording, @unchecked Sendable {
         }
 
         refreshMicrophonePermission()
-        EmergencyAudioRegistry.shared.install { [weak self] timeout in
+        emergencyAudioRegistry.install { [weak self] timeout in
             self?.emergencyStop(timeout: timeout) ?? true
         }
     }
@@ -361,6 +362,7 @@ final class AudioRecorder: AudioRecording, @unchecked Sendable {
     }
 }
 
+// Samples, capture state, and the callback are accessed exclusively under lock.
 private final class CaptureBuffer: @unchecked Sendable {
     private let lock = NSLock()
     private var samples: [Float] = []

@@ -14,8 +14,13 @@ Contraintes du projet :
 
 ## Architecture actuelle
 
-- `DictationCoordinator` orchestre le raccourci, l'enregistrement, la transcription, le nettoyage et
-  l'injection ; `DictationSessionPolicy` protège les transitions d'état et les générations de session.
+- `AppEnvironment` est le composition root unique : il instancie les stores, services, états de
+  modèles, pipeline, coordinateur et moniteurs de cycle de vie, puis injecte leurs dépendances.
+- `DictationCoordinator` orchestre le raccourci, l'enregistrement et le pipeline ; ses dépendances sont
+  regroupées dans `DictationCoordinatorDependencies`. `DictationSessionPolicy` protège les transitions
+  d'état et les générations de session. Les contrats substituables vivent dans `Coordination/Protocols`.
+- `DictationPipeline` enchaîne transcription, nettoyage et injection, puis enregistre historique et
+  métriques. Les watchdogs et récupérations de modèles restent injectés derrière des protocoles.
 - `HotkeyService` observe l'appui/relâchement de `fn` seul via un event tap et filtre les appuis courts.
 - `AudioRecorder` capture le microphone et convertit l'audio en mono Float32 à 16 kHz.
 - `TranscriptionService`, `WhisperKitTranscriptionService` et `SegmentedTranscriber` assurent le
@@ -27,7 +32,11 @@ Contraintes du projet :
 - `PermissionsManager` suit les autorisations Microphone, Surveillance de l'entrée et Accessibilité.
 - `TranscriptionHistoryStore` conserve localement jusqu'à 20 dictées ; `LaunchAtLoginService` gère le
   lancement à l'ouverture de session.
-- `DictationOverlayController` affiche l'état de la dictée ; `DictationDiagnostics`,
+- `UI/Settings` utilise une navigation latérale et un view model `@MainActor` par section, sans accès
+  direct à `UserDefaults`. `UI/DesignSystem` centralise tokens, cartes, lignes, badges et boutons.
+- `UI/MenuBar` fournit un panneau fenêtré avec état des modèles, historique copiable et état d'activité.
+  `UI/Overlay` sépare fenêtre, modèle de présentation et pilules d'état.
+- `DictationOverlayController` positionne l'overlay ; `DictationDiagnostics`,
   `PersistentDiagnosticLog`, les watchdogs et `WhisperBenchmarkRunner` couvrent diagnostics et mesures.
 
 ## Règles de build (le Mac de l'utilisateur doit rester utilisable)

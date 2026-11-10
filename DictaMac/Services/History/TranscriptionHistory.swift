@@ -17,7 +17,6 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Sendable {
 
 @MainActor
 final class TranscriptionHistoryStore: ObservableObject {
-    static let shared = TranscriptionHistoryStore()
     static let maximumEntryCount = 20
 
     @Published private(set) var entries: [TranscriptionHistoryEntry] = []

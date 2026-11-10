@@ -131,6 +131,7 @@ final class WhisperBenchmarkSelectionTests: XCTestCase {
 }
 #endif
 
+// URLProtocol invokes this stateless test double concurrently; shared test state has its own lock.
 private final class MockURLProtocol: URLProtocol, @unchecked Sendable {
     enum Response: Sendable {
         case http(status: Int, data: Data)

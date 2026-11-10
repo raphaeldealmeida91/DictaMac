@@ -14,6 +14,7 @@ enum PipelineWatchdog {
     }
 }
 
+// Resolution is single-shot and every continuation/task mutation is guarded by lock.
 private final class PipelineTimeoutRace<Value: Sendable>: @unchecked Sendable {
     private let lock = NSLock()
     private var continuation: CheckedContinuation<Value, Error>?

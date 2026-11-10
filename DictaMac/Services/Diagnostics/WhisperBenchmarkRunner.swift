@@ -5,15 +5,13 @@ import OSLog
 import WhisperKit
 
 actor WhisperBenchmarkRunner {
-    static let shared = WhisperBenchmarkRunner()
-
     private let settings: any TranscriptionSettings
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "WhisperBenchmark"
     )
 
-    init(settings: any TranscriptionSettings = StoredTranscriptionSettings()) {
+    init(settings: any TranscriptionSettings) {
         self.settings = settings
     }
 

@@ -6,8 +6,8 @@ enum TextCleanupEngine: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .disabled: "Désactivé"
-        case .fast: "Rapide (règles)"
-        case .local: "Local (LLM)"
+        case .fast: "Rapide"
+        case .local: "Local"
         case .cloud: "Cloud"
         }
     }

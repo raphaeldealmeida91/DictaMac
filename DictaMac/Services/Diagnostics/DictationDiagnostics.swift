@@ -4,15 +4,13 @@ import OSLog
 
 @MainActor
 final class DictationDiagnostics: ObservableObject, DictationMetricsRecording {
-    static let shared = DictationDiagnostics()
-
     @Published private(set) var lastTimings: DictationTimings?
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "Latency"
     )
 
-    private init() {}
+    init() {}
 
     func record(_ timings: DictationTimings) {
         lastTimings = timings

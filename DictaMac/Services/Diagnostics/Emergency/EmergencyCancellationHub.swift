@@ -4,13 +4,12 @@ protocol EmergencyCancellationRegistering: AnyObject {
     func replaceHandlers(_ handlers: [@Sendable () -> Void])
 }
 
+// The handler collection is copied and replaced exclusively under lock.
 final class EmergencyCancellationHub: EmergencyCancellationRegistering, @unchecked Sendable {
-    static let shared = EmergencyCancellationHub()
-
     private let lock = NSLock()
     private var handlers: [@Sendable () -> Void] = []
 
-    private init() {}
+    init() {}
 
     func replaceHandlers(_ handlers: [@Sendable () -> Void]) {
         lock.withLock { self.handlers = handlers }

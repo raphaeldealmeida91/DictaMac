@@ -48,6 +48,7 @@ enum PermissionStatus: Sendable {
     var isAuthorized: Bool { self == .authorized }
 }
 
+// The cached authorization bit is accessed exclusively under lock.
 final class PermissionStateCache: @unchecked Sendable {
     static let shared = PermissionStateCache()
     private let lock = NSLock()

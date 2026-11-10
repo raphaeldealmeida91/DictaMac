@@ -4,10 +4,9 @@ import OSLog
 import WhisperKit
 
 actor WhisperKitTranscriptionService: TranscriptionService {
-    static let shared = WhisperKitTranscriptionService()
-
     private let settings: any TranscriptionSettings
     private let modelPathStore: any TranscriptionModelPathStoring
+    private let modelState: TranscriptionModelState
     private var whisperKit: WhisperKit?
     private var preparedForModelRequest: String?
     private var preparationTask: Task<Void, Error>?
@@ -17,11 +16,13 @@ actor WhisperKitTranscriptionService: TranscriptionService {
     )
 
     init(
-        settings: any TranscriptionSettings = StoredTranscriptionSettings(),
-        modelPathStore: any TranscriptionModelPathStoring = StoredTranscriptionSettings()
+        settings: any TranscriptionSettings,
+        modelPathStore: any TranscriptionModelPathStoring,
+        modelState: TranscriptionModelState
     ) {
         self.settings = settings
         self.modelPathStore = modelPathStore
+        self.modelState = modelState
     }
 
     nonisolated func requestEmergencyUnload() {
@@ -45,7 +46,7 @@ actor WhisperKitTranscriptionService: TranscriptionService {
             preparationTask = nil
         } catch {
             preparationTask = nil
-            await TranscriptionModelState.shared.failed(error)
+            await modelState.failed(error)
             throw error
         }
     }
@@ -62,7 +63,7 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         preparationTask = nil
         whisperKit = nil
         preparedForModelRequest = nil
-        await TranscriptionModelState.shared.unloaded(reason)
+        await modelState.unloaded(reason)
         ProcessMemoryDiagnostics.logFootprint(.whisperUnloaded)
     }
 
@@ -115,7 +116,7 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         do {
             try await load(model: requestedModel)
         } catch where requestedModel != StoredTranscriptionSettings.fallbackModel {
-            await TranscriptionModelState.shared.usingFallback(after: requestedModel)
+            await modelState.usingFallback(after: requestedModel)
             try await load(model: StoredTranscriptionSettings.fallbackModel)
         }
         preparedForModelRequest = requestedModel
@@ -140,11 +141,11 @@ actor WhisperKitTranscriptionService: TranscriptionService {
             ProcessMemoryDiagnostics.logFootprint(.whisperLoaded)
         }
         let (folder, reusedCompiledCache) = try await modelFolder(for: model)
-        await TranscriptionModelState.shared.loading(model)
+        await modelState.loading(model)
         let preparedKit = try await WhisperKit(configuration(for: folder))
         recordLoad(start: loadStart, reusedCompiledCache: reusedCompiledCache)
         whisperKit = preparedKit
-        await TranscriptionModelState.shared.loaded(model)
+        await modelState.loaded(model)
         try await warmUp(preparedKit, model: model)
     }
 
@@ -153,10 +154,10 @@ actor WhisperKitTranscriptionService: TranscriptionService {
             return (storedFolder, WhisperModelFiles.containsCompiledModels(in: storedFolder))
         }
         let modelsDirectory = try WhisperModelFiles.modelsDirectory()
-        await TranscriptionModelState.shared.downloading(model, progress: 0)
+        await modelState.downloading(model, progress: 0)
         let folder = try await WhisperKit.download(variant: model, downloadBase: modelsDirectory) { progress in
             Task { @MainActor in
-                TranscriptionModelState.shared.downloading(model, progress: progress.fractionCompleted)
+                self.modelState.downloading(model, progress: progress.fractionCompleted)
             }
         }
         modelPathStore.setStoredModelPath(folder.path, for: model)
@@ -180,10 +181,10 @@ actor WhisperKitTranscriptionService: TranscriptionService {
 
     private func warmUp(_ kit: WhisperKit, model: String) async throws {
         if SafeModeState.isEnabled {
-            await TranscriptionModelState.shared.ready(model)
+            await modelState.ready(model)
             return
         }
-        await TranscriptionModelState.shared.warmingUp(model)
+        await modelState.warmingUp(model)
         let start = ContinuousClock.now
         _ = try await transcribeWithKit(
             kit,
@@ -193,7 +194,7 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         )
         let seconds = Self.seconds(start.duration(to: .now))
         logger.info("whisper warmup duration=\(seconds, format: .fixed(precision: 3))s audio=1.000s")
-        await TranscriptionModelState.shared.ready(model)
+        await modelState.ready(model)
     }
 
     private func storedFolder(for model: String) -> URL? {

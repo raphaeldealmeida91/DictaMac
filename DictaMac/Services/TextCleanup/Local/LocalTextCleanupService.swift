@@ -81,6 +81,7 @@ actor LocalTextCleanupService: TextCleanupService {
     }
 }
 
+// Continuation resolution and task ownership are single-shot and protected by lock.
 private final class AsyncTimeoutRace<Value: Sendable>: @unchecked Sendable {
     private let lock = NSLock()
     private var continuation: CheckedContinuation<Value, Error>?

@@ -35,6 +35,7 @@ extension SettingsStoring {
     }
 }
 
+// UserDefaults provides thread-safe access; the wrapped reference is immutable after initialization.
 final class UserDefaultsSettingsStore: SettingsStoring, @unchecked Sendable {
     private let defaults: UserDefaults
 
@@ -65,6 +66,7 @@ final class UserDefaultsSettingsStore: SettingsStoring, @unchecked Sendable {
     }
 }
 
+// The values dictionary is accessed exclusively under lock.
 final class InMemorySettingsStore: SettingsStoring, @unchecked Sendable {
     private let lock = NSLock()
     private var values: [SettingsKey: SettingsValue]

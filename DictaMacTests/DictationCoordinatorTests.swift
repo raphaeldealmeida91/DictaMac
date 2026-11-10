@@ -82,7 +82,7 @@ private final class Fixture {
 
     init() {
         sessionFactory = FakeRecordingSessionFactory(audio: audio)
-        coordinator = DictationCoordinator(
+        coordinator = DictationCoordinator(dependencies: DictationCoordinatorDependencies(
             hotkeyProvider: hotkey,
             audioRecorder: audio,
             overlayPresenter: overlay,
@@ -92,8 +92,9 @@ private final class Fixture {
             stageReporter: stageReporter,
             modelPreparer: FakeModelPreparer(),
             cancellationRegistry: FakeCancellationRegistry(),
+            activityModel: AppActivityModel(),
             frontmostApplicationName: { "Tests" }
-        )
+        ))
     }
 
     func waitUntilIdle() async {
@@ -116,6 +117,7 @@ private final class FakeHotkeyProvider: HotkeyProviding {
     func cancel() { onCancel?() }
 }
 
+// Test access is confined to the main-actor fixture despite the production protocol's Sendable bound.
 private final class FakeAudioRecorder: AudioRecording, @unchecked Sendable {
     var onLevelUpdate: (@MainActor @Sendable (Float) -> Void)?
     var onError: (@MainActor @Sendable (AudioRecorderError) -> Void)?

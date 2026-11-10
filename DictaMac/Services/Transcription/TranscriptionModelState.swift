@@ -3,15 +3,13 @@ import Foundation
 
 @MainActor
 final class TranscriptionModelState: ObservableObject {
-    static let shared = TranscriptionModelState()
-
     @Published private(set) var status = "Modèle non chargé"
     @Published private(set) var downloadProgress: Double?
     @Published private(set) var loadedModel: String?
     @Published private(set) var isBusy = false
     @Published private(set) var isReady = false
 
-    private init() {}
+    init() {}
 
     func downloading(_ model: String, progress: Double) {
         status = "Téléchargement de \(model)…"

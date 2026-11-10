@@ -1,15 +1,24 @@
 import Darwin
 import Foundation
 
+// Thread lifecycle, stop state, and policy are all protected by lock.
 final class EmergencyWatchdog: @unchecked Sendable {
     private let lock = NSLock()
     private var thread: Thread?
     private var shouldStop = false
     private var policy: EmergencyWatchdogPolicy
+    private let runtime: EmergencyRuntime
+    private let recovery: any EmergencyRecovering
 
-    init(configuration: EmergencyWatchdogPolicy.Configuration = .init(
-        physicalMemory: ProcessInfo.processInfo.physicalMemory
-    )) {
+    init(
+        runtime: EmergencyRuntime,
+        recovery: any EmergencyRecovering,
+        configuration: EmergencyWatchdogPolicy.Configuration = .init(
+            physicalMemory: ProcessInfo.processInfo.physicalMemory
+        )
+    ) {
+        self.runtime = runtime
+        self.recovery = recovery
         policy = EmergencyWatchdogPolicy(configuration: configuration)
     }
 
@@ -40,12 +49,12 @@ final class EmergencyWatchdog: @unchecked Sendable {
 
     private func tick() {
         let now = MonotonicClock.now
-        let runtime = EmergencyRuntime.shared.snapshot()
+        let runtime = runtime.snapshot()
         if let deadline = runtime.hotkeyDeadline, now >= deadline {
             if runtime.stateIsIdle {
-                EmergencyRuntime.shared.clearHotkeyExit()
+                self.runtime.clearHotkeyExit()
             } else {
-                EmergencyRecovery.exit(reason: runtime.hotkeyReason ?? "hotkey")
+                recovery.exit(reason: runtime.hotkeyReason ?? "hotkey")
             }
         }
         evaluatePolicy(now: now, runtime: runtime)
@@ -61,8 +70,8 @@ final class EmergencyWatchdog: @unchecked Sendable {
         )
         switch policy.evaluate(snapshot) {
         case .none: break
-        case .recover(let reason): EmergencyRecovery.begin(reason: reason)
-        case .exit(let reason): EmergencyRecovery.exit(reason: reason)
+        case .recover(let reason): recovery.begin(reason: reason, hotkey: false)
+        case .exit(let reason): recovery.exit(reason: reason)
         }
     }
 }

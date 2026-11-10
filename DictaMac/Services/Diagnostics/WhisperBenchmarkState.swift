@@ -6,13 +6,15 @@ import UniformTypeIdentifiers
 
 @MainActor
 final class WhisperBenchmarkState: ObservableObject {
-    static let shared = WhisperBenchmarkState()
-
     @Published private(set) var isRunning = false
     @Published private(set) var status = "Aucun benchmark lancé"
     @Published private(set) var results: [WhisperBenchmarkResult] = []
 
-    private init() {}
+    private let runner: WhisperBenchmarkRunner
+
+    init(runner: WhisperBenchmarkRunner) {
+        self.runner = runner
+    }
 
     func chooseWAVAndRun() {
         let panel = NSOpenPanel()
@@ -25,7 +27,7 @@ final class WhisperBenchmarkState: ObservableObject {
         results = []
         status = "Recherche des variantes WhisperKit…"
         Task { [self] in
-            let output = await WhisperBenchmarkRunner.shared.run(wavURL: url) { status in
+            let output = await runner.run(wavURL: url) { status in
                 Task { @MainActor in self.status = status }
             }
             results = output
