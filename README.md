@@ -73,6 +73,21 @@ taskpolicy -b xcodebuild \
   build-for-testing
 ```
 
+## Installation
+
+Pour compiler DictaMac en Release, remplacer l’éventuelle installation existante dans
+`/Applications`, puis relancer l’application :
+
+```sh
+./scripts/install.sh
+```
+
+Le script refuse de démarrer si un autre `xcodebuild` est actif, utilise le cache persistant
+`~/Library/Caches/DictaMac-Codex-DD`, limite la compilation à 4 jobs et l’exécute en priorité basse.
+Il demande le mot de passe administrateur uniquement si `/Applications` n’est pas accessible en
+écriture. Les autorisations macOS étant associées à l’identité signée de l’application, conservez la
+même équipe de signature entre les installations.
+
 ## Première configuration
 
 Au premier lancement, ouvrez **Réglages…** depuis le panneau de la barre de menus,

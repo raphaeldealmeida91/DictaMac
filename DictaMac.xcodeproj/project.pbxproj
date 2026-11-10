@@ -1171,6 +1171,7 @@
 				ENABLE_APP_INTENTS_METADATA = NO;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
+				EXCLUDED_SOURCE_FILE_NAMES = "WhisperBenchmarkResult.swift WhisperBenchmarkRunner.swift WhisperBenchmarkState.swift";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "DictaMac utilise le microphone pour transcrire votre dictée localement.";
