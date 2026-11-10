@@ -17,6 +17,7 @@ final class GeneralSettingsViewModel: ObservableObject {
     @Published private(set) var historyError: String?
 
     let recordingDurationRange = StoredRecordingSettings.allowedRange
+    let versionDescription: String
     private let store: any SettingsStoring
     private let setLaunchAtLogin: (Bool) -> Void
     private let refreshLaunchAtLogin: () -> Void
@@ -27,7 +28,8 @@ final class GeneralSettingsViewModel: ObservableObject {
     init<Launch: LaunchAtLoginManaging, History: HistoryManaging>(
         store: any SettingsStoring,
         launchAtLogin: Launch,
-        history: History
+        history: History,
+        versionInfo: AppVersionInfo = .current
     ) {
         self.store = store
         feedbackSoundsEnabled = store.bool(for: .feedbackSoundsEnabled) ?? true
@@ -38,6 +40,7 @@ final class GeneralSettingsViewModel: ObservableObject {
         emergencyUsesControl = store.bool(for: .emergencyHotkeyControl) ?? true
         emergencyUsesOption = store.bool(for: .emergencyHotkeyOption) ?? true
         emergencyUsesCommand = store.bool(for: .emergencyHotkeyCommand) ?? true
+        versionDescription = versionInfo.description
         setLaunchAtLogin = launchAtLogin.setEnabled
         refreshLaunchAtLogin = launchAtLogin.refresh
         clearStoredHistory = history.clear

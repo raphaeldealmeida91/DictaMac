@@ -100,6 +100,12 @@ final class SettingsTests: XCTestCase {
         XCTAssertTrue(options.detectLanguage)
     }
 
+    func testAppVersionDescription() {
+        let version = AppVersionInfo(marketingVersion: "1.0", buildNumber: "42")
+
+        XCTAssertEqual(version.description, "Version 1.0 (build 42)")
+    }
+
     func testVocabularyPromptContainsOnlyNormalizedTerms() {
         let prompt = WhisperKitTranscriptionService.vocabularyPrompt(
             for: " WhisperKit,\n DictaMac ,, SwiftUI "

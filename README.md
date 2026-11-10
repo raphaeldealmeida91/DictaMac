@@ -88,6 +88,13 @@ Il demande le mot de passe administrateur uniquement si `/Applications` n’est 
 écriture. Les autorisations macOS étant associées à l’identité signée de l’application, conservez la
 même équipe de signature entre les installations.
 
+Pour incrémenter `CURRENT_PROJECT_VERSION` avant la compilation et conserver ce nouveau numéro dans
+le projet :
+
+```sh
+./scripts/install.sh --increment-build
+```
+
 ## Première configuration
 
 Au premier lancement, ouvrez **Réglages…** depuis le panneau de la barre de menus,

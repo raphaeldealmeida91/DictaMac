@@ -84,6 +84,17 @@ struct GeneralSettingsView: View {
                         .buttonStyle(SecondaryButtonStyle())
                 }
             }
+
+            SettingsCard(title: "À propos") {
+                SettingsRow(
+                    title: "DictaMac",
+                    description: viewModel.versionDescription
+                ) {
+                    Image(systemName: "mic.and.signal.meter")
+                        .font(.title2)
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
         }
         .onAppear(perform: viewModel.appear)
     }

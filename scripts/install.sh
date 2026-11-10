@@ -8,6 +8,29 @@ readonly DERIVED_DATA_PATH="${HOME}/Library/Caches/DictaMac-Codex-DD"
 readonly BUILT_APPLICATION="${DERIVED_DATA_PATH}/Build/Products/Release/DictaMac.app"
 readonly INSTALLED_APPLICATION="/Applications/DictaMac.app"
 readonly BUNDLE_IDENTIFIER="com.raphaeldealmeida.DictaMac"
+typeset -g INCREMENT_BUILD=false
+
+parse_arguments() {
+    for argument in "$@"; do
+        case "${argument}" in
+            --increment-build) INCREMENT_BUILD=true ;;
+            --help)
+                print "Usage : ./scripts/install.sh [--increment-build]"
+                exit 0
+                ;;
+            *)
+                print -u2 "Option inconnue : ${argument}"
+                exit 2
+                ;;
+        esac
+    done
+}
+
+increment_build_number() {
+    [[ "${INCREMENT_BUILD}" == true ]] || return
+    print "Incrément du numéro de build…"
+    (cd "${PROJECT_DIRECTORY}" && xcrun agvtool next-version -all)
+}
 
 ensure_build_is_available() {
     if pgrep -x xcodebuild >/dev/null; then
@@ -63,7 +86,9 @@ launch_application() {
     print "DictaMac est installé et relancé."
 }
 
+parse_arguments "$@"
 ensure_build_is_available
+increment_build_number
 build_application
 stop_installed_application
 copy_application
