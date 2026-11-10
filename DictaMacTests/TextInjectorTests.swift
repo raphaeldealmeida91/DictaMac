@@ -68,7 +68,7 @@ final class ClipboardTextInjectorTests: XCTestCase {
         XCTAssertEqual(pasteboard.replaceCallCount, writesBeforeRestore)
     }
 
-    func testKeepsTextInClipboardWhenThereIsNoSafeFocusedField() {
+    func testKeepsTextInClipboardWhenSecureInputPreventsPaste() {
         let pasteboard = FakePasteboard(items: [])
         let scheduler = ManualRestoreScheduler()
         let injector = makeInjector(
@@ -80,6 +80,21 @@ final class ClipboardTextInjectorTests: XCTestCase {
         XCTAssertEqual(injector.insert("à coller"), .copiedToClipboard)
         scheduler.run()
         XCTAssertEqual(pasteboard.items.first?.representations[.string], Data("à coller".utf8))
+    }
+
+    func testAttemptsPasteWithoutAnAXCompatibleFocusedElement() {
+        let pasteboard = FakePasteboard(items: [])
+        let scheduler = ManualRestoreScheduler()
+        var pasteCount = 0
+        let injector = makeInjector(
+            pasteboard: pasteboard,
+            scheduler: scheduler,
+            canPasteIntoFocusedElement: { true },
+            pasteCommand: { pasteCount += 1 }
+        )
+
+        XCTAssertEqual(injector.insert("champ web"), .pasted)
+        XCTAssertEqual(pasteCount, 1)
     }
 
     func testKeepsTextInClipboardWhenPasteCommandFails() {
@@ -109,10 +124,25 @@ final class ClipboardTextInjectorTests: XCTestCase {
         XCTAssertEqual(injector.insert("avec permission"), .pasted)
     }
 
+    func testDirectPermissionCheckRecoversFromStaleDeniedCache() {
+        let pasteboard = FakePasteboard(items: [])
+        let scheduler = ManualRestoreScheduler()
+        let permissionCache = PermissionStateCache()
+        let injector = makeInjector(
+            pasteboard: pasteboard,
+            scheduler: scheduler,
+            permissionCache: permissionCache,
+            accessibilityIsTrusted: { true }
+        )
+
+        XCTAssertEqual(injector.insert("permission accordée"), .pasted)
+    }
+
     private func makeInjector(
         pasteboard: FakePasteboard,
         scheduler: ManualRestoreScheduler,
         permissionCache: PermissionStateCache? = nil,
+        accessibilityIsTrusted: @escaping ClipboardTextInjector.AccessibilityTrustCheck = { false },
         canPasteIntoFocusedElement: @escaping @MainActor () -> Bool = { true },
         pasteCommand: @escaping ClipboardTextInjector.PasteCommand = {}
     ) -> ClipboardTextInjector {
@@ -120,6 +150,7 @@ final class ClipboardTextInjectorTests: XCTestCase {
         return ClipboardTextInjector(
             permissionCache: resolvedPermissionCache,
             pasteboard: pasteboard,
+            accessibilityIsTrusted: accessibilityIsTrusted,
             canPasteIntoFocusedElement: canPasteIntoFocusedElement,
             pasteCommand: pasteCommand,
             scheduleRestore: scheduler.schedule

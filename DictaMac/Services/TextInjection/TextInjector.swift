@@ -106,9 +106,11 @@ final class GeneralPasteboardProvider: PasteboardProviding {
 final class ClipboardTextInjector: TextInjector {
     typealias PasteCommand = @MainActor () throws -> Void
     typealias RestoreScheduler = @MainActor (@escaping @MainActor () -> Void) -> Void
+    typealias AccessibilityTrustCheck = @MainActor () -> Bool
 
     private let pasteboard: any PasteboardProviding
     private let permissionCache: any AccessibilityPermissionReading
+    private let accessibilityIsTrusted: AccessibilityTrustCheck
     private let canPasteIntoFocusedElement: @MainActor () -> Bool
     private let pasteCommand: PasteCommand
     private let scheduleRestore: RestoreScheduler
@@ -116,19 +118,22 @@ final class ClipboardTextInjector: TextInjector {
     init(
         permissionCache: any AccessibilityPermissionReading,
         pasteboard: any PasteboardProviding = GeneralPasteboardProvider(),
+        accessibilityIsTrusted: @escaping AccessibilityTrustCheck = AXIsProcessTrusted,
         canPasteIntoFocusedElement: @escaping @MainActor () -> Bool = ClipboardTextInjector.defaultDestinationCheck,
         pasteCommand: @escaping PasteCommand = ClipboardTextInjector.postPasteCommand,
         scheduleRestore: @escaping RestoreScheduler = ClipboardTextInjector.scheduleDefaultRestore
     ) {
         self.permissionCache = permissionCache
         self.pasteboard = pasteboard
+        self.accessibilityIsTrusted = accessibilityIsTrusted
         self.canPasteIntoFocusedElement = canPasteIntoFocusedElement
         self.pasteCommand = pasteCommand
         self.scheduleRestore = scheduleRestore
     }
 
     func insert(_ text: String) -> TextInjectionOutcome {
-        guard permissionCache.isAccessibilityAuthorized,
+        let cachedAuthorization = permissionCache.isAccessibilityAuthorized
+        guard (cachedAuthorization || accessibilityIsTrusted()),
               canPasteIntoFocusedElement() else {
             pasteboard.writeText(text)
             return .copiedToClipboard
@@ -176,24 +181,10 @@ final class ClipboardTextInjector: TextInjector {
         keyUp.post(tap: .cghidEventTap)
     }
 
+    /// Only refuses when the system forbids synthetic input (secure fields such as passwords).
+    /// We deliberately do not require the focused element to expose a settable AXValue:
+    /// browsers, Electron apps and many web inputs do not, which used to force a manual Cmd+V.
     private static func defaultDestinationCheck() -> Bool {
-        guard !IsSecureEventInputEnabled() else { return false }
-
-        let systemWideElement = AXUIElementCreateSystemWide()
-        var focusedValue: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            systemWideElement,
-            kAXFocusedUIElementAttribute as CFString,
-            &focusedValue
-        ) == .success, let focusedValue else { return false }
-
-        let focusedElement = unsafeBitCast(focusedValue, to: AXUIElement.self)
-        var valueIsSettable = DarwinBoolean(false)
-        guard AXUIElementIsAttributeSettable(
-            focusedElement,
-            kAXValueAttribute as CFString,
-            &valueIsSettable
-        ) == .success else { return false }
-        return valueIsSettable.boolValue
+        !IsSecureEventInputEnabled()
     }
 }
