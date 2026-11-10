@@ -3,6 +3,11 @@ import SwiftUI
 
 @MainActor
 final class FirstLaunchAssistantController: NSObject, NSWindowDelegate {
+    private enum WindowMetrics {
+        static let initialContentSize = NSSize(width: 620, height: 500)
+        static let minimumContentSize = NSSize(width: 540, height: 420)
+    }
+
     private let store: any SettingsStoring
     private let makeViewModel: () -> FirstLaunchAssistantViewModel
     private var window: NSWindow?
@@ -44,7 +49,9 @@ final class FirstLaunchAssistantController: NSObject, NSWindowDelegate {
         }
         let window = NSWindow(contentViewController: NSHostingController(rootView: view))
         window.title = "Assistant de configuration DictaMac"
-        window.styleMask = [.titled, .closable, .miniaturizable]
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+        window.setContentSize(WindowMetrics.initialContentSize)
+        window.contentMinSize = WindowMetrics.minimumContentSize
         window.isReleasedWhenClosed = false
         window.center()
         window.delegate = self

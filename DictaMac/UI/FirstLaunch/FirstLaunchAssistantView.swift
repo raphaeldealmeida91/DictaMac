@@ -10,16 +10,20 @@ struct FirstLaunchAssistantView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 16) {
             header
             Divider()
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            ScrollView {
+                content
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .padding(.vertical, 4)
+            }
             Divider()
+            completionHint
             navigation
         }
-        .padding(28)
-        .frame(width: 620, height: 520)
+        .padding(24)
+        .frame(minWidth: 540, minHeight: 420)
         .onAppear(perform: viewModel.appear)
         .onDisappear(perform: viewModel.disappear)
     }
@@ -83,10 +87,9 @@ struct FirstLaunchAssistantView: View {
         GroupBox("Touche 🌐/fn") {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Dans Réglages Système → Clavier, choisissez « Ne rien faire » pour « Appuyer sur 🌐 pour ».")
-                HStack {
-                    Button("Ouvrir les réglages Clavier", action: viewModel.openKeyboardSettings)
-                    Toggle("Réglage effectué ou ignoré", isOn: $viewModel.fnConfigurationConfirmed)
-                }
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Ouvrir les réglages Clavier", action: viewModel.openKeyboardSettings)
+                Toggle("Réglage effectué ou ignoré", isOn: $viewModel.fnConfigurationConfirmed)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(6)
@@ -98,7 +101,9 @@ struct FirstLaunchAssistantView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Premier lancement : le téléchargement et la compilation peuvent prendre quelques minutes.")
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(viewModel.modelStatus)
+                    .fixedSize(horizontal: false, vertical: true)
                 if let progress = viewModel.modelProgress {
                     ProgressView(value: progress)
                 } else if !viewModel.modelIsReady && !viewModel.modelSkipped {
@@ -152,6 +157,16 @@ struct FirstLaunchAssistantView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(!viewModel.canContinue)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var completionHint: some View {
+        if viewModel.step == .readyToDictate && !viewModel.canFinish {
+            Text("Pour terminer, confirmez le réglage fn puis effectuez l’essai de dictée ou cochez « Terminer sans essai ».")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
