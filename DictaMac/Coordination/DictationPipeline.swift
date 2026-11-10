@@ -53,8 +53,6 @@ final class DefaultPipelineModelRecovery: PipelineModelRecovering {
 final class DictationPipeline: DictationPipelineRunning {
     private enum Constants {
         static let finalTranscriptionBudget: TimeInterval = 8
-        static let transcriptionFailureMessage =
-            "DictaMac : la transcription a échoué et la dictée audio n’a pas pu être récupérée."
     }
 
     private enum ModelPreparationError: Error {
@@ -77,7 +75,6 @@ final class DictationPipeline: DictationPipelineRunning {
     private let textCleanupService: any TextCleanupService
     private let textCleanupSettings: any TextCleanupSettings
     private let textInjector: any TextInjector
-    private let failurePasteboard: any PasteboardProviding
     private let historyRecorder: any DictationHistoryRecording
     private let metricsRecorder: any DictationMetricsRecording
     private let instrumentedStage: InstrumentedStage
@@ -91,7 +88,6 @@ final class DictationPipeline: DictationPipelineRunning {
         textCleanupService: any TextCleanupService,
         textCleanupSettings: any TextCleanupSettings,
         textInjector: any TextInjector,
-        failurePasteboard: any PasteboardProviding,
         historyRecorder: any DictationHistoryRecording,
         metricsRecorder: any DictationMetricsRecording,
         stageReporter: any DictationStageReporting,
@@ -100,7 +96,6 @@ final class DictationPipeline: DictationPipelineRunning {
         self.textCleanupService = textCleanupService
         self.textCleanupSettings = textCleanupSettings
         self.textInjector = textInjector
-        self.failurePasteboard = failurePasteboard
         self.historyRecorder = historyRecorder
         self.metricsRecorder = metricsRecorder
         self.instrumentedStage = InstrumentedStage(reporter: stageReporter)
@@ -118,11 +113,9 @@ final class DictationPipeline: DictationPipelineRunning {
             logger.debug("Pipeline de dictée annulé")
             return .cancelled
         } catch is ModelPreparationError {
-            copyTranscriptionFailureMessage()
             logger.error("Chargement du modèle interrompu pendant une dictée")
             return .failed(.transcription)
         } catch is TranscriptionFailureError {
-            copyTranscriptionFailureMessage()
             logger.error("Transcription impossible")
             return .failed(.transcription)
         } catch let error as PipelineWatchdogError {
@@ -205,10 +198,6 @@ final class DictationPipeline: DictationPipelineRunning {
         } catch {
             throw TranscriptionFailureError.failed
         }
-    }
-
-    private func copyTranscriptionFailureMessage() {
-        failurePasteboard.writeText(Constants.transcriptionFailureMessage)
     }
 
     private func cleanup(

@@ -85,6 +85,20 @@ final class DictationCoordinatorTests: XCTestCase {
         XCTAssertEqual(fixture.overlay.events.last, .hidden)
     }
 
+    func testTranscriptionFailureIsShownOnlyAsOverlayError() async {
+        let fixture = Fixture()
+        fixture.pipeline.outcome = .failed(.transcription)
+
+        fixture.hotkey.press()
+        fixture.hotkey.release()
+        await fixture.waitUntilIdle()
+
+        XCTAssertEqual(
+            fixture.overlay.events.last,
+            .error("Transcription impossible — dictée non récupérée")
+        )
+    }
+
     func testRecordingSessionCapturesPostRollBeforeStoppingAudio() throws {
         let audio = FakeAudioRecorder()
         let session = RecordingSession(

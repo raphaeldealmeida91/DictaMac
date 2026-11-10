@@ -273,7 +273,7 @@ final class DictationCoordinator: DictationCoordinating {
         case let .failed(.watchdog(message)):
             overlayPresenter.showError(message)
         case .failed(.transcription):
-            overlayPresenter.showError("Transcription impossible — explication copiée")
+            overlayPresenter.showError("Transcription impossible — dictée non récupérée")
         }
     }
 

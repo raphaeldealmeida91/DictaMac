@@ -25,12 +25,11 @@ final class DictationPipelineTests: XCTestCase {
 
     func testStageIsClosedWhenTranscriptionFails() async {
         let stageReporter = PipelineFakeStageReporter()
-        let pasteboard = PipelineFakePasteboard()
+        let injector = PipelineFakeInjector()
         let pipeline = makePipeline(
             cleanupService: FailingCleanupService(),
-            injector: PipelineFakeInjector(),
-            stageReporter: stageReporter,
-            failurePasteboard: pasteboard
+            injector: injector,
+            stageReporter: stageReporter
         )
 
         let outcome = await pipeline.run(
@@ -41,7 +40,7 @@ final class DictationPipelineTests: XCTestCase {
         XCTAssertEqual(outcome, .failed(.transcription))
         XCTAssertEqual(stageReporter.beginStages, [.transcription])
         XCTAssertEqual(stageReporter.endStages, [.transcription])
-        XCTAssertNotNil(pasteboard.text)
+        XCTAssertNil(injector.insertedText)
     }
 
     func testHistoryKeepsRawAndCleanedTextForComparison() async {
@@ -64,12 +63,11 @@ final class DictationPipelineTests: XCTestCase {
 
     func testModelPreparationFailureDoesNotStartTranscriptionStage() async {
         let stageReporter = PipelineFakeStageReporter()
-        let pasteboard = PipelineFakePasteboard()
+        let injector = PipelineFakeInjector()
         let pipeline = makePipeline(
             cleanupService: FailingCleanupService(),
-            injector: PipelineFakeInjector(),
-            stageReporter: stageReporter,
-            failurePasteboard: pasteboard
+            injector: injector,
+            stageReporter: stageReporter
         )
 
         let outcome = await pipeline.run(
@@ -79,21 +77,19 @@ final class DictationPipelineTests: XCTestCase {
 
         XCTAssertEqual(outcome, .failed(.transcription))
         XCTAssertTrue(stageReporter.beginStages.isEmpty)
-        XCTAssertNotNil(pasteboard.text)
+        XCTAssertNil(injector.insertedText)
     }
 
     private func makePipeline(
         cleanupService: any TextCleanupService,
         injector: PipelineFakeInjector,
         stageReporter: PipelineFakeStageReporter,
-        historyRecorder: PipelineFakeHistoryRecorder = PipelineFakeHistoryRecorder(),
-        failurePasteboard: PipelineFakePasteboard = PipelineFakePasteboard()
+        historyRecorder: PipelineFakeHistoryRecorder = PipelineFakeHistoryRecorder()
     ) -> DictationPipeline {
         DictationPipeline(
             textCleanupService: cleanupService,
             textCleanupSettings: PipelineCleanupSettings(),
             textInjector: injector,
-            failurePasteboard: failurePasteboard,
             historyRecorder: historyRecorder,
             metricsRecorder: PipelineFakeMetricsRecorder(),
             stageReporter: stageReporter,
@@ -200,22 +196,6 @@ private final class PipelineFakeInjector: TextInjector {
     func insert(_ text: String) -> TextInjectionOutcome {
         insertedText = text
         return .pasted
-    }
-}
-
-@MainActor
-private final class PipelineFakePasteboard: PasteboardProviding {
-    private(set) var text: String?
-    var changeCount = 0
-
-    func readItems() -> [PasteboardItemContents] { [] }
-    func replaceItems(with items: [PasteboardItemContents]) -> Int { changeCount }
-    func writeTransientText(_ text: String) -> Int { writeText(text) }
-
-    func writeText(_ text: String) -> Int {
-        self.text = text
-        changeCount += 1
-        return changeCount
     }
 }
 
