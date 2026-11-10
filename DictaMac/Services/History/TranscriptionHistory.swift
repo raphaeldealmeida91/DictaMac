@@ -15,16 +15,6 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
-enum HistoryPreferences {
-    static let enabledKey = "history.enabled"
-    static let defaultEnabled = true
-
-    static var isEnabled: Bool {
-        if UserDefaults.standard.object(forKey: enabledKey) == nil { return defaultEnabled }
-        return UserDefaults.standard.bool(forKey: enabledKey)
-    }
-}
-
 @MainActor
 final class TranscriptionHistoryStore: ObservableObject {
     static let shared = TranscriptionHistoryStore()
@@ -34,15 +24,21 @@ final class TranscriptionHistoryStore: ObservableObject {
 
     private let fileURL: URL
     private let fileManager: FileManager
+    private let settings: any HistorySettings
 
-    init(fileURL: URL? = nil, fileManager: FileManager = .default) {
+    init(
+        fileURL: URL? = nil,
+        fileManager: FileManager = .default,
+        settings: any HistorySettings = StoredHistorySettings()
+    ) {
         self.fileManager = fileManager
+        self.settings = settings
         self.fileURL = fileURL ?? Self.defaultFileURL(fileManager: fileManager)
         entries = loadEntries()
     }
 
     func add(text: String, date: Date = Date(), targetApplication: String) throws {
-        guard HistoryPreferences.isEnabled, !text.isEmpty else { return }
+        guard settings.isEnabled, !text.isEmpty else { return }
         entries.insert(TranscriptionHistoryEntry(
             text: text,
             date: date,

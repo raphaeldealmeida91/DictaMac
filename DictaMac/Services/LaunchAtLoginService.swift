@@ -44,12 +44,3 @@ final class LaunchAtLoginService: ObservableObject {
         }
     }
 }
-
-enum FeedbackSoundPreferences {
-    static let enabledKey = "feedbackSounds.enabled"
-
-    static var isEnabled: Bool {
-        if UserDefaults.standard.object(forKey: enabledKey) == nil { return true }
-        return UserDefaults.standard.bool(forKey: enabledKey)
-    }
-}

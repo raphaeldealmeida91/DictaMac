@@ -24,6 +24,10 @@ final class DictationCoordinator: DictationCoordinating {
     private let textCleanupService: any TextCleanupService
     private let textInjector: any TextInjector
     private let overlayController: DictationOverlayController
+    private let transcriptionSettings: any TranscriptionSettings
+    private let textCleanupSettings: any TextCleanupSettings
+    private let recordingSettings: any RecordingSettings
+    private let feedbackSoundSettings: any FeedbackSoundSettings
     private var transcriptionTask: Task<Void, Never>?
     private var modelPreparationTask: Task<Void, Never>?
     private var audioFeedTask: Task<Void, Never>?
@@ -42,9 +46,13 @@ final class DictationCoordinator: DictationCoordinating {
         hotkeyService: HotkeyService = HotkeyService(),
         audioRecorder: AudioRecorder = AudioRecorder(),
         transcriptionService: any TranscriptionService = WhisperKitTranscriptionService.shared,
-        textCleanupService: any TextCleanupService = ConfiguredTextCleanupService.shared,
+        textCleanupService: any TextCleanupService,
         textInjector: any TextInjector = ClipboardTextInjector(),
-        overlayController: DictationOverlayController = DictationOverlayController()
+        overlayController: DictationOverlayController = DictationOverlayController(),
+        transcriptionSettings: any TranscriptionSettings = StoredTranscriptionSettings(),
+        textCleanupSettings: any TextCleanupSettings = StoredTextCleanupSettings(),
+        recordingSettings: any RecordingSettings = StoredRecordingSettings(),
+        feedbackSoundSettings: any FeedbackSoundSettings = StoredFeedbackSoundSettings()
     ) {
         self.hotkeyService = hotkeyService
         self.audioRecorder = audioRecorder
@@ -52,6 +60,10 @@ final class DictationCoordinator: DictationCoordinating {
         self.textCleanupService = textCleanupService
         self.textInjector = textInjector
         self.overlayController = overlayController
+        self.transcriptionSettings = transcriptionSettings
+        self.textCleanupSettings = textCleanupSettings
+        self.recordingSettings = recordingSettings
+        self.feedbackSoundSettings = feedbackSoundSettings
 
         hotkeyService.onPress = { [weak self] in self?.beginRecording() }
         hotkeyService.onRelease = { [weak self] in self?.endRecording() }
@@ -75,12 +87,13 @@ final class DictationCoordinator: DictationCoordinating {
 
     func start() {
         hotkeyService.start()
-        modelPreparationTask = Task.detached(priority: .utility) { [transcriptionService, logger] in
+        modelPreparationTask = Task.detached(priority: .utility) {
+            [transcriptionService, textCleanupSettings, logger] in
             do {
                 try await transcriptionService.prepare()
                 logger.info("Modèle de transcription prêt")
-                guard TextCleanupPreferences.configuredEngine == .local,
-                      UserDefaults.standard.bool(forKey: TextCleanupPreferences.localDownloadApprovedKey) else {
+                guard textCleanupSettings.configuredEngine == .local,
+                      textCleanupSettings.localDownloadApproved else {
                     return
                 }
                 // Let Core ML release temporary compilation/loading buffers before
@@ -135,7 +148,7 @@ final class DictationCoordinator: DictationCoordinating {
             overlayController.showRecording()
             let segmentedTranscriber = SegmentedTranscriber(
                 transcriptionService: transcriptionService,
-                language: TranscriptionPreferences.configuredLanguage
+                language: transcriptionSettings.configuredLanguage
             )
             activeSegmentedTranscriber = segmentedTranscriber
             audioFeedTask = Task { [weak self, audioRecorder, logger] in
@@ -156,9 +169,9 @@ final class DictationCoordinator: DictationCoordinating {
                     )
                 }
             }
-            maximumDurationTask = Task { [weak self] in
+            maximumDurationTask = Task { [weak self, recordingSettings] in
                 do {
-                    try await Task.sleep(for: .seconds(RecordingDurationPreferences.maximumDuration))
+                    try await Task.sleep(for: .seconds(recordingSettings.maximumDuration))
                     guard !Task.isCancelled else { return }
                     self?.cancelForMaximumDuration()
                 } catch is CancellationError {
@@ -220,7 +233,8 @@ final class DictationCoordinator: DictationCoordinating {
             overlayController.showTranscribing()
         }
         let targetApplication = targetApplication
-        transcriptionTask = Task { [weak self, textCleanupService, textInjector, overlayController, logger] in
+        transcriptionTask = Task {
+            [weak self, textCleanupService, textCleanupSettings, textInjector, overlayController, logger] in
             defer { ProcessMemoryDiagnostics.logFootprint(.dictationFinished) }
             let transcriptionStart = ContinuousClock.now
             PersistentDiagnosticLog.shared.stage(
@@ -257,8 +271,8 @@ final class DictationCoordinator: DictationCoordinating {
 
                 let text: String
                 let cleanupStart = ContinuousClock.now
-                let cleanupEngine = TextCleanupPreferences.configuredEngine
-                if TextCleanupPreferences.isEnabled, !rawText.isEmpty {
+                let cleanupEngine = textCleanupSettings.configuredEngine
+                if textCleanupSettings.isEnabled, !rawText.isEmpty {
                     PersistentDiagnosticLog.shared.stage(
                         .cleanup,
                         phase: "begin",
@@ -416,7 +430,7 @@ final class DictationCoordinator: DictationCoordinating {
     }
 
     private func playFeedbackSound(named name: String) {
-        guard FeedbackSoundPreferences.isEnabled else { return }
+        guard feedbackSoundSettings.isEnabled else { return }
         NSSound(named: NSSound.Name(name))?.play()
     }
 
