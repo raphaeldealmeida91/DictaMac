@@ -7,6 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		M10000000000000000000001 /* HotkeyEventSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = M20000000000000000000001 /* HotkeyEventSnapshot.swift */; };
+		M10000000000000000000002 /* FnGestureStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = M20000000000000000000002 /* FnGestureStateMachine.swift */; };
+		M10000000000000000000003 /* EmergencyHotkeyDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = M20000000000000000000003 /* EmergencyHotkeyDetector.swift */; };
+		M10000000000000000000004 /* HotkeyCallbackDelivery.swift in Sources */ = {isa = PBXBuildFile; fileRef = M20000000000000000000004 /* HotkeyCallbackDelivery.swift */; };
+		M10000000000000000000005 /* HotkeyEventProcessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = M20000000000000000000005 /* HotkeyEventProcessing.swift */; };
+		M10000000000000000000006 /* HotkeyEventProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = M20000000000000000000006 /* HotkeyEventProcessor.swift */; };
+		M10000000000000000000007 /* HotkeyEventTapControlling.swift in Sources */ = {isa = PBXBuildFile; fileRef = M20000000000000000000007 /* HotkeyEventTapControlling.swift */; };
+		M10000000000000000000008 /* CGEventTapController.swift in Sources */ = {isa = PBXBuildFile; fileRef = M20000000000000000000008 /* CGEventTapController.swift */; };
+		M10000000000000000000009 /* HotkeyPermissionObserving.swift in Sources */ = {isa = PBXBuildFile; fileRef = M20000000000000000000009 /* HotkeyPermissionObserving.swift */; };
+		M1000000000000000000000A /* HotkeyPermissionObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = M2000000000000000000000A /* HotkeyPermissionObserver.swift */; };
+		M1000000000000000000000B /* HotkeyServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = M2000000000000000000000B /* HotkeyServiceTests.swift */; };
 		L10000000000000000000001 /* AudioSampleAccumulating.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000001 /* AudioSampleAccumulating.swift */; };
 		L10000000000000000000002 /* AudioSampleAccumulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000002 /* AudioSampleAccumulator.swift */; };
 		L10000000000000000000003 /* AudioSampleConverting.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000003 /* AudioSampleConverting.swift */; };
@@ -181,6 +192,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		M20000000000000000000001 /* HotkeyEventSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyEventSnapshot.swift; sourceTree = "<group>"; };
+		M20000000000000000000002 /* FnGestureStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FnGestureStateMachine.swift; sourceTree = "<group>"; };
+		M20000000000000000000003 /* EmergencyHotkeyDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyHotkeyDetector.swift; sourceTree = "<group>"; };
+		M20000000000000000000004 /* HotkeyCallbackDelivery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyCallbackDelivery.swift; sourceTree = "<group>"; };
+		M20000000000000000000005 /* HotkeyEventProcessing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyEventProcessing.swift; sourceTree = "<group>"; };
+		M20000000000000000000006 /* HotkeyEventProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyEventProcessor.swift; sourceTree = "<group>"; };
+		M20000000000000000000007 /* HotkeyEventTapControlling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyEventTapControlling.swift; sourceTree = "<group>"; };
+		M20000000000000000000008 /* CGEventTapController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGEventTapController.swift; sourceTree = "<group>"; };
+		M20000000000000000000009 /* HotkeyPermissionObserving.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyPermissionObserving.swift; sourceTree = "<group>"; };
+		M2000000000000000000000A /* HotkeyPermissionObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyPermissionObserver.swift; sourceTree = "<group>"; };
+		M2000000000000000000000B /* HotkeyServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyServiceTests.swift; sourceTree = "<group>"; };
 		L20000000000000000000001 /* AudioSampleAccumulating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSampleAccumulating.swift; sourceTree = "<group>"; };
 		L20000000000000000000002 /* AudioSampleAccumulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSampleAccumulator.swift; sourceTree = "<group>"; };
 		L20000000000000000000003 /* AudioSampleConverting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSampleConverting.swift; sourceTree = "<group>"; };
@@ -540,6 +562,16 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000003 /* HotkeyService.swift */,
+				M20000000000000000000001 /* HotkeyEventSnapshot.swift */,
+				M20000000000000000000002 /* FnGestureStateMachine.swift */,
+				M20000000000000000000003 /* EmergencyHotkeyDetector.swift */,
+				M20000000000000000000004 /* HotkeyCallbackDelivery.swift */,
+				M20000000000000000000005 /* HotkeyEventProcessing.swift */,
+				M20000000000000000000006 /* HotkeyEventProcessor.swift */,
+				M20000000000000000000007 /* HotkeyEventTapControlling.swift */,
+				M20000000000000000000008 /* CGEventTapController.swift */,
+				M20000000000000000000009 /* HotkeyPermissionObserving.swift */,
+				M2000000000000000000000A /* HotkeyPermissionObserver.swift */,
 			);
 			path = Hotkey;
 			sourceTree = "<group>";
@@ -682,6 +714,7 @@
 				G20000000000000000000008 /* MemoryPressureMonitorTests.swift */,
 				K20000000000000000000005 /* SharedServicesInjectionTests.swift */,
 				L2000000000000000000000B /* AudioRecorderTests.swift */,
+				M2000000000000000000000B /* HotkeyServiceTests.swift */,
 			);
 			path = DictaMacTests;
 			sourceTree = "<group>";
@@ -988,6 +1021,16 @@
 				L10000000000000000000008 /* AudioEnvironmentObserving.swift in Sources */,
 				L10000000000000000000009 /* AudioEnvironmentObserver.swift in Sources */,
 				L1000000000000000000000A /* AudioEmergencyStopRegistering.swift in Sources */,
+				M10000000000000000000001 /* HotkeyEventSnapshot.swift in Sources */,
+				M10000000000000000000002 /* FnGestureStateMachine.swift in Sources */,
+				M10000000000000000000003 /* EmergencyHotkeyDetector.swift in Sources */,
+				M10000000000000000000004 /* HotkeyCallbackDelivery.swift in Sources */,
+				M10000000000000000000005 /* HotkeyEventProcessing.swift in Sources */,
+				M10000000000000000000006 /* HotkeyEventProcessor.swift in Sources */,
+				M10000000000000000000007 /* HotkeyEventTapControlling.swift in Sources */,
+				M10000000000000000000008 /* CGEventTapController.swift in Sources */,
+				M10000000000000000000009 /* HotkeyPermissionObserving.swift in Sources */,
+				M1000000000000000000000A /* HotkeyPermissionObserver.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1007,6 +1050,7 @@
 				G10000000000000000000008 /* MemoryPressureMonitorTests.swift in Sources */,
 				K10000000000000000000005 /* SharedServicesInjectionTests.swift in Sources */,
 				L1000000000000000000000B /* AudioRecorderTests.swift in Sources */,
+				M1000000000000000000000B /* HotkeyServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
