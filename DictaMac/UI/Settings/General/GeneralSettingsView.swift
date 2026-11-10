@@ -2,9 +2,14 @@ import SwiftUI
 
 struct GeneralSettingsView: View {
     @StateObject private var viewModel: GeneralSettingsViewModel
+    private let openFirstLaunchAssistant: () -> Void
 
-    init(viewModel: GeneralSettingsViewModel) {
+    init(
+        viewModel: GeneralSettingsViewModel,
+        openFirstLaunchAssistant: @escaping () -> Void = {}
+    ) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        self.openFirstLaunchAssistant = openFirstLaunchAssistant
     }
 
     var body: some View {
@@ -64,6 +69,19 @@ struct GeneralSettingsView: View {
                     Toggle("⌃ Contrôle", isOn: $viewModel.emergencyUsesControl)
                     Toggle("⌥ Option", isOn: $viewModel.emergencyUsesOption)
                     Toggle("⌘ Commande", isOn: $viewModel.emergencyUsesCommand)
+                }
+            }
+
+            SettingsCard(
+                title: "Assistant de configuration",
+                footer: "Revérifie les autorisations, la touche fn et le modèle Whisper."
+            ) {
+                SettingsRow(
+                    title: "Premier lancement",
+                    description: "Rouvrir le guide de mise en route."
+                ) {
+                    Button("Ouvrir l’assistant", action: openFirstLaunchAssistant)
+                        .buttonStyle(SecondaryButtonStyle())
                 }
             }
         }

@@ -1,4 +1,5 @@
 import ApplicationServices
+import Combine
 import WhisperKit
 import XCTest
 @testable import DictaMac
@@ -107,4 +108,66 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(prompt, "WhisperKit, DictaMac, SwiftUI")
         XCTAssertNil(WhisperKitTranscriptionService.vocabularyPrompt(for: " \n, "))
     }
+
+    @MainActor
+    func testFirstLaunchAssistantRequiresAuthorizationOrExplicitSkip() {
+        let viewModel = makeFirstLaunchViewModel(store: InMemorySettingsStore())
+
+        XCTAssertEqual(viewModel.step, .microphone)
+        XCTAssertFalse(viewModel.canContinue)
+
+        viewModel.skipCurrentPermission()
+
+        XCTAssertTrue(viewModel.canContinue)
+        viewModel.continueForward()
+        XCTAssertEqual(viewModel.step, .inputMonitoring)
+    }
+
+    @MainActor
+    func testFirstLaunchAssistantPersistsCompletionAfterExplicitChoices() {
+        let store = InMemorySettingsStore()
+        let viewModel = makeFirstLaunchViewModel(store: store)
+
+        for expectedStep in FirstLaunchStep.allCases.dropLast() {
+            XCTAssertEqual(viewModel.step, expectedStep)
+            viewModel.skipCurrentPermission()
+            viewModel.continueForward()
+        }
+        viewModel.fnConfigurationConfirmed = true
+        viewModel.modelSkipped = true
+        viewModel.dictationTrialSkipped = true
+
+        XCTAssertTrue(viewModel.finish())
+        XCTAssertEqual(store.bool(for: .firstLaunchAssistantCompleted), true)
+    }
+
+    @MainActor
+    private func makeFirstLaunchViewModel(
+        store: any SettingsStoring
+    ) -> FirstLaunchAssistantViewModel {
+        FirstLaunchAssistantViewModel(
+            store: store,
+            permissions: DeniedPermissionManager(),
+            modelState: PreviewTranscriptionModelState(),
+            modelLoader: PreviewTranscriptionModelLoader(),
+            activity: TestDictationActivity(),
+            openKeyboardSettings: {}
+        )
+    }
+}
+
+@MainActor
+private final class DeniedPermissionManager: PermissionManaging {
+    @Published private var revision = false
+
+    func status(for permission: AppPermission) -> PermissionStatus { .denied }
+    func request(_ permission: AppPermission) async -> PermissionStatus { .denied }
+    func startPeriodicRefresh() { revision.toggle() }
+    func stopPeriodicRefresh() {}
+    func openSystemSettings(for permission: AppPermission) {}
+}
+
+@MainActor
+private final class TestDictationActivity: DictationActivityProviding {
+    @Published var state: DictationState = .idle
 }

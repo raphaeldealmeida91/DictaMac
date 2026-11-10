@@ -17,6 +17,7 @@ final class AppEnvironment {
     let textCleanupSettings: StoredTextCleanupSettings
     let localModelManager: LocalCleanupModelManager
     let transcriptionService: WhisperKitTranscriptionService
+    let firstLaunchAssistant: FirstLaunchAssistantController
     #if DEBUG
     let benchmarkState: WhisperBenchmarkState
     #endif
@@ -44,6 +45,13 @@ final class AppEnvironment {
         textCleanupSettings = composition.settings.cleanup
         localModelManager = composition.models.localManager
         transcriptionService = composition.models.transcriptionService
+        firstLaunchAssistant = FirstLaunchAssistantController(
+            store: composition.settingsStore,
+            permissions: composition.permissions,
+            modelState: composition.models.transcriptionState,
+            modelLoader: composition.models.transcriptionService,
+            activity: composition.activity
+        )
         coordinator = composition.coordinator
         memoryPressureMonitor = composition.lifecycle.memoryMonitor
         safeModeLauncher = composition.lifecycle.safeModeLauncher
@@ -72,5 +80,9 @@ final class AppEnvironment {
         emergencyWatchdog.stop()
         coordinator.stop()
         safeModeLauncher.terminate()
+    }
+
+    func presentFirstLaunchAssistantIfNeeded() {
+        firstLaunchAssistant.presentIfNeeded()
     }
 }

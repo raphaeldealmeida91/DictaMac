@@ -21,4 +21,5 @@ enum SettingsKey: String, Sendable {
     case emergencyHotkeyControl = "emergencyHotkey.control"
     case emergencyHotkeyOption = "emergencyHotkey.option"
     case emergencyHotkeyCommand = "emergencyHotkey.command"
+    case firstLaunchAssistantCompleted = "onboarding.completed"
 }

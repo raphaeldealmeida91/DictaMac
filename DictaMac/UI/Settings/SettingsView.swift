@@ -7,8 +7,10 @@ struct SettingsView: View {
     private let textCleanupViewModel: TextCleanupSettingsViewModel
     private let permissionsViewModel: PermissionsSettingsViewModel
     private let diagnosticViewModel: DiagnosticSettingsViewModel
+    private let firstLaunchAssistant: FirstLaunchAssistantController
 
     init(environment: AppEnvironment) {
+        firstLaunchAssistant = environment.firstLaunchAssistant
         generalViewModel = GeneralSettingsViewModel(
             store: environment.settingsStore,
             launchAtLogin: environment.launchAtLogin,
@@ -66,7 +68,10 @@ struct SettingsView: View {
     private var selectedSection: some View {
         switch selection ?? .general {
         case .general:
-            GeneralSettingsView(viewModel: generalViewModel)
+            GeneralSettingsView(
+                viewModel: generalViewModel,
+                openFirstLaunchAssistant: environmentAction
+            )
         case .transcription:
             TranscriptionSettingsView(viewModel: transcriptionViewModel)
         case .textCleanup:
@@ -77,4 +82,9 @@ struct SettingsView: View {
             DiagnosticSettingsView(viewModel: diagnosticViewModel)
         }
     }
+
+    private var environmentAction: () -> Void {
+        { firstLaunchAssistant.present() }
+    }
+
 }

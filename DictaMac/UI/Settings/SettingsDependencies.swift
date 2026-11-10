@@ -38,6 +38,11 @@ protocol TranscriptionModelReloading: Actor {
 }
 
 @MainActor
+protocol DictationActivityProviding: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
+    var state: DictationState { get }
+}
+
+@MainActor
 protocol LocalCleanupModelStateProviding: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     var status: String { get }
     var downloadProgress: Double? { get }
@@ -81,6 +86,7 @@ extension TranscriptionHistoryStore: HistoryManaging {}
 extension PermissionsManager: PermissionManaging {}
 extension TranscriptionModelState: TranscriptionModelStateProviding {}
 extension WhisperKitTranscriptionService: TranscriptionModelReloading {}
+extension AppActivityModel: DictationActivityProviding {}
 extension LocalCleanupModelState: LocalCleanupModelStateProviding {}
 extension LocalCleanupModelManager: LocalCleanupModelManaging {}
 extension DictationDiagnostics: DictationDiagnosticsProviding {}

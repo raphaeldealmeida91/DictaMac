@@ -18,6 +18,10 @@
 		M10000000000000000000009 /* HotkeyPermissionObserving.swift in Sources */ = {isa = PBXBuildFile; fileRef = M20000000000000000000009 /* HotkeyPermissionObserving.swift */; };
 		M1000000000000000000000A /* HotkeyPermissionObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = M2000000000000000000000A /* HotkeyPermissionObserver.swift */; };
 		M1000000000000000000000B /* HotkeyServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = M2000000000000000000000B /* HotkeyServiceTests.swift */; };
+		N10000000000000000000001 /* FirstLaunchStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = N20000000000000000000001 /* FirstLaunchStep.swift */; };
+		N10000000000000000000002 /* FirstLaunchAssistantViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = N20000000000000000000002 /* FirstLaunchAssistantViewModel.swift */; };
+		N10000000000000000000003 /* FirstLaunchAssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = N20000000000000000000003 /* FirstLaunchAssistantView.swift */; };
+		N10000000000000000000004 /* FirstLaunchAssistantController.swift in Sources */ = {isa = PBXBuildFile; fileRef = N20000000000000000000004 /* FirstLaunchAssistantController.swift */; };
 		L10000000000000000000001 /* AudioSampleAccumulating.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000001 /* AudioSampleAccumulating.swift */; };
 		L10000000000000000000002 /* AudioSampleAccumulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000002 /* AudioSampleAccumulator.swift */; };
 		L10000000000000000000003 /* AudioSampleConverting.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000003 /* AudioSampleConverting.swift */; };
@@ -203,6 +207,10 @@
 		M20000000000000000000009 /* HotkeyPermissionObserving.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyPermissionObserving.swift; sourceTree = "<group>"; };
 		M2000000000000000000000A /* HotkeyPermissionObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyPermissionObserver.swift; sourceTree = "<group>"; };
 		M2000000000000000000000B /* HotkeyServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyServiceTests.swift; sourceTree = "<group>"; };
+		N20000000000000000000001 /* FirstLaunchStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchStep.swift; sourceTree = "<group>"; };
+		N20000000000000000000002 /* FirstLaunchAssistantViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchAssistantViewModel.swift; sourceTree = "<group>"; };
+		N20000000000000000000003 /* FirstLaunchAssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchAssistantView.swift; sourceTree = "<group>"; };
+		N20000000000000000000004 /* FirstLaunchAssistantController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchAssistantController.swift; sourceTree = "<group>"; };
 		L20000000000000000000001 /* AudioSampleAccumulating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSampleAccumulating.swift; sourceTree = "<group>"; };
 		L20000000000000000000002 /* AudioSampleAccumulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSampleAccumulator.swift; sourceTree = "<group>"; };
 		L20000000000000000000003 /* AudioSampleConverting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSampleConverting.swift; sourceTree = "<group>"; };
@@ -435,6 +443,7 @@
 		A40000000000000000000004 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				N40000000000000000000001 /* FirstLaunch */,
 				J40000000000000000000001 /* MenuBar */,
 				H40000000000000000000001 /* DesignSystem */,
 				H40000000000000000000002 /* Overlay */,
@@ -450,6 +459,17 @@
 				J20000000000000000000003 /* MenuBarIcon.swift */,
 			);
 			path = MenuBar;
+			sourceTree = "<group>";
+		};
+		N40000000000000000000001 /* FirstLaunch */ = {
+			isa = PBXGroup;
+			children = (
+				N20000000000000000000001 /* FirstLaunchStep.swift */,
+				N20000000000000000000002 /* FirstLaunchAssistantViewModel.swift */,
+				N20000000000000000000003 /* FirstLaunchAssistantView.swift */,
+				N20000000000000000000004 /* FirstLaunchAssistantController.swift */,
+			);
+			path = FirstLaunch;
 			sourceTree = "<group>";
 		};
 		H40000000000000000000001 /* DesignSystem */ = {
@@ -1031,6 +1051,10 @@
 				M10000000000000000000008 /* CGEventTapController.swift in Sources */,
 				M10000000000000000000009 /* HotkeyPermissionObserving.swift in Sources */,
 				M1000000000000000000000A /* HotkeyPermissionObserver.swift in Sources */,
+				N10000000000000000000001 /* FirstLaunchStep.swift in Sources */,
+				N10000000000000000000002 /* FirstLaunchAssistantViewModel.swift in Sources */,
+				N10000000000000000000003 /* FirstLaunchAssistantView.swift in Sources */,
+				N10000000000000000000004 /* FirstLaunchAssistantController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

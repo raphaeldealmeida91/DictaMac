@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         environment.start()
+        environment.presentFirstLaunchAssistantIfNeeded()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
