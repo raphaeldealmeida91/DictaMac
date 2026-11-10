@@ -85,7 +85,11 @@ extension AppEnvironment {
             permissionCache: PermissionStateCache()
         )
         let models = makeModels(settings: settings, shared: shared)
-        let emergency = makeEmergency(models: models, diagnosticLog: shared.diagnosticLog)
+        let emergency = makeEmergency(
+            models: models,
+            diagnosticLog: shared.diagnosticLog,
+            modelLoadingGate: shared.modelLoadingGate
+        )
         let lifecycle = makeLifecycle(settings: settings, models: models, emergency: emergency)
         let cleanup = makeCleanupService(settings: settings.cleanup, manager: models.localManager)
         let activity = AppActivityModel()

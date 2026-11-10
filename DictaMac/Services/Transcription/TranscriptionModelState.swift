@@ -72,3 +72,7 @@ final class TranscriptionModelState: ObservableObject {
         isReady = false
     }
 }
+
+extension TranscriptionModelState: DictationModelReadinessProviding {
+    var progress: Double? { downloadProgress }
+}

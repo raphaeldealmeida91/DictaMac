@@ -69,6 +69,22 @@ final class DictationCoordinatorTests: XCTestCase {
         XCTAssertTrue(fixture.overlay.events.isEmpty)
     }
 
+    func testPressWhileModelIsLoadingShowsProgressWithoutRecording() {
+        let fixture = Fixture(modelIsReady: false, modelProgress: 0.42)
+
+        fixture.hotkey.press()
+
+        XCTAssertEqual(fixture.coordinator.state, .idle)
+        XCTAssertEqual(fixture.audio.startCount, 0)
+        XCTAssertEqual(
+            fixture.overlay.events,
+            [.transcribing("Chargement du modèle… 42 %")]
+        )
+
+        fixture.hotkey.release()
+        XCTAssertEqual(fixture.overlay.events.last, .hidden)
+    }
+
     func testRecordingSessionCapturesPostRollBeforeStoppingAudio() throws {
         let audio = FakeAudioRecorder()
         let session = RecordingSession(
@@ -101,7 +117,7 @@ private final class Fixture {
     let sessionFactory: FakeRecordingSessionFactory
     let coordinator: DictationCoordinator
 
-    init() {
+    init(modelIsReady: Bool = true, modelProgress: Double? = nil) {
         sessionFactory = FakeRecordingSessionFactory(audio: audio)
         coordinator = DictationCoordinator(dependencies: DictationCoordinatorDependencies(
             hotkeyProvider: hotkey,
@@ -112,6 +128,10 @@ private final class Fixture {
             pipeline: pipeline,
             stageReporter: stageReporter,
             modelPreparer: FakeModelPreparer(),
+            modelReadiness: FakeModelReadiness(
+                isReady: modelIsReady,
+                progress: modelProgress
+            ),
             cancellationRegistry: FakeCancellationRegistry(),
             diagnosticLog: PersistentDiagnosticLog(),
             activityModel: AppActivityModel(),
@@ -273,6 +293,17 @@ private final class FakeStageReporter: DictationStageReporting {
 @MainActor
 private final class FakeModelPreparer: DictationModelPreparing {
     func prepare() async throws {}
+}
+
+@MainActor
+private final class FakeModelReadiness: DictationModelReadinessProviding {
+    let isReady: Bool
+    let progress: Double?
+
+    init(isReady: Bool, progress: Double?) {
+        self.isReady = isReady
+        self.progress = progress
+    }
 }
 
 private final class FakeCancellationRegistry: EmergencyCancellationRegistering {

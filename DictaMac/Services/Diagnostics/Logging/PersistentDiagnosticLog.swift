@@ -75,8 +75,21 @@ final class PersistentDiagnosticLog: DiagnosticLogging, @unchecked Sendable {
     }
 
     func modelLoadCompleted(duration: TimeInterval, reusedCompiledCache: Bool) {
+        modelLoadEnded(
+            duration: duration,
+            reusedCompiledCache: reusedCompiledCache,
+            outcome: "success"
+        )
+    }
+
+    func modelLoadEnded(
+        duration: TimeInterval,
+        reusedCompiledCache: Bool?,
+        outcome: String
+    ) {
+        let cache = reusedCompiledCache.map(String.init) ?? "unknown"
         enqueue(
-            "event=stage stage=\(DiagnosticStage.modelLoad.rawValue) phase=end duration_s=\(fixed(duration)) compiled_cache_reused=\(reusedCompiledCache)"
+            "event=stage_end stage=\(DiagnosticStage.modelLoad.rawValue) phase=end duration_s=\(fixed(duration)) compiled_cache_reused=\(cache) outcome=\(safeToken(outcome))"
         )
     }
 

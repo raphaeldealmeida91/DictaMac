@@ -8,16 +8,19 @@ final class EmergencyWatchdog: @unchecked Sendable {
     private var shouldStop = false
     private var policy: EmergencyWatchdogPolicy
     private let runtime: EmergencyRuntime
+    private let modelLoadingGate: any ModelLoadingGating
     private let recovery: any EmergencyRecovering
 
     init(
         runtime: EmergencyRuntime,
+        modelLoadingGate: any ModelLoadingGating,
         recovery: any EmergencyRecovering,
         configuration: EmergencyWatchdogPolicy.Configuration = .init(
             physicalMemory: ProcessInfo.processInfo.physicalMemory
         )
     ) {
         self.runtime = runtime
+        self.modelLoadingGate = modelLoadingGate
         self.recovery = recovery
         policy = EmergencyWatchdogPolicy(configuration: configuration)
     }
@@ -66,6 +69,7 @@ final class EmergencyWatchdog: @unchecked Sendable {
             mainHeartbeat: runtime.mainHeartbeat,
             stage: runtime.stage,
             stageStartedAt: runtime.stageStartedAt,
+            modelIsLoading: modelLoadingGate.isLoading,
             physicalFootprint: ProcessMemoryDiagnostics.physicalFootprint
         )
         switch policy.evaluate(snapshot) {

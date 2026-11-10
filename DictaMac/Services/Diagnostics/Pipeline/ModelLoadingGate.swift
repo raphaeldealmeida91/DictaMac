@@ -1,6 +1,13 @@
-actor ModelLoadingGate: ModelLoadingGating {
+import Foundation
+
+final class ModelLoadingGate: ModelLoadingGating, @unchecked Sendable {
+    private let lock = NSLock()
     private var isLocked = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    var isLoading: Bool {
+        lock.withLock { isLocked }
+    }
 
     func run<Value: Sendable>(
         _ operation: @escaping @Sendable () async throws -> Value
@@ -17,18 +24,29 @@ actor ModelLoadingGate: ModelLoadingGating {
     }
 
     private func acquire() async {
-        if !isLocked {
-            isLocked = true
-            return
+        await withCheckedContinuation { continuation in
+            let acquired = lock.withLock {
+                guard isLocked else {
+                    isLocked = true
+                    return true
+                }
+                waiters.append(continuation)
+                return false
+            }
+            if acquired {
+                continuation.resume()
+            }
         }
-        await withCheckedContinuation { waiters.append($0) }
     }
 
     private func release() {
-        if waiters.isEmpty {
-            isLocked = false
-        } else {
-            waiters.removeFirst().resume()
+        let waiter = lock.withLock {
+            guard !waiters.isEmpty else {
+                isLocked = false
+                return nil as CheckedContinuation<Void, Never>?
+            }
+            return waiters.removeFirst()
         }
+        waiter?.resume()
     }
 }

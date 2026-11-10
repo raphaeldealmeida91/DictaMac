@@ -4,6 +4,12 @@ import OSLog
 import WhisperKit
 
 actor WhisperKitTranscriptionService: TranscriptionService {
+    private enum LoadOutcome: String {
+        case success
+        case failure
+        case cancelled
+    }
+
     private let settings: any TranscriptionSettings
     private let modelPathStore: any TranscriptionModelPathStoring
     private let modelState: TranscriptionModelState
@@ -157,6 +163,8 @@ actor WhisperKitTranscriptionService: TranscriptionService {
 
     private func loadWithoutCompetition(model: String) async throws {
         let loadStart = ContinuousClock.now
+        var reusedCompiledCache: Bool?
+        var outcome = LoadOutcome.failure
         diagnosticLog.stage(.modelLoad, phase: "begin")
         let signpostID = PerformanceSignposts.signposter.makeSignpostID()
         let signpostState = PerformanceSignposts.signposter.beginInterval(
@@ -165,14 +173,32 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         defer {
             PerformanceSignposts.signposter.endInterval("Model load", signpostState)
             ProcessMemoryDiagnostics.logFootprint(.whisperLoaded, diagnosticLog: diagnosticLog)
+            recordLoad(
+                start: loadStart,
+                reusedCompiledCache: reusedCompiledCache,
+                outcome: outcome
+            )
         }
+        do {
+            reusedCompiledCache = try await loadModel(model)
+            outcome = .success
+        } catch is CancellationError {
+            outcome = .cancelled
+            throw CancellationError()
+        } catch {
+            outcome = .failure
+            throw error
+        }
+    }
+
+    private func loadModel(_ model: String) async throws -> Bool {
         let (folder, reusedCompiledCache) = try await modelFolder(for: model)
         await modelState.loading(model)
         let preparedKit = try await WhisperKit(configuration(for: folder))
-        recordLoad(start: loadStart, reusedCompiledCache: reusedCompiledCache)
         whisperKit = preparedKit
         await modelState.loaded(model)
         try await warmUp(preparedKit, model: model)
+        return reusedCompiledCache
     }
 
     private func modelFolder(for model: String) async throws -> (URL, Bool) {
@@ -229,14 +255,19 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
-    private func recordLoad(start: ContinuousClock.Instant, reusedCompiledCache: Bool) {
+    private func recordLoad(
+        start: ContinuousClock.Instant,
+        reusedCompiledCache: Bool?,
+        outcome: LoadOutcome
+    ) {
         let seconds = Self.seconds(start.duration(to: .now))
         logger.info(
-            "whisper model load duration=\(seconds, format: .fixed(precision: 3))s compiled_cache_reused=\(reusedCompiledCache)"
+            "whisper model load duration=\(seconds, format: .fixed(precision: 3))s outcome=\(outcome.rawValue, privacy: .public)"
         )
-        diagnosticLog.modelLoadCompleted(
+        diagnosticLog.modelLoadEnded(
             duration: seconds,
-            reusedCompiledCache: reusedCompiledCache
+            reusedCompiledCache: reusedCompiledCache,
+            outcome: outcome.rawValue
         )
     }
 

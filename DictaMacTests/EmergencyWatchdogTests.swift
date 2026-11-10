@@ -27,10 +27,47 @@ final class EmergencyWatchdogTests: XCTestCase {
                 mainHeartbeat: elapsed,
                 stage: stage,
                 stageStartedAt: 0,
+                modelIsLoading: false,
                 physicalFootprint: nil
             )
             XCTAssertEqual(policy.evaluate(input), .recover(reason: reason))
         }
+    }
+
+    func testFinalTranscriptionDoesNotTimeoutWhileModelIsLoading() {
+        var policy = makePolicy()
+        let input = EmergencyWatchdogPolicy.Snapshot(
+            now: 30,
+            mainHeartbeat: 30,
+            stage: .finalTranscription,
+            stageStartedAt: 0,
+            modelIsLoading: true,
+            physicalFootprint: nil
+        )
+
+        XCTAssertEqual(policy.evaluate(input), .none)
+        XCTAssertEqual(
+            policy.evaluate(EmergencyWatchdogPolicy.Snapshot(
+                now: 30.1,
+                mainHeartbeat: 30.1,
+                stage: .finalTranscription,
+                stageStartedAt: 0,
+                modelIsLoading: false,
+                physicalFootprint: nil
+            )),
+            .none
+        )
+        XCTAssertEqual(
+            policy.evaluate(EmergencyWatchdogPolicy.Snapshot(
+                now: 38.2,
+                mainHeartbeat: 38.2,
+                stage: .finalTranscription,
+                stageStartedAt: 0,
+                modelIsLoading: false,
+                physicalFootprint: nil
+            )),
+            .recover(reason: "stage_timeout_final_transcription")
+        )
     }
 
     func testMemoryLimitIsLowerOfHalfRAMAndSixGiB() {
@@ -88,6 +125,7 @@ final class EmergencyWatchdogTests: XCTestCase {
             mainHeartbeat: heartbeat,
             stage: nil,
             stageStartedAt: nil,
+            modelIsLoading: false,
             physicalFootprint: memory
         )
     }

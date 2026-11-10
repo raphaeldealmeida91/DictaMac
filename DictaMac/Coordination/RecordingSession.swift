@@ -3,11 +3,16 @@ import OSLog
 
 protocol SegmentedTranscribing: Sendable {
     func append(_ samples: [Float]) async
+    func prepareForFinalTranscription() async throws
     func finishWithBudget(
         completeAudio: [Float],
         budget: TimeInterval?
     ) async throws -> SegmentedTranscriber.FinishResult
     func cancel() async
+}
+
+extension SegmentedTranscribing {
+    func prepareForFinalTranscription() async throws {}
 }
 
 struct RecordingSessionResult {

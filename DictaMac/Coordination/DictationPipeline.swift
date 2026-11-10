@@ -53,6 +53,16 @@ final class DefaultPipelineModelRecovery: PipelineModelRecovering {
 final class DictationPipeline: DictationPipelineRunning {
     private enum Constants {
         static let finalTranscriptionBudget: TimeInterval = 8
+        static let transcriptionFailureMessage =
+            "DictaMac : la transcription a échoué et la dictée audio n’a pas pu être récupérée."
+    }
+
+    private enum ModelPreparationError: Error {
+        case interrupted
+    }
+
+    private enum TranscriptionFailureError: Error {
+        case failed
     }
 
     private struct ProcessedText {
@@ -67,6 +77,7 @@ final class DictationPipeline: DictationPipelineRunning {
     private let textCleanupService: any TextCleanupService
     private let textCleanupSettings: any TextCleanupSettings
     private let textInjector: any TextInjector
+    private let failurePasteboard: any PasteboardProviding
     private let historyRecorder: any DictationHistoryRecording
     private let metricsRecorder: any DictationMetricsRecording
     private let instrumentedStage: InstrumentedStage
@@ -80,6 +91,7 @@ final class DictationPipeline: DictationPipelineRunning {
         textCleanupService: any TextCleanupService,
         textCleanupSettings: any TextCleanupSettings,
         textInjector: any TextInjector,
+        failurePasteboard: any PasteboardProviding,
         historyRecorder: any DictationHistoryRecording,
         metricsRecorder: any DictationMetricsRecording,
         stageReporter: any DictationStageReporting,
@@ -88,6 +100,7 @@ final class DictationPipeline: DictationPipelineRunning {
         self.textCleanupService = textCleanupService
         self.textCleanupSettings = textCleanupSettings
         self.textInjector = textInjector
+        self.failurePasteboard = failurePasteboard
         self.historyRecorder = historyRecorder
         self.metricsRecorder = metricsRecorder
         self.instrumentedStage = InstrumentedStage(reporter: stageReporter)
@@ -104,6 +117,14 @@ final class DictationPipeline: DictationPipelineRunning {
         } catch is CancellationError {
             logger.debug("Pipeline de dictée annulé")
             return .cancelled
+        } catch is ModelPreparationError {
+            copyTranscriptionFailureMessage()
+            logger.error("Chargement du modèle interrompu pendant une dictée")
+            return .failed(.transcription)
+        } catch is TranscriptionFailureError {
+            copyTranscriptionFailureMessage()
+            logger.error("Transcription impossible")
+            return .failed(.transcription)
         } catch let error as PipelineWatchdogError {
             logger.fault("Watchdog pipeline: \(error.localizedDescription, privacy: .public)")
             await session.transcriber.cancel()
@@ -140,16 +161,54 @@ final class DictationPipeline: DictationPipelineRunning {
         samples: [Float],
         session: DictationPipelineSession
     ) async throws -> SegmentedTranscriber.FinishResult {
+        try await prepareForFinalTranscription(session.transcriber)
+        try Task.checkCancellation()
         let context = StageContext(
             audioDuration: session.audioDuration,
             segmentCount: session.estimatedSegmentCount
         )
-        return try await instrumentedStage.run(.transcription, context: context) {
-            try await session.transcriber.finishWithBudget(
-                completeAudio: samples,
-                budget: Constants.finalTranscriptionBudget
-            )
+        return try await runFinalTranscription(
+            samples: samples,
+            transcriber: session.transcriber,
+            context: context
+        )
+    }
+
+    private func prepareForFinalTranscription(
+        _ transcriber: any SegmentedTranscribing
+    ) async throws {
+        do {
+            try await transcriber.prepareForFinalTranscription()
+        } catch is CancellationError {
+            throw ModelPreparationError.interrupted
+        } catch {
+            throw TranscriptionFailureError.failed
         }
+    }
+
+    private func runFinalTranscription(
+        samples: [Float],
+        transcriber: any SegmentedTranscribing,
+        context: StageContext
+    ) async throws -> SegmentedTranscriber.FinishResult {
+        do {
+            return try await instrumentedStage.run(.transcription, context: context) {
+                try await transcriber.finishWithBudget(
+                    completeAudio: samples,
+                    budget: Constants.finalTranscriptionBudget
+                )
+            }
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch let error as PipelineWatchdogError {
+            throw error
+        } catch {
+            throw TranscriptionFailureError.failed
+        }
+    }
+
+    private func copyTranscriptionFailureMessage() {
+        failurePasteboard.writeText(Constants.transcriptionFailureMessage)
     }
 
     private func cleanup(

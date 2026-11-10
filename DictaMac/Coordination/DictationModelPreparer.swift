@@ -10,6 +10,12 @@ protocol DictationModelPreparing: AnyObject {
 }
 
 @MainActor
+protocol DictationModelReadinessProviding: AnyObject {
+    var isReady: Bool { get }
+    var progress: Double? { get }
+}
+
+@MainActor
 final class DictationModelPreparer: DictationModelPreparing {
     private enum Constants {
         static let localModelActivationDelay = Duration.seconds(1)

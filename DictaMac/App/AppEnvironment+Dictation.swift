@@ -37,6 +37,7 @@ extension AppEnvironment {
             pipeline: pipeline,
             stageReporter: reporter,
             modelPreparer: makeModelPreparer(settings: settings.cleanup, models: models),
+            modelReadiness: models.transcriptionState,
             cancellationRegistry: emergency.cancellationHub,
             diagnosticLog: emergency.log,
             activityModel: activity,
@@ -55,10 +56,15 @@ extension AppEnvironment {
             await models.localManager.unload(reason: "Modèle déchargé après timeout")
             await models.transcriptionService.unload(reason: "Whisper déchargé après timeout")
         }
+        let pasteboard = GeneralPasteboardProvider()
         return DictationPipeline(
             textCleanupService: cleanupService,
             textCleanupSettings: settings,
-            textInjector: ClipboardTextInjector(permissionCache: permissionCache),
+            textInjector: ClipboardTextInjector(
+                permissionCache: permissionCache,
+                pasteboard: pasteboard
+            ),
+            failurePasteboard: pasteboard,
             historyRecorder: models.history,
             metricsRecorder: models.diagnostics,
             stageReporter: reporter,

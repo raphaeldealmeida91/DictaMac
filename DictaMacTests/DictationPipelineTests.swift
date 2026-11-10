@@ -25,10 +25,12 @@ final class DictationPipelineTests: XCTestCase {
 
     func testStageIsClosedWhenTranscriptionFails() async {
         let stageReporter = PipelineFakeStageReporter()
+        let pasteboard = PipelineFakePasteboard()
         let pipeline = makePipeline(
             cleanupService: FailingCleanupService(),
             injector: PipelineFakeInjector(),
-            stageReporter: stageReporter
+            stageReporter: stageReporter,
+            failurePasteboard: pasteboard
         )
 
         let outcome = await pipeline.run(
@@ -39,6 +41,7 @@ final class DictationPipelineTests: XCTestCase {
         XCTAssertEqual(outcome, .failed(.transcription))
         XCTAssertEqual(stageReporter.beginStages, [.transcription])
         XCTAssertEqual(stageReporter.endStages, [.transcription])
+        XCTAssertNotNil(pasteboard.text)
     }
 
     func testHistoryKeepsRawAndCleanedTextForComparison() async {
@@ -59,16 +62,38 @@ final class DictationPipelineTests: XCTestCase {
         XCTAssertEqual(history.text, "Texte nettoyé.")
     }
 
+    func testModelPreparationFailureDoesNotStartTranscriptionStage() async {
+        let stageReporter = PipelineFakeStageReporter()
+        let pasteboard = PipelineFakePasteboard()
+        let pipeline = makePipeline(
+            cleanupService: FailingCleanupService(),
+            injector: PipelineFakeInjector(),
+            stageReporter: stageReporter,
+            failurePasteboard: pasteboard
+        )
+
+        let outcome = await pipeline.run(
+            samples: [0.1],
+            session: makeSession(transcriber: PreparationFailingTranscriber())
+        )
+
+        XCTAssertEqual(outcome, .failed(.transcription))
+        XCTAssertTrue(stageReporter.beginStages.isEmpty)
+        XCTAssertNotNil(pasteboard.text)
+    }
+
     private func makePipeline(
         cleanupService: any TextCleanupService,
         injector: PipelineFakeInjector,
         stageReporter: PipelineFakeStageReporter,
-        historyRecorder: PipelineFakeHistoryRecorder = PipelineFakeHistoryRecorder()
+        historyRecorder: PipelineFakeHistoryRecorder = PipelineFakeHistoryRecorder(),
+        failurePasteboard: PipelineFakePasteboard = PipelineFakePasteboard()
     ) -> DictationPipeline {
         DictationPipeline(
             textCleanupService: cleanupService,
             textCleanupSettings: PipelineCleanupSettings(),
             textInjector: injector,
+            failurePasteboard: failurePasteboard,
             historyRecorder: historyRecorder,
             metricsRecorder: PipelineFakeMetricsRecorder(),
             stageReporter: stageReporter,
@@ -123,6 +148,23 @@ private actor ThrowingPipelineTranscriber: SegmentedTranscribing {
     func cancel() {}
 }
 
+private actor PreparationFailingTranscriber: SegmentedTranscribing {
+    enum Failure: Error { case modelUnavailable }
+
+    func append(_ samples: [Float]) {}
+    func prepareForFinalTranscription() async throws { throw Failure.modelUnavailable }
+
+    func finishWithBudget(
+        completeAudio: [Float],
+        budget: TimeInterval?
+    ) async throws -> SegmentedTranscriber.FinishResult {
+        XCTFail("Final transcription must not start before model preparation succeeds")
+        throw Failure.modelUnavailable
+    }
+
+    func cancel() {}
+}
+
 private actor FailingCleanupService: TextCleanupService {
     enum Failure: Error { case cleanup }
 
@@ -158,6 +200,22 @@ private final class PipelineFakeInjector: TextInjector {
     func insert(_ text: String) -> TextInjectionOutcome {
         insertedText = text
         return .pasted
+    }
+}
+
+@MainActor
+private final class PipelineFakePasteboard: PasteboardProviding {
+    private(set) var text: String?
+    var changeCount = 0
+
+    func readItems() -> [PasteboardItemContents] { [] }
+    func replaceItems(with items: [PasteboardItemContents]) -> Int { changeCount }
+    func writeTransientText(_ text: String) -> Int { writeText(text) }
+
+    func writeText(_ text: String) -> Int {
+        self.text = text
+        changeCount += 1
+        return changeCount
     }
 }
 

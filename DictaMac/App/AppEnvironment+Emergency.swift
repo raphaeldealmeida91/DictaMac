@@ -11,7 +11,8 @@ extension AppEnvironment {
 
     static func makeEmergency(
         models: ModelBundle,
-        diagnosticLog: any DiagnosticLogging
+        diagnosticLog: any DiagnosticLogging,
+        modelLoadingGate: any ModelLoadingGating
     ) -> EmergencyBundle {
         let log = diagnosticLog
         let runtime = EmergencyRuntime()
@@ -34,7 +35,11 @@ extension AppEnvironment {
             cancellationHub: cancellationHub,
             audioRegistry: audioRegistry,
             recovery: recovery,
-            watchdog: EmergencyWatchdog(runtime: runtime, recovery: recovery)
+            watchdog: EmergencyWatchdog(
+                runtime: runtime,
+                modelLoadingGate: modelLoadingGate,
+                recovery: recovery
+            )
         )
     }
 }

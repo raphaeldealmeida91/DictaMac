@@ -31,6 +31,7 @@ final class DictationCoordinator: DictationCoordinating {
     private let pipeline: any DictationPipelineRunning
     private let stageReporter: any DictationStageReporting
     private let modelPreparer: any DictationModelPreparing
+    private let modelReadiness: any DictationModelReadinessProviding
     private let cancellationRegistry: any EmergencyCancellationRegistering
     private let diagnosticLog: any DiagnosticLogging
     private let activityModel: AppActivityModel
@@ -41,6 +42,7 @@ final class DictationCoordinator: DictationCoordinating {
     private var pipelineTask: Task<Void, Never>?
     private var modelPreparationTask: Task<Void, Never>?
     private var emergencyObserver: NSObjectProtocol?
+    private var rejectedPressIsActive = false
     private var targetApplication = Constants.unknownApplication
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
@@ -56,6 +58,7 @@ final class DictationCoordinator: DictationCoordinating {
         pipeline = dependencies.pipeline
         stageReporter = dependencies.stageReporter
         modelPreparer = dependencies.modelPreparer
+        modelReadiness = dependencies.modelReadiness
         cancellationRegistry = dependencies.cancellationRegistry
         diagnosticLog = dependencies.diagnosticLog
         activityModel = dependencies.activityModel
@@ -83,6 +86,7 @@ final class DictationCoordinator: DictationCoordinating {
 
     func stop() {
         hotkeyProvider.stop()
+        rejectedPressIsActive = false
         modelPreparationTask?.cancel()
         modelPreparationTask = nil
         pipelineTask?.cancel()
@@ -95,7 +99,7 @@ final class DictationCoordinator: DictationCoordinating {
 
     private func bindEvents() {
         hotkeyProvider.onPress = { [weak self] in self?.beginRecording() }
-        hotkeyProvider.onRelease = { [weak self] in self?.endRecording() }
+        hotkeyProvider.onRelease = { [weak self] in self?.handleRelease() }
         hotkeyProvider.onCancel = { [weak self] in self?.cancelDictation() }
         audioRecorder.onLevelUpdate = { [weak overlayPresenter] level in
             overlayPresenter?.updateLevel(level)
@@ -112,6 +116,11 @@ final class DictationCoordinator: DictationCoordinating {
 
     private func beginRecording() {
         guard state == .idle else { return }
+        guard modelReadiness.isReady else {
+            rejectedPressIsActive = true
+            overlayPresenter.showTranscribing(message: modelLoadingMessage)
+            return
+        }
         stageReporter.report(.recording, phase: "begin", context: StageContext())
         ProcessMemoryDiagnostics.logFootprint(.dictationStarted, diagnosticLog: diagnosticLog)
         let session = makeRecordingSession()
@@ -124,6 +133,22 @@ final class DictationCoordinator: DictationCoordinating {
             logger.error("Démarrage de l’enregistrement impossible: \(error.localizedDescription, privacy: .public)")
             overlayPresenter.showError(error.localizedDescription)
         }
+    }
+
+    private func handleRelease() {
+        if rejectedPressIsActive {
+            rejectedPressIsActive = false
+            overlayPresenter.hide()
+            return
+        }
+        endRecording()
+    }
+
+    private var modelLoadingMessage: String {
+        guard let progress = modelReadiness.progress else {
+            return "Chargement du modèle…"
+        }
+        return "Chargement du modèle… \(Int((progress * 100).rounded())) %"
     }
 
     private func makeRecordingSession() -> any RecordingSessionManaging {
@@ -248,7 +273,7 @@ final class DictationCoordinator: DictationCoordinating {
         case let .failed(.watchdog(message)):
             overlayPresenter.showError(message)
         case .failed(.transcription):
-            overlayPresenter.showError("Transcription impossible")
+            overlayPresenter.showError("Transcription impossible — explication copiée")
         }
     }
 

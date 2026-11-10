@@ -100,6 +100,10 @@ actor SegmentedTranscriber {
         try await finishWithBudget(completeAudio: completeAudio, budget: nil).text
     }
 
+    func prepareForFinalTranscription() async throws {
+        try await transcriptionService.prepare()
+    }
+
     /// A bounded final pass. Audio longer than 30 seconds is never sent to the
     /// transcription service as a single buffer, including error/backlog paths.
     func finishWithBudget(

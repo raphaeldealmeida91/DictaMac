@@ -10,6 +10,7 @@ struct DictationCoordinatorDependencies {
     let pipeline: any DictationPipelineRunning
     let stageReporter: any DictationStageReporting
     let modelPreparer: any DictationModelPreparing
+    let modelReadiness: any DictationModelReadinessProviding
     let cancellationRegistry: any EmergencyCancellationRegistering
     let diagnosticLog: any DiagnosticLogging
     let activityModel: AppActivityModel

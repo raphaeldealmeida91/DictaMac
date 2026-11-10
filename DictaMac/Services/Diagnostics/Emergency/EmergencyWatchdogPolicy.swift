@@ -26,6 +26,7 @@ struct EmergencyWatchdogPolicy: Sendable {
         var mainHeartbeat: TimeInterval
         var stage: EmergencyStage?
         var stageStartedAt: TimeInterval?
+        var modelIsLoading: Bool
         var physicalFootprint: UInt64?
     }
 
@@ -38,6 +39,9 @@ struct EmergencyWatchdogPolicy: Sendable {
     let configuration: Configuration
     private(set) var recoveryStartedAt: TimeInterval?
     private(set) var recoveryReason: String?
+    private var observedTranscriptionStart: TimeInterval?
+    private var modelLoadingStartedAt: TimeInterval?
+    private var suspendedTranscriptionDuration: TimeInterval = 0
 
     mutating func evaluate(_ snapshot: Snapshot) -> Decision {
         guard let reason = breachReason(snapshot) else {
@@ -57,13 +61,14 @@ struct EmergencyWatchdogPolicy: Sendable {
         return .exit(reason: reason)
     }
 
-    private func breachReason(_ snapshot: Snapshot) -> String? {
+    private mutating func breachReason(_ snapshot: Snapshot) -> String? {
         if snapshot.now - snapshot.mainHeartbeat > configuration.mainThreadTimeout {
             return "main_thread_stall"
         }
+        let stageElapsed = stageElapsedTime(snapshot)
         if let stage = snapshot.stage,
-           let startedAt = snapshot.stageStartedAt,
-           snapshot.now - startedAt > configuration.budget(for: stage) {
+           let elapsed = stageElapsed,
+           elapsed > configuration.budget(for: stage) {
             return "stage_timeout_\(stage.rawValue)"
         }
         if let footprint = snapshot.physicalFootprint,
@@ -71,5 +76,47 @@ struct EmergencyWatchdogPolicy: Sendable {
             return "memory_limit"
         }
         return nil
+    }
+
+    private mutating func stageElapsedTime(_ snapshot: Snapshot) -> TimeInterval? {
+        guard let stage = snapshot.stage,
+              let startedAt = snapshot.stageStartedAt else {
+            resetTranscriptionSuspension()
+            return nil
+        }
+        guard stage == .finalTranscription else {
+            resetTranscriptionSuspension()
+            return snapshot.now - startedAt
+        }
+        let startedTracking = beginTrackingTranscriptionIfNeeded(startedAt: startedAt)
+        if snapshot.modelIsLoading {
+            if modelLoadingStartedAt == nil {
+                modelLoadingStartedAt = startedTracking ? startedAt : snapshot.now
+            }
+            return nil
+        }
+        resumeTranscriptionBudget(at: snapshot.now)
+        return snapshot.now - startedAt - suspendedTranscriptionDuration
+    }
+
+    private mutating func beginTrackingTranscriptionIfNeeded(
+        startedAt: TimeInterval
+    ) -> Bool {
+        guard observedTranscriptionStart != startedAt else { return false }
+        resetTranscriptionSuspension()
+        observedTranscriptionStart = startedAt
+        return true
+    }
+
+    private mutating func resumeTranscriptionBudget(at now: TimeInterval) {
+        guard let modelLoadingStartedAt else { return }
+        suspendedTranscriptionDuration += now - modelLoadingStartedAt
+        self.modelLoadingStartedAt = nil
+    }
+
+    private mutating func resetTranscriptionSuspension() {
+        observedTranscriptionStart = nil
+        modelLoadingStartedAt = nil
+        suspendedTranscriptionDuration = 0
     }
 }
