@@ -2,26 +2,6 @@
 import Foundation
 import OSLog
 
-enum EmergencyHotkeyPreferences {
-    static let controlKey = "emergencyHotkey.control"
-    static let optionKey = "emergencyHotkey.option"
-    static let commandKey = "emergencyHotkey.command"
-    static let defaultModifiers: CGEventFlags = [.maskControl, .maskAlternate, .maskCommand]
-
-    static var configuredModifiers: CGEventFlags {
-        var flags: CGEventFlags = []
-        if value(forKey: controlKey) { flags.insert(.maskControl) }
-        if value(forKey: optionKey) { flags.insert(.maskAlternate) }
-        if value(forKey: commandKey) { flags.insert(.maskCommand) }
-        return flags.isEmpty ? defaultModifiers : flags
-    }
-
-    private static func value(forKey key: String) -> Bool {
-        if UserDefaults.standard.object(forKey: key) == nil { return true }
-        return UserDefaults.standard.bool(forKey: key)
-    }
-}
-
 /// Publishes a single press/release pair when the Globe/Fn key is held on its own.
 ///
 /// The CGEvent callback only snapshots primitive event data and enqueues it. Gesture
@@ -38,10 +18,13 @@ final class HotkeyService {
 
     /// - Parameter triggerDelay: How long Fn must be held alone before `onPress`.
     ///   The default (300 ms) filters accidental Fn presses and recognises Fn+key combinations.
-    init(triggerDelay: TimeInterval = 0.300) {
+    init(
+        triggerDelay: TimeInterval = 0.300,
+        emergencySettings: any EmergencyHotkeySettings = StoredEmergencyHotkeySettings()
+    ) {
         precondition(triggerDelay >= 0, "triggerDelay must not be negative")
 
-        worker = EventTapWorker(triggerDelay: triggerDelay)
+        worker = EventTapWorker(triggerDelay: triggerDelay, emergencySettings: emergencySettings)
         worker.onPress = { [weak self] in
             Task { @MainActor [weak self] in
                 self?.onPress?()
@@ -91,6 +74,7 @@ private final class EventTapWorker: @unchecked Sendable {
     }
 
     private let triggerDelay: TimeInterval
+    private let emergencySettings: any EmergencyHotkeySettings
     private let lifecycleLock = NSLock()
     private let eventQueue = DispatchQueue(
         label: "com.raphaeldealmeida.DictaMac.fn-event-processing",
@@ -119,8 +103,9 @@ private final class EventTapWorker: @unchecked Sendable {
     var onRelease: (@Sendable () -> Void)?
     var onCancel: (@Sendable () -> Void)?
 
-    init(triggerDelay: TimeInterval) {
+    init(triggerDelay: TimeInterval, emergencySettings: any EmergencyHotkeySettings) {
         self.triggerDelay = triggerDelay
+        self.emergencySettings = emergencySettings
     }
 
     func start() {
@@ -266,7 +251,7 @@ private final class EventTapWorker: @unchecked Sendable {
     /// main actor and does not create or await a Swift concurrency task.
     fileprivate func handleEmergencyIfNeeded(type: CGEventType, event: CGEvent) {
         guard type == .flagsChanged || type == .keyDown else { return }
-        let required = EmergencyHotkeyPreferences.configuredModifiers
+        let required = emergencySettings.configuredModifiers
         let chordIsDown = !required.isEmpty && event.flags.intersection(required) == required
         if chordIsDown, !emergencyChordIsDown {
             emergencyChordIsDown = true

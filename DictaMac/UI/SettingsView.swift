@@ -8,45 +8,47 @@ struct SettingsView: View {
     @ObservedObject private var cleanupModelState = LocalCleanupModelState.shared
     @ObservedObject private var diagnostics = DictationDiagnostics.shared
     @ObservedObject private var history = TranscriptionHistoryStore.shared
+    private let transcriptionConfiguration = StoredTranscriptionSettings()
+    private let textCleanupConfiguration = StoredTextCleanupSettings()
     #if DEBUG
     @ObservedObject private var benchmark = WhisperBenchmarkState.shared
     #endif
 
-    @AppStorage(TranscriptionPreferences.modelKey)
-    private var model = TranscriptionPreferences.recommendedModel
-    @AppStorage(TranscriptionPreferences.automaticLanguageKey)
+    @AppStorage(SettingsKey.transcriptionModel.rawValue)
+    private var model = StoredTranscriptionSettings().recommendedModel
+    @AppStorage(SettingsKey.transcriptionAutomaticLanguage.rawValue)
     private var automaticLanguage = false
-    @AppStorage(TranscriptionPreferences.languageKey)
+    @AppStorage(SettingsKey.transcriptionLanguage.rawValue)
     private var language = "fr"
-    @AppStorage(TranscriptionPreferences.vocabularyKey)
+    @AppStorage(SettingsKey.transcriptionVocabulary.rawValue)
     private var vocabulary = ""
-    @AppStorage(FeedbackSoundPreferences.enabledKey)
+    @AppStorage(SettingsKey.feedbackSoundsEnabled.rawValue)
     private var feedbackSoundsEnabled = true
-    @AppStorage(HistoryPreferences.enabledKey)
-    private var historyEnabled = HistoryPreferences.defaultEnabled
-    @AppStorage(RecordingDurationPreferences.maximumDurationKey)
-    private var maximumRecordingDuration = RecordingDurationPreferences.defaultMaximumDuration
-    @AppStorage(TextCleanupPreferences.engineKey)
+    @AppStorage(SettingsKey.historyEnabled.rawValue)
+    private var historyEnabled = StoredHistorySettings.defaultEnabled
+    @AppStorage(SettingsKey.recordingMaximumDuration.rawValue)
+    private var maximumRecordingDuration = StoredRecordingSettings.defaultMaximumDuration
+    @AppStorage(SettingsKey.textCleanupEngine.rawValue)
     private var textCleanupEngine = TextCleanupEngine.fast.rawValue
-    @AppStorage(TextCleanupPreferences.modelKey)
-    private var textCleanupModel = TextCleanupPreferences.defaultModel
-    @AppStorage(TextCleanupPreferences.localModelKey)
-    private var localCleanupModel = TextCleanupPreferences.recommendedLocalModel
-    @AppStorage(TextCleanupPreferences.removeIsolatedGenreKey)
+    @AppStorage(SettingsKey.textCleanupModel.rawValue)
+    private var textCleanupModel = StoredTextCleanupSettings.defaultModel
+    @AppStorage(SettingsKey.textCleanupLocalModel.rawValue)
+    private var localCleanupModel = StoredTextCleanupSettings().recommendedLocalModel
+    @AppStorage(SettingsKey.textCleanupRemoveIsolatedGenre.rawValue)
     private var removeIsolatedGenre = true
-    @AppStorage(TextCleanupPreferences.localTimeoutKey)
-    private var localTimeout = TextCleanupPreferences.defaultLocalTimeout
+    @AppStorage(SettingsKey.textCleanupLocalTimeout.rawValue)
+    private var localTimeout = StoredTextCleanupSettings.defaultLocalTimeout
     @State private var apiKey = ""
     @State private var apiKeyStatus: String?
-    @AppStorage(EmergencyHotkeyPreferences.controlKey)
+    @AppStorage(SettingsKey.emergencyHotkeyControl.rawValue)
     private var emergencyUsesControl = true
-    @AppStorage(EmergencyHotkeyPreferences.optionKey)
+    @AppStorage(SettingsKey.emergencyHotkeyOption.rawValue)
     private var emergencyUsesOption = true
-    @AppStorage(EmergencyHotkeyPreferences.commandKey)
+    @AppStorage(SettingsKey.emergencyHotkeyCommand.rawValue)
     private var emergencyUsesCommand = true
 
     init() {
-        TextCleanupPreferences.migrate()
+        textCleanupConfiguration.migrate()
     }
 
     var body: some View {
@@ -104,15 +106,15 @@ struct SettingsView: View {
 
                 Picker("Modèle local", selection: $localCleanupModel) {
                     Text("Qwen 2.5 3B — recommandé (~1,74 Go)")
-                        .tag(TextCleanupPreferences.defaultLocalModel)
+                        .tag(StoredTextCleanupSettings.defaultLocalModel)
                     Text("Qwen 2.5 1,5B — Mac moins puissants (~869 Mo)")
-                        .tag(TextCleanupPreferences.lightLocalModel)
+                        .tag(StoredTextCleanupSettings.lightLocalModel)
                 }
 
                 TextField("Identifiant Hugging Face configurable", text: $localCleanupModel)
                     .textFieldStyle(.roundedBorder)
 
-                if TranscriptionPreferences.isLowMemoryMac {
+                if transcriptionConfiguration.isLowMemoryMac {
                     Label(
                         "Ce Mac a moins de 16 Go de RAM : le modèle 1,5B est recommandé. Le 3B peut provoquer une forte pression mémoire.",
                         systemImage: "exclamationmark.triangle.fill"
@@ -168,7 +170,7 @@ struct SettingsView: View {
                 Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 12) {
                     GridRow {
                         Text("Modèle")
-                        TextField(TextCleanupPreferences.defaultModel, text: $textCleanupModel)
+                        TextField(StoredTextCleanupSettings.defaultModel, text: $textCleanupModel)
                             .textFieldStyle(.roundedBorder)
                     }
                     GridRow {
@@ -301,7 +303,7 @@ struct SettingsView: View {
                 Text("Durée maximale d’enregistrement")
                 Slider(
                     value: $maximumRecordingDuration,
-                    in: RecordingDurationPreferences.allowedRange,
+                    in: StoredRecordingSettings.allowedRange,
                     step: 10
                 )
                 Text("\(Int(maximumRecordingDuration)) s")
@@ -361,7 +363,7 @@ struct SettingsView: View {
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 12) {
                 GridRow {
                     Text("Modèle")
-                    TextField(TranscriptionPreferences.defaultModel, text: $model)
+                    TextField(StoredTranscriptionSettings.defaultModel, text: $model)
                         .textFieldStyle(.roundedBorder)
                 }
 
@@ -377,7 +379,7 @@ struct SettingsView: View {
                 }
             }
 
-            if TranscriptionPreferences.isLowMemoryMac {
+            if transcriptionConfiguration.isLowMemoryMac {
                 Label(
                     "Ce Mac a moins de 16 Go de RAM : Whisper small est utilisé par défaut. Évite large-v3-turbo non quantifié.",
                     systemImage: "exclamationmark.triangle.fill"
@@ -421,7 +423,7 @@ struct SettingsView: View {
 
                 Spacer()
 
-                Text("Repli automatique : \(TranscriptionPreferences.fallbackModel)")
+                Text("Repli automatique : \(StoredTranscriptionSettings.fallbackModel)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

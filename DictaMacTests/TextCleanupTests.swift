@@ -23,32 +23,58 @@ final class TextCleanupPostProcessorTests: XCTestCase {
     }
 }
 
-final class TextCleanupPreferencesTests: XCTestCase {
-    func testLegacyEnabledMigratesToCloudAndPreservesOtherValues() throws {
-        let name = "TextCleanupPreferencesTests-\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
-        defer { defaults.removePersistentDomain(forName: name) }
-        defaults.set(true, forKey: TextCleanupPreferences.enabledKey)
-        defaults.set("sentinel", forKey: "unrelated.key")
-        TextCleanupPreferences.migrate(in: defaults)
-        XCTAssertEqual(defaults.string(forKey: TextCleanupPreferences.engineKey), TextCleanupEngine.cloud.rawValue)
-        XCTAssertEqual(defaults.string(forKey: "unrelated.key"), "sentinel")
+final class TextCleanupSettingsMigrationTests: XCTestCase {
+    func testLegacyEnabledMigratesToCloud() {
+        let store = InMemorySettingsStore(values: [.legacyTextCleanupEnabled: .bool(true)])
+        let settings = StoredTextCleanupSettings(store: store)
+
+        settings.migrate()
+
+        XCTAssertEqual(store.string(for: .textCleanupEngine), TextCleanupEngine.cloud.rawValue)
     }
 
-    func testLegacyDisabledMigratesToDisabledAndNewInstallToFastRules() throws {
-        let disabledName = "TextCleanupPreferencesTests-\(UUID().uuidString)"
-        let disabled = try XCTUnwrap(UserDefaults(suiteName: disabledName))
-        defer { disabled.removePersistentDomain(forName: disabledName) }
-        disabled.set(false, forKey: TextCleanupPreferences.enabledKey)
-        TextCleanupPreferences.migrate(in: disabled)
-        XCTAssertEqual(disabled.string(forKey: TextCleanupPreferences.engineKey), TextCleanupEngine.disabled.rawValue)
+    func testLegacyDisabledMigratesToDisabledAndNewInstallToFastRules() {
+        let disabledStore = InMemorySettingsStore(values: [.legacyTextCleanupEnabled: .bool(false)])
+        StoredTextCleanupSettings(store: disabledStore).migrate()
+        XCTAssertEqual(disabledStore.string(for: .textCleanupEngine), TextCleanupEngine.disabled.rawValue)
 
-        let freshName = "TextCleanupPreferencesTests-\(UUID().uuidString)"
-        let fresh = try XCTUnwrap(UserDefaults(suiteName: freshName))
-        defer { fresh.removePersistentDomain(forName: freshName) }
-        TextCleanupPreferences.migrate(in: fresh)
-        XCTAssertEqual(fresh.string(forKey: TextCleanupPreferences.engineKey), TextCleanupEngine.fast.rawValue)
+        let freshStore = InMemorySettingsStore()
+        StoredTextCleanupSettings(store: freshStore).migrate()
+        XCTAssertEqual(freshStore.string(for: .textCleanupEngine), TextCleanupEngine.fast.rawValue)
     }
+}
+
+final class TextCleanupEngineRegistryTests: XCTestCase {
+    func testSelectorReadsEngineForEveryCall() async throws {
+        let store = InMemorySettingsStore(values: [
+            .textCleanupEngine: .string(TextCleanupEngine.fast.rawValue)
+        ])
+        let settings = StoredTextCleanupSettings(store: store)
+        let registry = TextCleanupEngineRegistry(services: [
+            .fast: StubTextCleanupService(output: "fast"),
+            .cloud: StubTextCleanupService(output: "cloud")
+        ])
+        let selector = ConfiguredTextCleanupService(settings: settings, registry: registry)
+
+        let fastResult = try await selector.cleanup("input")
+        store.set(.string(TextCleanupEngine.cloud.rawValue), for: .textCleanupEngine)
+        let cloudResult = try await selector.cleanup("input")
+
+        XCTAssertEqual(fastResult, "fast")
+        XCTAssertEqual(cloudResult, "cloud")
+    }
+
+    func testPassthroughEnginePreservesText() async throws {
+        let service = PassthroughTextCleanupService()
+        let result = try await service.cleanup("Texte brut")
+        XCTAssertEqual(result, "Texte brut")
+    }
+}
+
+private struct StubTextCleanupService: TextCleanupService {
+    let output: String
+
+    func cleanup(_ text: String) async throws -> String { output }
 }
 
 final class FastRulesTextCleanupServiceTests: XCTestCase {

@@ -56,9 +56,9 @@ final class EmergencyWatchdogTests: XCTestCase {
     }
 
     func testRecordingDurationIsClamped() {
-        XCTAssertEqual(RecordingDurationPreferences.clamped(1), 10)
-        XCTAssertEqual(RecordingDurationPreferences.clamped(120), 120)
-        XCTAssertEqual(RecordingDurationPreferences.clamped(1_000), 600)
+        XCTAssertEqual(StoredRecordingSettings.clamped(1), 10)
+        XCTAssertEqual(StoredRecordingSettings.clamped(120), 120)
+        XCTAssertEqual(StoredRecordingSettings.clamped(1_000), 600)
     }
 
     func testSafeModeMarkerDetectsAbnormalExitAndCleanExit() throws {

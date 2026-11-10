@@ -46,19 +46,3 @@ struct DictationSessionPolicy {
         state = .idle
     }
 }
-
-enum RecordingDurationPreferences {
-    static let maximumDurationKey = "recording.maximumDuration"
-    static let defaultMaximumDuration: TimeInterval = 120
-    static let allowedRange: ClosedRange<TimeInterval> = 10...600
-
-    static var maximumDuration: TimeInterval {
-        let stored = UserDefaults.standard.double(forKey: maximumDurationKey)
-        let value = stored > 0 ? stored : defaultMaximumDuration
-        return clamped(value)
-    }
-
-    static func clamped(_ value: TimeInterval) -> TimeInterval {
-        min(max(value, allowedRange.lowerBound), allowedRange.upperBound)
-    }
-}

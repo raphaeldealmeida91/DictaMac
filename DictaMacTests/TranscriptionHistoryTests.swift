@@ -5,13 +5,13 @@ import XCTest
 @MainActor
 final class TranscriptionHistoryTests: XCTestCase {
     func testKeepsNewestTwentyEntriesAndPersistsWithOwnerOnlyPermissions() throws {
-        let originalSetting = enableHistoryForTest()
-        defer { restoreHistorySetting(originalSetting) }
+        let settingsStore = InMemorySettingsStore(values: [.historyEnabled: .bool(true)])
+        let settings = StoredHistorySettings(store: settingsStore)
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         let fileURL = directory.appendingPathComponent("history.json")
         defer { try? FileManager.default.removeItem(at: directory) }
-        let store = TranscriptionHistoryStore(fileURL: fileURL)
+        let store = TranscriptionHistoryStore(fileURL: fileURL, settings: settings)
 
         for index in 0..<25 {
             try store.add(
@@ -27,18 +27,18 @@ final class TranscriptionHistoryTests: XCTestCase {
         let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
         XCTAssertEqual((attributes[.posixPermissions] as? NSNumber)?.intValue, 0o600)
 
-        let reloaded = TranscriptionHistoryStore(fileURL: fileURL)
+        let reloaded = TranscriptionHistoryStore(fileURL: fileURL, settings: settings)
         XCTAssertEqual(reloaded.entries, store.entries)
     }
 
     func testDisabledHistoryDoesNotStoreTextAndClearRemovesFile() throws {
-        let originalSetting = enableHistoryForTest()
-        defer { restoreHistorySetting(originalSetting) }
+        let settingsStore = InMemorySettingsStore(values: [.historyEnabled: .bool(true)])
+        let settings = StoredHistorySettings(store: settingsStore)
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         let fileURL = directory.appendingPathComponent("history.json")
         defer { try? FileManager.default.removeItem(at: directory) }
-        let store = TranscriptionHistoryStore(fileURL: fileURL)
+        let store = TranscriptionHistoryStore(fileURL: fileURL, settings: settings)
         try store.add(text: "à supprimer", targetApplication: "Tests")
         XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.path))
 
@@ -46,23 +46,10 @@ final class TranscriptionHistoryTests: XCTestCase {
         XCTAssertTrue(store.entries.isEmpty)
         XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
 
-        UserDefaults.standard.set(false, forKey: HistoryPreferences.enabledKey)
+        settingsStore.set(.bool(false), for: .historyEnabled)
         try store.add(text: "secret", targetApplication: "Tests")
         XCTAssertTrue(store.entries.isEmpty)
         XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
     }
 
-    private func enableHistoryForTest() -> Any? {
-        let original = UserDefaults.standard.object(forKey: HistoryPreferences.enabledKey)
-        UserDefaults.standard.set(true, forKey: HistoryPreferences.enabledKey)
-        return original
-    }
-
-    private func restoreHistorySetting(_ setting: Any?) {
-        if let setting {
-            UserDefaults.standard.set(setting, forKey: HistoryPreferences.enabledKey)
-        } else {
-            UserDefaults.standard.removeObject(forKey: HistoryPreferences.enabledKey)
-        }
-    }
 }

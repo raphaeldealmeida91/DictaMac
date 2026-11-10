@@ -5,6 +5,10 @@ import SwiftUI
 @MainActor
 private final class AppDelegate: NSObject, NSApplicationDelegate {
     private var dictationCoordinator: DictationCoordinator?
+    private let transcriptionSettings = StoredTranscriptionSettings()
+    private let textCleanupSettings = StoredTextCleanupSettings()
+    private let recordingSettings = StoredRecordingSettings()
+    private let feedbackSoundSettings = StoredFeedbackSoundSettings()
     private let emergencyWatchdog = EmergencyWatchdog()
     private var heartbeatTimer: Timer?
     private var safeModeManager: SafeModeManager?
@@ -26,14 +30,37 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
-        TextCleanupPreferences.migrate()
+        textCleanupSettings.migrate()
         _ = PersistentDiagnosticLog.shared
         configureSafeMode()
         Task { await PermissionsManager.primeSharedCache() }
         ProcessMemoryDiagnostics.logFootprint(.startup)
         startMainThreadHeartbeat()
         emergencyWatchdog.start()
-        let coordinator = DictationCoordinator()
+        guard let cleanupEndpoint = URL(string: "https://api.openai.com/v1/responses") else { return }
+        let registry = TextCleanupEngineRegistry(services: [
+            .disabled: PassthroughTextCleanupService(),
+            .fast: FastRulesTextCleanupService(settings: textCleanupSettings),
+            .local: LocalTextCleanupService(
+                generator: LocalCleanupModelManager.shared,
+                settings: textCleanupSettings
+            ),
+            .cloud: CloudTextCleanupService(
+                endpoint: cleanupEndpoint,
+                settings: textCleanupSettings
+            )
+        ])
+        let cleanupService = ConfiguredTextCleanupService(
+            settings: textCleanupSettings,
+            registry: registry
+        )
+        let coordinator = DictationCoordinator(
+            textCleanupService: cleanupService,
+            transcriptionSettings: transcriptionSettings,
+            textCleanupSettings: textCleanupSettings,
+            recordingSettings: recordingSettings,
+            feedbackSoundSettings: feedbackSoundSettings
+        )
         dictationCoordinator = coordinator
         coordinator.start()
     }
@@ -88,7 +115,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
                 reason: "Whisper déchargé : pression mémoire critique"
             )
         }
-        UserDefaults.standard.set(TextCleanupEngine.fast.rawValue, forKey: TextCleanupPreferences.engineKey)
+        textCleanupSettings.setEngine(.fast)
 
         let alert = NSAlert()
         alert.alertStyle = critical ? .critical : .warning
@@ -122,6 +149,7 @@ private struct MenuBarContent: View {
     @ObservedObject private var transcriptionState = TranscriptionModelState.shared
     @ObservedObject private var cleanupState = LocalCleanupModelState.shared
     @ObservedObject private var history = TranscriptionHistoryStore.shared
+    private let textCleanupSettings: any TextCleanupSettings = StoredTextCleanupSettings()
     #if DEBUG
     @ObservedObject private var benchmarkState = WhisperBenchmarkState.shared
     #endif
@@ -129,7 +157,7 @@ private struct MenuBarContent: View {
     var body: some View {
         Text("Whisper : \(transcriptionState.isReady ? "prêt" : transcriptionState.status)")
             .disabled(true)
-        if TextCleanupPreferences.configuredEngine == .local {
+        if textCleanupSettings.configuredEngine == .local {
             Text("LLM local : \(cleanupState.isReady ? "prêt" : cleanupState.status)")
                 .disabled(true)
         }

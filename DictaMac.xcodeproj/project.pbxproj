@@ -22,7 +22,7 @@
 		A1000000000000000000000D /* TextCleanupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* TextCleanupTests.swift */; };
 		A1000000000000000000000E /* TextInjectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* TextInjectorTests.swift */; };
 		A1000000000000000000000F /* DictationDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* DictationDiagnostics.swift */; };
-		A10000000000000000000010 /* WhisperBenchmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* WhisperBenchmark.swift */; };
+		A10000000000000000000010 /* WhisperBenchmarkRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* WhisperBenchmarkRunner.swift */; };
 		A10000000000000000000011 /* SegmentedTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* SegmentedTranscriber.swift */; };
 		A10000000000000000000012 /* SegmentedTranscriberTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* SegmentedTranscriberTests.swift */; };
 		A10000000000000000000013 /* TranscriptionHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* TranscriptionHistory.swift */; };
@@ -31,6 +31,62 @@
 		A10000000000000000000016 /* DictationSessionPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* DictationSessionPolicyTests.swift */; };
 		A10000000000000000000017 /* EmergencyWatchdog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001A /* EmergencyWatchdog.swift */; };
 		A10000000000000000000018 /* EmergencyWatchdogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001B /* EmergencyWatchdogTests.swift */; };
+		D10000000000000000000001 /* SettingsKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000001 /* SettingsKey.swift */; };
+		D10000000000000000000002 /* SettingsStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000002 /* SettingsStoring.swift */; };
+		D10000000000000000000003 /* TranscriptionSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000003 /* TranscriptionSettings.swift */; };
+		D10000000000000000000004 /* StoredTranscriptionSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000004 /* StoredTranscriptionSettings.swift */; };
+		D10000000000000000000005 /* TextCleanupSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000005 /* TextCleanupSettings.swift */; };
+		D10000000000000000000006 /* StoredTextCleanupSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000006 /* StoredTextCleanupSettings.swift */; };
+		D10000000000000000000007 /* RecordingSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000007 /* RecordingSettings.swift */; };
+		D10000000000000000000008 /* StoredRecordingSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000008 /* StoredRecordingSettings.swift */; };
+		D10000000000000000000009 /* HistorySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000009 /* HistorySettings.swift */; };
+		D1000000000000000000000A /* StoredHistorySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000000000000000000000A /* StoredHistorySettings.swift */; };
+		D1000000000000000000000B /* FeedbackSoundSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000000000000000000000B /* FeedbackSoundSettings.swift */; };
+		D1000000000000000000000C /* StoredFeedbackSoundSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000000000000000000000C /* StoredFeedbackSoundSettings.swift */; };
+		D1000000000000000000000D /* EmergencyHotkeySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000000000000000000000D /* EmergencyHotkeySettings.swift */; };
+		D1000000000000000000000E /* StoredEmergencyHotkeySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000000000000000000000E /* StoredEmergencyHotkeySettings.swift */; };
+		D1000000000000000000000F /* SettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000000000000000000000F /* SettingsTests.swift */; };
+		E10000000000000000000001 /* TextCleanupEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000001 /* TextCleanupEngine.swift */; };
+		E10000000000000000000002 /* FastRulesTextCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000002 /* FastRulesTextCleanupService.swift */; };
+		E10000000000000000000003 /* PassthroughTextCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000003 /* PassthroughTextCleanupService.swift */; };
+		E10000000000000000000004 /* TextCleanupPostProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000004 /* TextCleanupPostProcessor.swift */; };
+		E10000000000000000000005 /* TextCleanupError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000005 /* TextCleanupError.swift */; };
+		E10000000000000000000006 /* TextCleanupAPIKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000006 /* TextCleanupAPIKeyStore.swift */; };
+		E10000000000000000000007 /* CloudTextCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000007 /* CloudTextCleanupService.swift */; };
+		E10000000000000000000008 /* TextCleanupEngineRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000008 /* TextCleanupEngineRegistry.swift */; };
+		E10000000000000000000009 /* ConfiguredTextCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000009 /* ConfiguredTextCleanupService.swift */; };
+		E1000000000000000000000A /* LocalTextGenerating.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000000A /* LocalTextGenerating.swift */; };
+		E1000000000000000000000B /* ResumableModelDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000000B /* ResumableModelDownloader.swift */; };
+		E1000000000000000000000C /* LocalCleanupModelState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000000C /* LocalCleanupModelState.swift */; };
+		E1000000000000000000000D /* LocalCleanupModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000000D /* LocalCleanupModelManager.swift */; };
+		E1000000000000000000000E /* LocalCleanupError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000000E /* LocalCleanupError.swift */; };
+		E1000000000000000000000F /* TranscriptionModelState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000000F /* TranscriptionModelState.swift */; };
+		E10000000000000000000010 /* WhisperKitTranscriptionError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000010 /* WhisperKitTranscriptionError.swift */; };
+		E10000000000000000000011 /* WhisperModelFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000011 /* WhisperModelFiles.swift */; };
+		E10000000000000000000012 /* WhisperTranscriptionTextCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000012 /* WhisperTranscriptionTextCleaner.swift */; };
+		E10000000000000000000013 /* WhisperKitTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000013 /* WhisperKitTranscriptionService.swift */; };
+		E10000000000000000000014 /* DiagnosticStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000014 /* DiagnosticStage.swift */; };
+		E10000000000000000000015 /* DiagnosticMemoryContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000015 /* DiagnosticMemoryContext.swift */; };
+		E10000000000000000000016 /* PersistentDiagnosticLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000016 /* PersistentDiagnosticLog.swift */; };
+		E10000000000000000000017 /* DictationTimings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000017 /* DictationTimings.swift */; };
+		E10000000000000000000018 /* ProcessMemoryDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000018 /* ProcessMemoryDiagnostics.swift */; };
+		E10000000000000000000019 /* PerformanceSignposts.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000019 /* PerformanceSignposts.swift */; };
+		E1000000000000000000001A /* ModelLoadingGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000001A /* ModelLoadingGate.swift */; };
+		E1000000000000000000001B /* PipelineWatchdogError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000001B /* PipelineWatchdogError.swift */; };
+		E1000000000000000000001C /* PipelineWatchdog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000001C /* PipelineWatchdog.swift */; };
+		E1000000000000000000001D /* MainThreadWatchdog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000001D /* MainThreadWatchdog.swift */; };
+		E1000000000000000000001E /* EmergencyStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000001E /* EmergencyStage.swift */; };
+		E1000000000000000000001F /* EmergencyWatchdogPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000001F /* EmergencyWatchdogPolicy.swift */; };
+		E10000000000000000000020 /* MonotonicClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000020 /* MonotonicClock.swift */; };
+		E10000000000000000000021 /* EmergencyRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000021 /* EmergencyRuntime.swift */; };
+		E10000000000000000000022 /* EmergencyCancellationHub.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000022 /* EmergencyCancellationHub.swift */; };
+		E10000000000000000000023 /* EmergencyAudioRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000023 /* EmergencyAudioRegistry.swift */; };
+		E10000000000000000000024 /* EmergencyRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000024 /* EmergencyRecovery.swift */; };
+		E10000000000000000000025 /* SafeModeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000025 /* SafeModeManager.swift */; };
+		E10000000000000000000026 /* SafeModeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000026 /* SafeModeState.swift */; };
+		E10000000000000000000027 /* CleanupDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000027 /* CleanupDecision.swift */; };
+		E10000000000000000000028 /* WhisperBenchmarkResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000028 /* WhisperBenchmarkResult.swift */; };
+		E10000000000000000000029 /* WhisperBenchmarkState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000029 /* WhisperBenchmarkState.swift */; };
 		B10000000000000000000001 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000001 /* WhisperKit */; };
 		B10000000000000000000002 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000002 /* MLXLLM */; };
 		B10000000000000000000003 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000003 /* MLXLMCommon */; };
@@ -62,20 +118,76 @@
 		A2000000000000000000000B /* DictationOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationOverlayController.swift; sourceTree = "<group>"; };
 		A2000000000000000000000C /* LaunchAtLoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginService.swift; sourceTree = "<group>"; };
 		A2000000000000000000000D /* TextCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCleanupService.swift; sourceTree = "<group>"; };
-		A2000000000000000000000E /* LocalTextCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalTextCleanupService.swift; sourceTree = "<group>"; };
+		A2000000000000000000000E /* LocalTextCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Local/LocalTextCleanupService.swift; sourceTree = "<group>"; };
 		A2000000000000000000000F /* TextCleanupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCleanupTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000010 /* DictaMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DictaMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000011 /* TextInjectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInjectorTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000012 /* DictationDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationDiagnostics.swift; sourceTree = "<group>"; };
-		A20000000000000000000013 /* WhisperBenchmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperBenchmark.swift; sourceTree = "<group>"; };
+		A20000000000000000000013 /* WhisperBenchmarkRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperBenchmarkRunner.swift; sourceTree = "<group>"; };
 		A20000000000000000000014 /* SegmentedTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentedTranscriber.swift; sourceTree = "<group>"; };
 		A20000000000000000000015 /* SegmentedTranscriberTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentedTranscriberTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000016 /* TranscriptionHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHistory.swift; sourceTree = "<group>"; };
 		A20000000000000000000017 /* DictationSessionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationSessionPolicy.swift; sourceTree = "<group>"; };
 		A20000000000000000000018 /* TranscriptionHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHistoryTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000019 /* DictationSessionPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationSessionPolicyTests.swift; sourceTree = "<group>"; };
-		A2000000000000000000001A /* EmergencyWatchdog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyWatchdog.swift; sourceTree = "<group>"; };
+		A2000000000000000000001A /* EmergencyWatchdog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emergency/EmergencyWatchdog.swift; sourceTree = "<group>"; };
 		A2000000000000000000001B /* EmergencyWatchdogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyWatchdogTests.swift; sourceTree = "<group>"; };
+		D20000000000000000000001 /* SettingsKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsKey.swift; sourceTree = "<group>"; };
+		D20000000000000000000002 /* SettingsStoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStoring.swift; sourceTree = "<group>"; };
+		D20000000000000000000003 /* TranscriptionSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionSettings.swift; sourceTree = "<group>"; };
+		D20000000000000000000004 /* StoredTranscriptionSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredTranscriptionSettings.swift; sourceTree = "<group>"; };
+		D20000000000000000000005 /* TextCleanupSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCleanupSettings.swift; sourceTree = "<group>"; };
+		D20000000000000000000006 /* StoredTextCleanupSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredTextCleanupSettings.swift; sourceTree = "<group>"; };
+		D20000000000000000000007 /* RecordingSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingSettings.swift; sourceTree = "<group>"; };
+		D20000000000000000000008 /* StoredRecordingSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredRecordingSettings.swift; sourceTree = "<group>"; };
+		D20000000000000000000009 /* HistorySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistorySettings.swift; sourceTree = "<group>"; };
+		D2000000000000000000000A /* StoredHistorySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredHistorySettings.swift; sourceTree = "<group>"; };
+		D2000000000000000000000B /* FeedbackSoundSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackSoundSettings.swift; sourceTree = "<group>"; };
+		D2000000000000000000000C /* StoredFeedbackSoundSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredFeedbackSoundSettings.swift; sourceTree = "<group>"; };
+		D2000000000000000000000D /* EmergencyHotkeySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyHotkeySettings.swift; sourceTree = "<group>"; };
+		D2000000000000000000000E /* StoredEmergencyHotkeySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredEmergencyHotkeySettings.swift; sourceTree = "<group>"; };
+		D2000000000000000000000F /* SettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTests.swift; sourceTree = "<group>"; };
+		E20000000000000000000001 /* TextCleanupEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCleanupEngine.swift; sourceTree = "<group>"; };
+		E20000000000000000000002 /* FastRulesTextCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Engines/FastRulesTextCleanupService.swift; sourceTree = "<group>"; };
+		E20000000000000000000003 /* PassthroughTextCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Engines/PassthroughTextCleanupService.swift; sourceTree = "<group>"; };
+		E20000000000000000000004 /* TextCleanupPostProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCleanupPostProcessor.swift; sourceTree = "<group>"; };
+		E20000000000000000000005 /* TextCleanupError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cloud/TextCleanupError.swift; sourceTree = "<group>"; };
+		E20000000000000000000006 /* TextCleanupAPIKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cloud/TextCleanupAPIKeyStore.swift; sourceTree = "<group>"; };
+		E20000000000000000000007 /* CloudTextCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cloud/CloudTextCleanupService.swift; sourceTree = "<group>"; };
+		E20000000000000000000008 /* TextCleanupEngineRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCleanupEngineRegistry.swift; sourceTree = "<group>"; };
+		E20000000000000000000009 /* ConfiguredTextCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfiguredTextCleanupService.swift; sourceTree = "<group>"; };
+		E2000000000000000000000A /* LocalTextGenerating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Local/LocalTextGenerating.swift; sourceTree = "<group>"; };
+		E2000000000000000000000B /* ResumableModelDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Local/ResumableModelDownloader.swift; sourceTree = "<group>"; };
+		E2000000000000000000000C /* LocalCleanupModelState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Local/LocalCleanupModelState.swift; sourceTree = "<group>"; };
+		E2000000000000000000000D /* LocalCleanupModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Local/LocalCleanupModelManager.swift; sourceTree = "<group>"; };
+		E2000000000000000000000E /* LocalCleanupError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Local/LocalCleanupError.swift; sourceTree = "<group>"; };
+		E2000000000000000000000F /* TranscriptionModelState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionModelState.swift; sourceTree = "<group>"; };
+		E20000000000000000000010 /* WhisperKitTranscriptionError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperKitTranscriptionError.swift; sourceTree = "<group>"; };
+		E20000000000000000000011 /* WhisperModelFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperModelFiles.swift; sourceTree = "<group>"; };
+		E20000000000000000000012 /* WhisperTranscriptionTextCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperTranscriptionTextCleaner.swift; sourceTree = "<group>"; };
+		E20000000000000000000013 /* WhisperKitTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperKitTranscriptionService.swift; sourceTree = "<group>"; };
+		E20000000000000000000014 /* DiagnosticStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging/DiagnosticStage.swift; sourceTree = "<group>"; };
+		E20000000000000000000015 /* DiagnosticMemoryContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging/DiagnosticMemoryContext.swift; sourceTree = "<group>"; };
+		E20000000000000000000016 /* PersistentDiagnosticLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging/PersistentDiagnosticLog.swift; sourceTree = "<group>"; };
+		E20000000000000000000017 /* DictationTimings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationTimings.swift; sourceTree = "<group>"; };
+		E20000000000000000000018 /* ProcessMemoryDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging/ProcessMemoryDiagnostics.swift; sourceTree = "<group>"; };
+		E20000000000000000000019 /* PerformanceSignposts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging/PerformanceSignposts.swift; sourceTree = "<group>"; };
+		E2000000000000000000001A /* ModelLoadingGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pipeline/ModelLoadingGate.swift; sourceTree = "<group>"; };
+		E2000000000000000000001B /* PipelineWatchdogError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pipeline/PipelineWatchdogError.swift; sourceTree = "<group>"; };
+		E2000000000000000000001C /* PipelineWatchdog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pipeline/PipelineWatchdog.swift; sourceTree = "<group>"; };
+		E2000000000000000000001D /* MainThreadWatchdog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging/MainThreadWatchdog.swift; sourceTree = "<group>"; };
+		E2000000000000000000001E /* EmergencyStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emergency/EmergencyStage.swift; sourceTree = "<group>"; };
+		E2000000000000000000001F /* EmergencyWatchdogPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emergency/EmergencyWatchdogPolicy.swift; sourceTree = "<group>"; };
+		E20000000000000000000020 /* MonotonicClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emergency/MonotonicClock.swift; sourceTree = "<group>"; };
+		E20000000000000000000021 /* EmergencyRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emergency/EmergencyRuntime.swift; sourceTree = "<group>"; };
+		E20000000000000000000022 /* EmergencyCancellationHub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emergency/EmergencyCancellationHub.swift; sourceTree = "<group>"; };
+		E20000000000000000000023 /* EmergencyAudioRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emergency/EmergencyAudioRegistry.swift; sourceTree = "<group>"; };
+		E20000000000000000000024 /* EmergencyRecovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emergency/EmergencyRecovery.swift; sourceTree = "<group>"; };
+		E20000000000000000000025 /* SafeModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emergency/SafeModeManager.swift; sourceTree = "<group>"; };
+		E20000000000000000000026 /* SafeModeState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emergency/SafeModeState.swift; sourceTree = "<group>"; };
+		E20000000000000000000027 /* CleanupDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupDecision.swift; sourceTree = "<group>"; };
+		E20000000000000000000028 /* WhisperBenchmarkResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperBenchmarkResult.swift; sourceTree = "<group>"; };
+		E20000000000000000000029 /* WhisperBenchmarkState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperBenchmarkState.swift; sourceTree = "<group>"; };
 		B40000000000000000000001 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -116,6 +228,7 @@
 			isa = PBXGroup;
 			children = (
 				A40000000000000000000003 /* App */,
+				D40000000000000000000001 /* Settings */,
 				A40000000000000000000004 /* UI */,
 				A40000000000000000000005 /* Services */,
 				A4000000000000000000000B /* Coordination */,
@@ -178,6 +291,11 @@
 			children = (
 				A20000000000000000000005 /* TranscriptionService.swift */,
 				A20000000000000000000014 /* SegmentedTranscriber.swift */,
+				E2000000000000000000000F /* TranscriptionModelState.swift */,
+				E20000000000000000000010 /* WhisperKitTranscriptionError.swift */,
+				E20000000000000000000011 /* WhisperModelFiles.swift */,
+				E20000000000000000000012 /* WhisperTranscriptionTextCleaner.swift */,
+				E20000000000000000000013 /* WhisperKitTranscriptionService.swift */,
 			);
 			path = Transcription;
 			sourceTree = "<group>";
@@ -229,6 +347,21 @@
 			children = (
 				A2000000000000000000000D /* TextCleanupService.swift */,
 				A2000000000000000000000E /* LocalTextCleanupService.swift */,
+				E20000000000000000000001 /* TextCleanupEngine.swift */,
+				E20000000000000000000002 /* FastRulesTextCleanupService.swift */,
+				E20000000000000000000003 /* PassthroughTextCleanupService.swift */,
+				E20000000000000000000004 /* TextCleanupPostProcessor.swift */,
+				E20000000000000000000005 /* TextCleanupError.swift */,
+				E20000000000000000000006 /* TextCleanupAPIKeyStore.swift */,
+				E20000000000000000000007 /* CloudTextCleanupService.swift */,
+				E20000000000000000000008 /* TextCleanupEngineRegistry.swift */,
+				E20000000000000000000009 /* ConfiguredTextCleanupService.swift */,
+				E2000000000000000000000A /* LocalTextGenerating.swift */,
+				E2000000000000000000000B /* ResumableModelDownloader.swift */,
+				E2000000000000000000000C /* LocalCleanupModelState.swift */,
+				E2000000000000000000000D /* LocalCleanupModelManager.swift */,
+				E2000000000000000000000E /* LocalCleanupError.swift */,
+				E20000000000000000000027 /* CleanupDecision.swift */,
 			);
 			path = TextCleanup;
 			sourceTree = "<group>";
@@ -242,6 +375,7 @@
 				A20000000000000000000018 /* TranscriptionHistoryTests.swift */,
 				A20000000000000000000019 /* DictationSessionPolicyTests.swift */,
 				A2000000000000000000001B /* EmergencyWatchdogTests.swift */,
+				D2000000000000000000000F /* SettingsTests.swift */,
 			);
 			path = DictaMacTests;
 			sourceTree = "<group>";
@@ -250,8 +384,29 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000012 /* DictationDiagnostics.swift */,
-				A20000000000000000000013 /* WhisperBenchmark.swift */,
+				A20000000000000000000013 /* WhisperBenchmarkRunner.swift */,
+				E20000000000000000000028 /* WhisperBenchmarkResult.swift */,
+				E20000000000000000000029 /* WhisperBenchmarkState.swift */,
 				A2000000000000000000001A /* EmergencyWatchdog.swift */,
+				E20000000000000000000014 /* DiagnosticStage.swift */,
+				E20000000000000000000015 /* DiagnosticMemoryContext.swift */,
+				E20000000000000000000016 /* PersistentDiagnosticLog.swift */,
+				E20000000000000000000017 /* DictationTimings.swift */,
+				E20000000000000000000018 /* ProcessMemoryDiagnostics.swift */,
+				E20000000000000000000019 /* PerformanceSignposts.swift */,
+				E2000000000000000000001A /* ModelLoadingGate.swift */,
+				E2000000000000000000001B /* PipelineWatchdogError.swift */,
+				E2000000000000000000001C /* PipelineWatchdog.swift */,
+				E2000000000000000000001D /* MainThreadWatchdog.swift */,
+				E2000000000000000000001E /* EmergencyStage.swift */,
+				E2000000000000000000001F /* EmergencyWatchdogPolicy.swift */,
+				E20000000000000000000020 /* MonotonicClock.swift */,
+				E20000000000000000000021 /* EmergencyRuntime.swift */,
+				E20000000000000000000022 /* EmergencyCancellationHub.swift */,
+				E20000000000000000000023 /* EmergencyAudioRegistry.swift */,
+				E20000000000000000000024 /* EmergencyRecovery.swift */,
+				E20000000000000000000025 /* SafeModeManager.swift */,
+				E20000000000000000000026 /* SafeModeState.swift */,
 			);
 			path = Diagnostics;
 			sourceTree = "<group>";
@@ -262,6 +417,27 @@
 				A20000000000000000000016 /* TranscriptionHistory.swift */,
 			);
 			path = History;
+			sourceTree = "<group>";
+		};
+		D40000000000000000000001 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				D20000000000000000000001 /* SettingsKey.swift */,
+				D20000000000000000000002 /* SettingsStoring.swift */,
+				D20000000000000000000003 /* TranscriptionSettings.swift */,
+				D20000000000000000000004 /* StoredTranscriptionSettings.swift */,
+				D20000000000000000000005 /* TextCleanupSettings.swift */,
+				D20000000000000000000006 /* StoredTextCleanupSettings.swift */,
+				D20000000000000000000007 /* RecordingSettings.swift */,
+				D20000000000000000000008 /* StoredRecordingSettings.swift */,
+				D20000000000000000000009 /* HistorySettings.swift */,
+				D2000000000000000000000A /* StoredHistorySettings.swift */,
+				D2000000000000000000000B /* FeedbackSoundSettings.swift */,
+				D2000000000000000000000C /* StoredFeedbackSoundSettings.swift */,
+				D2000000000000000000000D /* EmergencyHotkeySettings.swift */,
+				D2000000000000000000000E /* StoredEmergencyHotkeySettings.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -373,11 +549,66 @@
 				A1000000000000000000000B /* TextCleanupService.swift in Sources */,
 				A1000000000000000000000C /* LocalTextCleanupService.swift in Sources */,
 				A1000000000000000000000F /* DictationDiagnostics.swift in Sources */,
-				A10000000000000000000010 /* WhisperBenchmark.swift in Sources */,
+				A10000000000000000000010 /* WhisperBenchmarkRunner.swift in Sources */,
 				A10000000000000000000011 /* SegmentedTranscriber.swift in Sources */,
 				A10000000000000000000013 /* TranscriptionHistory.swift in Sources */,
 				A10000000000000000000014 /* DictationSessionPolicy.swift in Sources */,
 				A10000000000000000000017 /* EmergencyWatchdog.swift in Sources */,
+				D10000000000000000000001 /* SettingsKey.swift in Sources */,
+				D10000000000000000000002 /* SettingsStoring.swift in Sources */,
+				D10000000000000000000003 /* TranscriptionSettings.swift in Sources */,
+				D10000000000000000000004 /* StoredTranscriptionSettings.swift in Sources */,
+				D10000000000000000000005 /* TextCleanupSettings.swift in Sources */,
+				D10000000000000000000006 /* StoredTextCleanupSettings.swift in Sources */,
+				D10000000000000000000007 /* RecordingSettings.swift in Sources */,
+				D10000000000000000000008 /* StoredRecordingSettings.swift in Sources */,
+				D10000000000000000000009 /* HistorySettings.swift in Sources */,
+				D1000000000000000000000A /* StoredHistorySettings.swift in Sources */,
+				D1000000000000000000000B /* FeedbackSoundSettings.swift in Sources */,
+				D1000000000000000000000C /* StoredFeedbackSoundSettings.swift in Sources */,
+				D1000000000000000000000D /* EmergencyHotkeySettings.swift in Sources */,
+				D1000000000000000000000E /* StoredEmergencyHotkeySettings.swift in Sources */,
+				E10000000000000000000001 /* TextCleanupEngine.swift in Sources */,
+				E10000000000000000000002 /* FastRulesTextCleanupService.swift in Sources */,
+				E10000000000000000000003 /* PassthroughTextCleanupService.swift in Sources */,
+				E10000000000000000000004 /* TextCleanupPostProcessor.swift in Sources */,
+				E10000000000000000000005 /* TextCleanupError.swift in Sources */,
+				E10000000000000000000006 /* TextCleanupAPIKeyStore.swift in Sources */,
+				E10000000000000000000007 /* CloudTextCleanupService.swift in Sources */,
+				E10000000000000000000008 /* TextCleanupEngineRegistry.swift in Sources */,
+				E10000000000000000000009 /* ConfiguredTextCleanupService.swift in Sources */,
+				E1000000000000000000000A /* LocalTextGenerating.swift in Sources */,
+				E1000000000000000000000B /* ResumableModelDownloader.swift in Sources */,
+				E1000000000000000000000C /* LocalCleanupModelState.swift in Sources */,
+				E1000000000000000000000D /* LocalCleanupModelManager.swift in Sources */,
+				E1000000000000000000000E /* LocalCleanupError.swift in Sources */,
+				E1000000000000000000000F /* TranscriptionModelState.swift in Sources */,
+				E10000000000000000000010 /* WhisperKitTranscriptionError.swift in Sources */,
+				E10000000000000000000011 /* WhisperModelFiles.swift in Sources */,
+				E10000000000000000000012 /* WhisperTranscriptionTextCleaner.swift in Sources */,
+				E10000000000000000000013 /* WhisperKitTranscriptionService.swift in Sources */,
+				E10000000000000000000014 /* DiagnosticStage.swift in Sources */,
+				E10000000000000000000015 /* DiagnosticMemoryContext.swift in Sources */,
+				E10000000000000000000016 /* PersistentDiagnosticLog.swift in Sources */,
+				E10000000000000000000017 /* DictationTimings.swift in Sources */,
+				E10000000000000000000018 /* ProcessMemoryDiagnostics.swift in Sources */,
+				E10000000000000000000019 /* PerformanceSignposts.swift in Sources */,
+				E1000000000000000000001A /* ModelLoadingGate.swift in Sources */,
+				E1000000000000000000001B /* PipelineWatchdogError.swift in Sources */,
+				E1000000000000000000001C /* PipelineWatchdog.swift in Sources */,
+				E1000000000000000000001D /* MainThreadWatchdog.swift in Sources */,
+				E1000000000000000000001E /* EmergencyStage.swift in Sources */,
+				E1000000000000000000001F /* EmergencyWatchdogPolicy.swift in Sources */,
+				E10000000000000000000020 /* MonotonicClock.swift in Sources */,
+				E10000000000000000000021 /* EmergencyRuntime.swift in Sources */,
+				E10000000000000000000022 /* EmergencyCancellationHub.swift in Sources */,
+				E10000000000000000000023 /* EmergencyAudioRegistry.swift in Sources */,
+				E10000000000000000000024 /* EmergencyRecovery.swift in Sources */,
+				E10000000000000000000025 /* SafeModeManager.swift in Sources */,
+				E10000000000000000000026 /* SafeModeState.swift in Sources */,
+				E10000000000000000000027 /* CleanupDecision.swift in Sources */,
+				E10000000000000000000028 /* WhisperBenchmarkResult.swift in Sources */,
+				E10000000000000000000029 /* WhisperBenchmarkState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -391,6 +622,7 @@
 				A10000000000000000000015 /* TranscriptionHistoryTests.swift in Sources */,
 				A10000000000000000000016 /* DictationSessionPolicyTests.swift in Sources */,
 				A10000000000000000000018 /* EmergencyWatchdogTests.swift in Sources */,
+				D1000000000000000000000F /* SettingsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
