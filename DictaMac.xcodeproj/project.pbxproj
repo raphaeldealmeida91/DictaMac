@@ -7,6 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		L10000000000000000000001 /* AudioSampleAccumulating.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000001 /* AudioSampleAccumulating.swift */; };
+		L10000000000000000000002 /* AudioSampleAccumulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000002 /* AudioSampleAccumulator.swift */; };
+		L10000000000000000000003 /* AudioSampleConverting.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000003 /* AudioSampleConverting.swift */; };
+		L10000000000000000000004 /* AVAudioSampleConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000004 /* AVAudioSampleConverter.swift */; };
+		L10000000000000000000005 /* AudioCaptureEngineManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000005 /* AudioCaptureEngineManaging.swift */; };
+		L10000000000000000000006 /* AudioCaptureEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000006 /* AudioCaptureEngine.swift */; };
+		L10000000000000000000007 /* MicrophonePermissionProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000007 /* MicrophonePermissionProviding.swift */; };
+		L10000000000000000000008 /* AudioEnvironmentObserving.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000008 /* AudioEnvironmentObserving.swift */; };
+		L10000000000000000000009 /* AudioEnvironmentObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = L20000000000000000000009 /* AudioEnvironmentObserver.swift */; };
+		L1000000000000000000000A /* AudioEmergencyStopRegistering.swift in Sources */ = {isa = PBXBuildFile; fileRef = L2000000000000000000000A /* AudioEmergencyStopRegistering.swift */; };
+		L1000000000000000000000B /* AudioRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = L2000000000000000000000B /* AudioRecorderTests.swift */; };
 		K10000000000000000000001 /* DiagnosticLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = K20000000000000000000001 /* DiagnosticLogging.swift */; };
 		K10000000000000000000002 /* ModelLoadingGating.swift in Sources */ = {isa = PBXBuildFile; fileRef = K20000000000000000000002 /* ModelLoadingGating.swift */; };
 		K10000000000000000000003 /* AccessibilityPermissionCaching.swift in Sources */ = {isa = PBXBuildFile; fileRef = K20000000000000000000003 /* AccessibilityPermissionCaching.swift */; };
@@ -170,6 +181,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		L20000000000000000000001 /* AudioSampleAccumulating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSampleAccumulating.swift; sourceTree = "<group>"; };
+		L20000000000000000000002 /* AudioSampleAccumulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSampleAccumulator.swift; sourceTree = "<group>"; };
+		L20000000000000000000003 /* AudioSampleConverting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSampleConverting.swift; sourceTree = "<group>"; };
+		L20000000000000000000004 /* AVAudioSampleConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVAudioSampleConverter.swift; sourceTree = "<group>"; };
+		L20000000000000000000005 /* AudioCaptureEngineManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureEngineManaging.swift; sourceTree = "<group>"; };
+		L20000000000000000000006 /* AudioCaptureEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureEngine.swift; sourceTree = "<group>"; };
+		L20000000000000000000007 /* MicrophonePermissionProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophonePermissionProviding.swift; sourceTree = "<group>"; };
+		L20000000000000000000008 /* AudioEnvironmentObserving.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEnvironmentObserving.swift; sourceTree = "<group>"; };
+		L20000000000000000000009 /* AudioEnvironmentObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEnvironmentObserver.swift; sourceTree = "<group>"; };
+		L2000000000000000000000A /* AudioEmergencyStopRegistering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEmergencyStopRegistering.swift; sourceTree = "<group>"; };
+		L2000000000000000000000B /* AudioRecorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorderTests.swift; sourceTree = "<group>"; };
 		K20000000000000000000001 /* DiagnosticLogging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging/DiagnosticLogging.swift; sourceTree = "<group>"; };
 		K20000000000000000000002 /* ModelLoadingGating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pipeline/ModelLoadingGating.swift; sourceTree = "<group>"; };
 		K20000000000000000000003 /* AccessibilityPermissionCaching.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissionCaching.swift; sourceTree = "<group>"; };
@@ -526,6 +548,16 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000004 /* AudioRecorder.swift */,
+				L20000000000000000000001 /* AudioSampleAccumulating.swift */,
+				L20000000000000000000002 /* AudioSampleAccumulator.swift */,
+				L20000000000000000000003 /* AudioSampleConverting.swift */,
+				L20000000000000000000004 /* AVAudioSampleConverter.swift */,
+				L20000000000000000000005 /* AudioCaptureEngineManaging.swift */,
+				L20000000000000000000006 /* AudioCaptureEngine.swift */,
+				L20000000000000000000007 /* MicrophonePermissionProviding.swift */,
+				L20000000000000000000008 /* AudioEnvironmentObserving.swift */,
+				L20000000000000000000009 /* AudioEnvironmentObserver.swift */,
+				L2000000000000000000000A /* AudioEmergencyStopRegistering.swift */,
 			);
 			path = Audio;
 			sourceTree = "<group>";
@@ -649,6 +681,7 @@
 				F2000000000000000000000F /* DictationPipelineTests.swift */,
 				G20000000000000000000008 /* MemoryPressureMonitorTests.swift */,
 				K20000000000000000000005 /* SharedServicesInjectionTests.swift */,
+				L2000000000000000000000B /* AudioRecorderTests.swift */,
 			);
 			path = DictaMacTests;
 			sourceTree = "<group>";
@@ -945,6 +978,16 @@
 				K10000000000000000000002 /* ModelLoadingGating.swift in Sources */,
 				K10000000000000000000003 /* AccessibilityPermissionCaching.swift in Sources */,
 				K10000000000000000000004 /* PermissionStateCache.swift in Sources */,
+				L10000000000000000000001 /* AudioSampleAccumulating.swift in Sources */,
+				L10000000000000000000002 /* AudioSampleAccumulator.swift in Sources */,
+				L10000000000000000000003 /* AudioSampleConverting.swift in Sources */,
+				L10000000000000000000004 /* AVAudioSampleConverter.swift in Sources */,
+				L10000000000000000000005 /* AudioCaptureEngineManaging.swift in Sources */,
+				L10000000000000000000006 /* AudioCaptureEngine.swift in Sources */,
+				L10000000000000000000007 /* MicrophonePermissionProviding.swift in Sources */,
+				L10000000000000000000008 /* AudioEnvironmentObserving.swift in Sources */,
+				L10000000000000000000009 /* AudioEnvironmentObserver.swift in Sources */,
+				L1000000000000000000000A /* AudioEmergencyStopRegistering.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -963,6 +1006,7 @@
 				F1000000000000000000000F /* DictationPipelineTests.swift in Sources */,
 				G10000000000000000000008 /* MemoryPressureMonitorTests.swift in Sources */,
 				K10000000000000000000005 /* SharedServicesInjectionTests.swift in Sources */,
+				L1000000000000000000000B /* AudioRecorderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
