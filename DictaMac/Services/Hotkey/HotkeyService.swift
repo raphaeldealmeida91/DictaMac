@@ -2,6 +2,26 @@
 import Foundation
 import OSLog
 
+enum EmergencyHotkeyPreferences {
+    static let controlKey = "emergencyHotkey.control"
+    static let optionKey = "emergencyHotkey.option"
+    static let commandKey = "emergencyHotkey.command"
+    static let defaultModifiers: CGEventFlags = [.maskControl, .maskAlternate, .maskCommand]
+
+    static var configuredModifiers: CGEventFlags {
+        var flags: CGEventFlags = []
+        if value(forKey: controlKey) { flags.insert(.maskControl) }
+        if value(forKey: optionKey) { flags.insert(.maskAlternate) }
+        if value(forKey: commandKey) { flags.insert(.maskCommand) }
+        return flags.isEmpty ? defaultModifiers : flags
+    }
+
+    private static func value(forKey key: String) -> Bool {
+        if UserDefaults.standard.object(forKey: key) == nil { return true }
+        return UserDefaults.standard.bool(forKey: key)
+    }
+}
+
 /// Publishes a single press/release pair when the Globe/Fn key is held on its own.
 ///
 /// The CGEvent callback only snapshots primitive event data and enqueues it. Gesture
@@ -92,6 +112,8 @@ private final class EventTapWorker: @unchecked Sendable {
     private var triggerWorkItem: DispatchWorkItem?
     private var fnIsDown = false
     private var pressWasPublished = false
+    // Accessed only by the event-tap thread, directly from its callback.
+    private var emergencyChordIsDown = false
 
     var onPress: (@Sendable () -> Void)?
     var onRelease: (@Sendable () -> Void)?
@@ -240,6 +262,21 @@ private final class EventTapWorker: @unchecked Sendable {
         }
     }
 
+    /// Runs on the event-tap thread. It deliberately does not enqueue on the
+    /// main actor and does not create or await a Swift concurrency task.
+    fileprivate func handleEmergencyIfNeeded(type: CGEventType, event: CGEvent) {
+        guard type == .flagsChanged || type == .keyDown else { return }
+        let required = EmergencyHotkeyPreferences.configuredModifiers
+        let chordIsDown = !required.isEmpty && event.flags.intersection(required) == required
+        if chordIsDown, !emergencyChordIsDown {
+            emergencyChordIsDown = true
+            EmergencyRuntime.shared.setIdle(false)
+            EmergencyRecovery.begin(reason: "global_hotkey", hotkey: true)
+        } else if !chordIsDown {
+            emergencyChordIsDown = false
+        }
+    }
+
     private func handle(_ event: EventSnapshot) {
         switch event.type {
         case .tapDisabledByTimeout, .tapDisabledByUserInput:
@@ -329,7 +366,7 @@ private final class EventTapWorker: @unchecked Sendable {
 
 // AppKit exposes this as NSEvent.EventType.systemDefined (raw value 14), while
 // Core Graphics accepts the value in an event mask without naming it in Swift.
-private let systemDefinedEventType = CGEventType(rawValue: 14)!
+private let systemDefinedEventType = CGEventType(rawValue: 14) ?? .null
 
 private let eventTapCallback: CGEventTapCallBack = { _, type, event, userInfo in
     guard let userInfo else {
@@ -337,6 +374,7 @@ private let eventTapCallback: CGEventTapCallBack = { _, type, event, userInfo in
     }
 
     let worker = Unmanaged<EventTapWorker>.fromOpaque(userInfo).takeUnretainedValue()
+    worker.handleEmergencyIfNeeded(type: type, event: event)
     worker.enqueue(type: type, event: event)
     return Unmanaged.passUnretained(event)
 }

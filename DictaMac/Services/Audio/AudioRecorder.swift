@@ -24,8 +24,7 @@ enum AudioRecorderError: LocalizedError {
 }
 
 /// Captures microphone audio as mono, 16 kHz Float32 samples.
-@MainActor
-final class AudioRecorder {
+final class AudioRecorder: @unchecked Sendable {
     typealias LevelHandler = @MainActor @Sendable (Float) -> Void
     typealias ErrorHandler = @MainActor @Sendable (AudioRecorderError) -> Void
 
@@ -39,10 +38,18 @@ final class AudioRecorder {
     }
     var onError: ErrorHandler?
 
-    private(set) var lastRecordingDuration: TimeInterval = 0
+    var lastRecordingDuration: TimeInterval {
+        stateLock.withLock { storedRecordingDuration }
+    }
 
     private var engine: AVAudioEngine?
     private let captureBuffer = CaptureBuffer()
+    private let stateLock = NSLock()
+    private let audioQueue = DispatchQueue(
+        label: "com.raphaeldealmeida.DictaMac.audio-engine",
+        qos: .userInitiated
+    )
+    private let configurationQueue = OperationQueue()
     private var configurationObserver: NSObjectProtocol?
     private var permissionObserver: NSObjectProtocol?
     private var applicationActiveObserver: NSObjectProtocol?
@@ -50,28 +57,34 @@ final class AudioRecorder {
     private var tapIsInstalled = false
     private var engineIsPrepared = false
     private var isHandlingConfigurationChange = false
+    private var storedRecordingDuration: TimeInterval = 0
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "AudioRecorder"
     )
 
     init() {
+        configurationQueue.name = "com.raphaeldealmeida.DictaMac.audio-configuration"
+        configurationQueue.maxConcurrentOperationCount = 1
         permissionObserver = NotificationCenter.default.addObserver(
             forName: .microphonePermissionDidChange,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.refreshMicrophonePermission() }
+            self?.refreshMicrophonePermission()
         }
         applicationActiveObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.refreshMicrophonePermission() }
+            self?.refreshMicrophonePermission()
         }
 
         refreshMicrophonePermission()
+        EmergencyAudioRegistry.shared.install { [weak self] timeout in
+            self?.emergencyStop(timeout: timeout) ?? true
+        }
     }
 
     deinit {
@@ -87,51 +100,85 @@ final class AudioRecorder {
     }
 
     func start() throws {
-        guard !isRecording else { throw AudioRecorderError.alreadyRecording }
         guard microphoneIsAuthorized else {
             logMicrophonePermission()
             throw AudioRecorderError.microphonePermissionRequired
         }
 
-        if !engineIsPrepared {
-            do {
-                try prepareEngine()
-            } catch {
-                tearDownEngine()
-                throw error
-            }
-        }
-        guard let engine else {
-            throw AudioRecorderError.inputUnavailable
-        }
-
         captureBuffer.beginCapture()
-        lastRecordingDuration = 0
+        stateLock.withLock { storedRecordingDuration = 0 }
 
         do {
-            try engine.start()
-            isRecording = true
-            logger.info("Moteur audio démarré")
+            try audioQueue.sync {
+                guard !isRecording else { throw AudioRecorderError.alreadyRecording }
+                if !engineIsPrepared {
+                    do {
+                        try prepareEngine()
+                    } catch {
+                        tearDownEngine()
+                        throw error
+                    }
+                }
+                guard let engine else { throw AudioRecorderError.inputUnavailable }
+                try engine.start()
+                isRecording = true
+                logger.info("Moteur audio démarré")
+            }
         } catch {
             captureBuffer.discard()
-            tearDownEngine()
             throw error
         }
     }
 
     /// Returns mono 16 kHz samples, or an empty array for captures too short to transcribe.
     func stop() -> [Float] {
-        guard isRecording else { return [] }
-
-        isRecording = false
-        engine?.stop()
-        logger.info("Moteur audio arrêté")
-
         let samples = captureBuffer.finishCapture()
-        lastRecordingDuration = Double(samples.count) / Self.sampleRate
+        let duration = Double(samples.count) / Self.sampleRate
+        stateLock.withLock { storedRecordingDuration = duration }
+        requestEngineStop()
 
-        guard lastRecordingDuration >= Self.minimumDuration else { return [] }
+        guard duration >= Self.minimumDuration else { return [] }
         return samples
+    }
+
+    private func requestEngineStop() {
+        let completion = DispatchSemaphore(value: 0)
+        audioQueue.async { [weak self] in
+            guard let self else {
+                completion.signal()
+                return
+            }
+            self.isRecording = false
+            self.engine?.stop()
+            self.removeTap()
+            self.engineIsPrepared = false
+            self.logger.info("Moteur audio arrêté")
+            completion.signal()
+        }
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 2) { [weak self] in
+            if completion.wait(timeout: .now()) == .timedOut {
+                self?.logger.fault("audio stop timeout=2.000s")
+            }
+        }
+    }
+
+    private func emergencyStop(timeout: TimeInterval) -> Bool {
+        captureBuffer.discard()
+        let completion = DispatchSemaphore(value: 0)
+        audioQueue.async { [weak self] in
+            guard let self else {
+                completion.signal()
+                return
+            }
+            self.isRecording = false
+            self.engine?.stop()
+            self.removeTap()
+            self.engine?.reset()
+            self.engine = nil
+            self.engineIsPrepared = false
+            completion.signal()
+        }
+        return completion.wait(timeout: .now() + timeout) == .success
     }
 
     /// Returns samples captured after `offset` without stopping the recorder.
@@ -212,9 +259,9 @@ final class AudioRecorder {
         configurationObserver = NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange,
             object: engine,
-            queue: .main
+            queue: configurationQueue
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.handleConfigurationChange() }
+            self?.handleConfigurationChange()
         }
     }
 
@@ -225,37 +272,34 @@ final class AudioRecorder {
     }
 
     private func handleConfigurationChange() {
-        guard !isHandlingConfigurationChange, let engine else { return }
-        isHandlingConfigurationChange = true
-        defer { isHandlingConfigurationChange = false }
+        audioQueue.async { [weak self] in
+            guard let self, !self.isHandlingConfigurationChange, let engine = self.engine else { return }
+            self.isHandlingConfigurationChange = true
+            defer { self.isHandlingConfigurationChange = false }
 
-        let shouldResume = isRecording
-
-        engine.stop()
-        if shouldResume {
-            logger.info("Moteur audio arrêté pour changement de configuration")
-        }
-        removeTap()
-        engine.reset()
-        engineIsPrepared = false
-
-        do {
-            try prepareEngine()
-            if shouldResume {
-                try engine.start()
-                logger.info("Moteur audio redémarré après changement de configuration")
+            let inputWasLost = self.isRecording
+            self.isRecording = false
+            if inputWasLost {
+                self.logger.error("input_lost")
+                PersistentDiagnosticLog.shared.inputLost()
+                DispatchQueue.main.async { [weak self] in self?.onError?(.inputUnavailable) }
             }
-        } catch {
-            let recorderError = error as? AudioRecorderError ?? .inputUnavailable
-            logger.error(
-                "Reconfiguration audio impossible: \(error.localizedDescription, privacy: .public)"
-            )
-            tearDownEngine()
-            if shouldResume {
-                isRecording = false
-                captureBuffer.discard()
-                lastRecordingDuration = 0
-                onError?(recorderError)
+            engine.stop()
+            self.removeTap()
+            engine.reset()
+            self.engineIsPrepared = false
+
+            guard !inputWasLost else {
+                self.tearDownEngine()
+                return
+            }
+            do {
+                try self.prepareEngine()
+            } catch {
+                self.logger.error(
+                    "Reconfiguration audio impossible: \(error.localizedDescription, privacy: .public)"
+                )
+                self.tearDownEngine()
             }
         }
     }
@@ -264,27 +308,31 @@ final class AudioRecorder {
         logMicrophonePermission()
 
         guard microphoneIsAuthorized else {
-            if engine != nil {
-                let wasRecording = isRecording
-                isRecording = false
-                captureBuffer.discard()
-                lastRecordingDuration = 0
-                tearDownEngine()
+            audioQueue.async { [weak self] in
+                guard let self, self.engine != nil else { return }
+                let wasRecording = self.isRecording
+                self.isRecording = false
+                self.tearDownEngine()
                 if wasRecording {
-                    onError?(.microphonePermissionRequired)
+                    PersistentDiagnosticLog.shared.inputLost()
+                    DispatchQueue.main.async { [weak self] in
+                        self?.onError?(.microphonePermissionRequired)
+                    }
                 }
             }
             return
         }
 
-        guard !engineIsPrepared, !isRecording else { return }
-        do {
-            try prepareEngine()
-        } catch {
-            logger.error(
-                "Préparation audio impossible: \(error.localizedDescription, privacy: .public)"
-            )
-            tearDownEngine()
+        audioQueue.async { [weak self] in
+            guard let self, !self.engineIsPrepared, !self.isRecording else { return }
+            do {
+                try self.prepareEngine()
+            } catch {
+                self.logger.error(
+                    "Préparation audio impossible: \(error.localizedDescription, privacy: .public)"
+                )
+                self.tearDownEngine()
+            }
         }
     }
 

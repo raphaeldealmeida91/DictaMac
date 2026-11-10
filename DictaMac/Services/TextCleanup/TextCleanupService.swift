@@ -44,6 +44,7 @@ enum TextCleanupPreferences {
     }
 
     static var configuredEngine: TextCleanupEngine {
+        if SafeModeState.isEnabled { return .fast }
         migrate()
         return TextCleanupEngine(rawValue: UserDefaults.standard.string(forKey: engineKey) ?? "") ?? .fast
     }
@@ -52,7 +53,10 @@ enum TextCleanupPreferences {
     static var recommendedLocalModel: String {
         TranscriptionPreferences.isLowMemoryMac ? lightLocalModel : defaultLocalModel
     }
-    static var configuredLocalModel: String { nonEmptyValue(forKey: localModelKey) ?? recommendedLocalModel }
+    static var configuredLocalModel: String {
+        if SafeModeState.isEnabled { return lightLocalModel }
+        return nonEmptyValue(forKey: localModelKey) ?? recommendedLocalModel
+    }
     static var removeIsolatedGenre: Bool {
         if UserDefaults.standard.object(forKey: removeIsolatedGenreKey) == nil { return true }
         return UserDefaults.standard.bool(forKey: removeIsolatedGenreKey)

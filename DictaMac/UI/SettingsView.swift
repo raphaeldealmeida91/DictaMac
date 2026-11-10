@@ -38,6 +38,12 @@ struct SettingsView: View {
     private var localTimeout = TextCleanupPreferences.defaultLocalTimeout
     @State private var apiKey = ""
     @State private var apiKeyStatus: String?
+    @AppStorage(EmergencyHotkeyPreferences.controlKey)
+    private var emergencyUsesControl = true
+    @AppStorage(EmergencyHotkeyPreferences.optionKey)
+    private var emergencyUsesOption = true
+    @AppStorage(EmergencyHotkeyPreferences.commandKey)
+    private var emergencyUsesCommand = true
 
     init() {
         TextCleanupPreferences.migrate()
@@ -301,6 +307,18 @@ struct SettingsView: View {
                 Text("\(Int(maximumRecordingDuration)) s")
                     .monospacedDigit()
                     .frame(width: 48, alignment: .trailing)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Arrêt d’urgence global")
+                HStack {
+                    Toggle("⌃ Contrôle", isOn: $emergencyUsesControl)
+                    Toggle("⌥ Option", isOn: $emergencyUsesOption)
+                    Toggle("⌘ Commande", isOn: $emergencyUsesCommand)
+                }
+                Text("Maintenez simultanément les modificateurs sélectionnés. Si aucun n’est sélectionné, ⌃⌥⌘ reste utilisé.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Toggle("Conserver les 20 dernières dictées", isOn: $historyEnabled)

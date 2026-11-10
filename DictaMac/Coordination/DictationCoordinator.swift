@@ -29,6 +29,7 @@ final class DictationCoordinator: DictationCoordinating {
     private var audioFeedTask: Task<Void, Never>?
     private var maximumDurationTask: Task<Void, Never>?
     private var activeSegmentedTranscriber: SegmentedTranscriber?
+    private var emergencyObserver: NSObjectProtocol?
     private var sessionPolicy = DictationSessionPolicy()
     private var activeGeneration: Int?
     private var targetApplication = "Application inconnue"
@@ -61,6 +62,15 @@ final class DictationCoordinator: DictationCoordinating {
         audioRecorder.onError = { [weak self] error in
             self?.handleAudioRecorderError(error)
         }
+        emergencyObserver = NotificationCenter.default.addObserver(
+            forName: .emergencyStopRequested,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.cancelDictation()
+            }
+        }
     }
 
     func start() {
@@ -81,6 +91,7 @@ final class DictationCoordinator: DictationCoordinating {
                 logger.error("Préparation du modèle impossible: \(error.localizedDescription, privacy: .public)")
             }
         }
+        refreshEmergencyCancellationHandlers()
     }
 
     func stop() {
@@ -100,8 +111,10 @@ final class DictationCoordinator: DictationCoordinating {
             _ = audioRecorder.stop()
         }
         _ = sessionPolicy.cancel()
+        EmergencyRuntime.shared.setIdle(true)
         activeGeneration = nil
         overlayController.hide()
+        refreshEmergencyCancellationHandlers()
     }
 
     private func beginRecording() {
@@ -116,6 +129,7 @@ final class DictationCoordinator: DictationCoordinating {
                 return
             }
             activeGeneration = generation
+            EmergencyRuntime.shared.setIdle(false)
             targetApplication = NSWorkspace.shared.frontmostApplication?.localizedName
                 ?? "Application inconnue"
             overlayController.showRecording()
@@ -153,6 +167,7 @@ final class DictationCoordinator: DictationCoordinating {
                     // Task.sleep has no other expected failure.
                 }
             }
+            refreshEmergencyCancellationHandlers()
             playFeedbackSound(named: "Tink")
         } catch {
             PersistentDiagnosticLog.shared.stage(.recording, phase: "error")
@@ -170,7 +185,6 @@ final class DictationCoordinator: DictationCoordinating {
         audioFeedTask?.cancel()
         audioFeedTask = nil
         let samples = audioRecorder.stop()
-        PersistentDiagnosticLog.shared.stage(.recording, phase: "end")
         guard let segmentedTranscriber = activeSegmentedTranscriber else {
             logger.error("Session de transcription incrémentale absente")
             sessionPolicy.complete(generation: generation)
@@ -182,6 +196,13 @@ final class DictationCoordinator: DictationCoordinating {
         let stopAudioSeconds = Self.seconds(releaseInstant.duration(to: .now))
         playFeedbackSound(named: "Pop")
         let duration = audioRecorder.lastRecordingDuration
+        let estimatedSegments = max(1, Int(ceil(duration / 4)))
+        PersistentDiagnosticLog.shared.stage(
+            .recording,
+            phase: "end",
+            audioDuration: duration,
+            segmentCount: estimatedSegments
+        )
         logger.info("Durée enregistrée: \(duration, format: .fixed(precision: 3)) s")
 
         if samples.isEmpty, duration < AudioRecorder.minimumDuration {
@@ -202,32 +223,49 @@ final class DictationCoordinator: DictationCoordinating {
         transcriptionTask = Task { [weak self, textCleanupService, textInjector, overlayController, logger] in
             defer { ProcessMemoryDiagnostics.logFootprint(.dictationFinished) }
             let transcriptionStart = ContinuousClock.now
-            PersistentDiagnosticLog.shared.stage(.transcription, phase: "begin")
+            PersistentDiagnosticLog.shared.stage(
+                .transcription,
+                phase: "begin",
+                audioDuration: duration,
+                segmentCount: estimatedSegments
+            )
+            EmergencyRuntime.shared.begin(.finalTranscription)
             do {
                 let transcriptionSignpost = PerformanceSignposts.signposter.beginInterval("Transcription")
-                let rawText: String
+                let finishResult: SegmentedTranscriber.FinishResult
                 do {
-                    rawText = try await PipelineWatchdog.run(stage: "transcription") {
-                        try await segmentedTranscriber.finish(completeAudio: samples)
-                    }
+                    finishResult = try await segmentedTranscriber.finishWithBudget(
+                        completeAudio: samples,
+                        budget: 8
+                    )
                     PerformanceSignposts.signposter.endInterval("Transcription", transcriptionSignpost)
                 } catch {
                     PerformanceSignposts.signposter.endInterval("Transcription", transcriptionSignpost)
                     throw error
                 }
+                EmergencyRuntime.shared.end(.finalTranscription)
+                let rawText = finishResult.text
                 try Task.checkCancellation()
                 let transcriptionSeconds = Self.seconds(transcriptionStart.duration(to: .now))
                 PersistentDiagnosticLog.shared.stage(
                     .transcription,
                     phase: "end",
-                    duration: transcriptionSeconds
+                    duration: transcriptionSeconds,
+                    audioDuration: duration,
+                    segmentCount: finishResult.segmentCount
                 )
 
                 let text: String
                 let cleanupStart = ContinuousClock.now
                 let cleanupEngine = TextCleanupPreferences.configuredEngine
                 if TextCleanupPreferences.isEnabled, !rawText.isEmpty {
-                    PersistentDiagnosticLog.shared.stage(.cleanup, phase: "begin")
+                    PersistentDiagnosticLog.shared.stage(
+                        .cleanup,
+                        phase: "begin",
+                        audioDuration: duration,
+                        segmentCount: finishResult.segmentCount
+                    )
+                    EmergencyRuntime.shared.begin(.cleanup)
                     let cleanupSignpost = PerformanceSignposts.signposter.beginInterval(
                         "Cleanup", "engine=\(cleanupEngine.rawValue, privacy: .public)"
                     )
@@ -249,8 +287,11 @@ final class DictationCoordinator: DictationCoordinating {
                     PersistentDiagnosticLog.shared.stage(
                         .cleanup,
                         phase: "end",
-                        duration: Self.seconds(cleanupStart.duration(to: .now))
+                        duration: Self.seconds(cleanupStart.duration(to: .now)),
+                        audioDuration: duration,
+                        segmentCount: finishResult.segmentCount
                     )
+                    EmergencyRuntime.shared.end(.cleanup)
                 } else {
                     text = rawText
                 }
@@ -258,7 +299,13 @@ final class DictationCoordinator: DictationCoordinating {
                 try Task.checkCancellation()
 
                 let injectionStart = ContinuousClock.now
-                PersistentDiagnosticLog.shared.stage(.injection, phase: "begin")
+                PersistentDiagnosticLog.shared.stage(
+                    .injection,
+                    phase: "begin",
+                    audioDuration: duration,
+                    segmentCount: finishResult.segmentCount
+                )
+                EmergencyRuntime.shared.begin(.injection)
                 let injectionSignpost = PerformanceSignposts.signposter.beginInterval("Injection")
                 var injectionOutcome = TextInjectionOutcome.pasted
                 do {
@@ -278,8 +325,11 @@ final class DictationCoordinator: DictationCoordinating {
                 PersistentDiagnosticLog.shared.stage(
                     .injection,
                     phase: "end",
-                    duration: injectionSeconds
+                    duration: injectionSeconds,
+                    audioDuration: duration,
+                    segmentCount: finishResult.segmentCount
                 )
+                EmergencyRuntime.shared.end(.injection)
                 if !text.isEmpty {
                     do {
                         try TranscriptionHistoryStore.shared.add(
@@ -300,7 +350,9 @@ final class DictationCoordinator: DictationCoordinating {
                     total: totalSeconds,
                     cleanupEngine: cleanupEngine
                 ))
-                if injectionOutcome == .copiedToClipboard {
+                if finishResult.isPartial {
+                    overlayController.showMessage("Transcription partielle")
+                } else if injectionOutcome == .copiedToClipboard {
                     overlayController.showMessage("Copié : ⌘V pour coller")
                 } else {
                     overlayController.hide()
@@ -324,12 +376,16 @@ final class DictationCoordinator: DictationCoordinating {
                 self.activeGeneration = nil
                 self.transcriptionTask = nil
             }
+            EmergencyRuntime.shared.setIdle(true)
+            self.refreshEmergencyCancellationHandlers()
         }
+        refreshEmergencyCancellationHandlers()
     }
 
     private func cancelDictation() {
         let wasRecording = state == .recording
         guard sessionPolicy.cancel() else { return }
+        EmergencyRuntime.shared.setIdle(true)
         activeGeneration = nil
         maximumDurationTask?.cancel()
         maximumDurationTask = nil
@@ -346,12 +402,13 @@ final class DictationCoordinator: DictationCoordinating {
             self.activeSegmentedTranscriber = nil
         }
         overlayController.showMessage("Dictée annulée")
+        refreshEmergencyCancellationHandlers()
     }
 
     private func cancelForMaximumDuration() {
         guard state == .recording else { return }
-        cancelDictation()
-        overlayController.showError("Durée maximale atteinte — dictée annulée")
+        overlayController.showTranscribing(message: "Durée maximale atteinte…")
+        endRecording(reason: .maximumDuration)
     }
 
     private static func seconds(_ duration: Duration) -> Double {
@@ -365,6 +422,16 @@ final class DictationCoordinator: DictationCoordinating {
 
     private func handleAudioRecorderError(_ error: AudioRecorderError) {
         logger.error("Enregistrement interrompu: \(error.localizedDescription, privacy: .public)")
+        let inputWasLost = switch error {
+        case .inputUnavailable, .microphonePermissionRequired: true
+        case .alreadyRecording, .converterCreationFailed: false
+        }
+        if state == .recording, inputWasLost {
+            PersistentDiagnosticLog.shared.inputLost()
+            overlayController.showTranscribing(message: "Entrée audio perdue — finalisation…")
+            endRecording(reason: .inputLost)
+            return
+        }
         PersistentDiagnosticLog.shared.stage(.recording, phase: "error")
         audioFeedTask?.cancel()
         audioFeedTask = nil
@@ -377,7 +444,17 @@ final class DictationCoordinator: DictationCoordinating {
             self.activeSegmentedTranscriber = nil
         }
         _ = sessionPolicy.cancel()
+        EmergencyRuntime.shared.setIdle(true)
         activeGeneration = nil
         overlayController.showError(error.localizedDescription)
+        refreshEmergencyCancellationHandlers()
+    }
+
+    private func refreshEmergencyCancellationHandlers() {
+        let tasks = [modelPreparationTask, audioFeedTask, maximumDurationTask, transcriptionTask]
+            .compactMap { $0 }
+        EmergencyCancellationHub.shared.replaceHandlers(
+            tasks.map { task in { task.cancel() } }
+        )
     }
 }

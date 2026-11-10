@@ -166,4 +166,48 @@ final class SegmentedTranscriberTests: XCTestCase {
         let sampleCounts = await service.sampleCounts()
         XCTAssertEqual(sampleCounts, [40, 190])
     }
+
+    func testFinalBudgetReturnsAlreadyTranscribedPartialText() async throws {
+        let service = FakeTranscriptionService(
+            results: [.success("segment disponible"), .success("segment trop lent")],
+            delay: .milliseconds(30)
+        )
+        let transcriber = SegmentedTranscriber(
+            transcriptionService: service,
+            language: "fr",
+            configuration: configuration
+        )
+        await transcriber.append(Array(repeating: 0, count: 40))
+        try await ContinuousClock().sleep(for: .milliseconds(40))
+
+        let result = try await transcriber.finishWithBudget(
+            completeAudio: Array(repeating: 0, count: 50),
+            budget: 0.005
+        )
+
+        XCTAssertTrue(result.isPartial)
+        XCTAssertEqual(result.text, "segment disponible")
+    }
+
+    func testLongDictationNeverFallsBackToOneCompleteAudioCall() async throws {
+        let service = FakeTranscriptionService(results: [
+            .failure(FakeTranscriptionService.FakeError.segment)
+        ])
+        let transcriber = SegmentedTranscriber(
+            transcriptionService: service,
+            language: "fr",
+            configuration: configuration
+        )
+        await transcriber.append(Array(repeating: 0, count: 40))
+        try await ContinuousClock().sleep(for: .milliseconds(10))
+
+        let result = try await transcriber.finishWithBudget(
+            completeAudio: Array(repeating: 0, count: 310),
+            budget: 8
+        )
+
+        XCTAssertTrue(result.isPartial)
+        let sampleCounts = await service.sampleCounts()
+        XCTAssertFalse(sampleCounts.contains(310))
+    }
 }

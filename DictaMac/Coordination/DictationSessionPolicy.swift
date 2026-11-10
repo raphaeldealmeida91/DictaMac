@@ -4,6 +4,7 @@ struct DictationSessionPolicy {
     enum StopReason: Equatable {
         case released
         case maximumDuration
+        case inputLost
     }
 
     private(set) var state: DictationState = .idle
@@ -54,6 +55,10 @@ enum RecordingDurationPreferences {
     static var maximumDuration: TimeInterval {
         let stored = UserDefaults.standard.double(forKey: maximumDurationKey)
         let value = stored > 0 ? stored : defaultMaximumDuration
-        return min(max(value, allowedRange.lowerBound), allowedRange.upperBound)
+        return clamped(value)
+    }
+
+    static func clamped(_ value: TimeInterval) -> TimeInterval {
+        min(max(value, allowedRange.lowerBound), allowedRange.upperBound)
     }
 }

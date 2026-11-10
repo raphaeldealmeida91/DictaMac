@@ -5,7 +5,9 @@ import SwiftUI
 @MainActor
 private final class AppDelegate: NSObject, NSApplicationDelegate {
     private var dictationCoordinator: DictationCoordinator?
-    private let mainThreadWatchdog = MainThreadWatchdog()
+    private let emergencyWatchdog = EmergencyWatchdog()
+    private var heartbeatTimer: Timer?
+    private var safeModeManager: SafeModeManager?
     private let memoryPressureSource = DispatchSource.makeMemoryPressureSource(
         eventMask: [.warning, .critical], queue: .global(qos: .utility)
     )
@@ -26,17 +28,52 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
         TextCleanupPreferences.migrate()
         _ = PersistentDiagnosticLog.shared
+        configureSafeMode()
         Task { await PermissionsManager.primeSharedCache() }
         ProcessMemoryDiagnostics.logFootprint(.startup)
-        mainThreadWatchdog.start()
+        startMainThreadHeartbeat()
+        emergencyWatchdog.start()
         let coordinator = DictationCoordinator()
         dictationCoordinator = coordinator
         coordinator.start()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        mainThreadWatchdog.stop()
+        heartbeatTimer?.invalidate()
+        heartbeatTimer = nil
+        emergencyWatchdog.stop()
         dictationCoordinator?.stop()
+        try? safeModeManager?.markCleanExit()
+    }
+
+    private func startMainThreadHeartbeat() {
+        EmergencyRuntime.shared.heartbeat()
+        let timer = Timer(timeInterval: 0.5, repeats: true) { _ in
+            EmergencyRuntime.shared.heartbeat()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        heartbeatTimer = timer
+    }
+
+    private func configureSafeMode() {
+        guard let manager = try? SafeModeManager.live() else { return }
+        safeModeManager = manager
+        let abnormalExit = (try? manager.detectAbnormalExitAndMarkRunning()) ?? false
+        SafeModeState.setEnabled(abnormalExit)
+        guard abnormalExit else { return }
+
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = "DictaMac a démarré en mode sûr"
+            alert.informativeText = "La sortie précédente était anormale. Le nettoyage Rapide (règles), les modèles légers et l’absence de préchauffage LLM sont activés pour cette session."
+            alert.addButton(withTitle: "Continuer")
+            alert.addButton(withTitle: "Ouvrir le journal")
+            if alert.runModal() == .alertSecondButtonReturn,
+               let directory = try? PersistentDiagnosticLog.logsDirectoryURL() {
+                NSWorkspace.shared.open(directory)
+            }
+        }
     }
 
     private func handleMemoryPressure(_ pressure: DispatchSource.MemoryPressureEvent) async {

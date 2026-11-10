@@ -66,10 +66,39 @@ final class PersistentDiagnosticLog: @unchecked Sendable {
         }
     }
 
-    func stage(_ stage: DiagnosticStage, phase: String, duration: TimeInterval? = nil) {
-        var line = "event=stage stage=\(stage.rawValue) phase=\(safeToken(phase))"
+    func stage(
+        _ stage: DiagnosticStage,
+        phase: String,
+        duration: TimeInterval? = nil,
+        audioDuration: TimeInterval? = nil,
+        segmentCount: Int? = nil
+    ) {
+        let event = switch phase {
+        case "begin": "stage_begin"
+        case "end": "stage_end"
+        default: "stage"
+        }
+        var line = "event=\(event) stage=\(stage.rawValue) phase=\(safeToken(phase))"
         if let duration { line += " duration_s=\(fixed(duration))" }
+        if let audioDuration { line += " audio_s=\(fixed(audioDuration))" }
+        if let segmentCount { line += " segments=\(segmentCount)" }
         enqueue(line)
+    }
+
+    func inputLost() {
+        enqueue("event=input_lost")
+    }
+
+    func emergencyRecovery(reason: String) {
+        enqueue("event=emergency_recovery reason=\(safeToken(reason))")
+    }
+
+    /// Synchronous by design: `_exit` does not run process teardown or flush stdio.
+    func emergencyExitAndFlush(reason: String) {
+        queue.sync {
+            writeLine("EMERGENCY_EXIT reason=\(safeToken(reason))")
+            try? fileHandle?.synchronize()
+        }
     }
 
     func modelLoadCompleted(duration: TimeInterval, reusedCompiledCache: Bool) {
@@ -157,7 +186,8 @@ final class PersistentDiagnosticLog: @unchecked Sendable {
     }
 
     private func rotatedURL(index: Int) -> URL {
-        logURL!.deletingLastPathComponent().appendingPathComponent("session.log.\(index)")
+        let directory = logURL?.deletingLastPathComponent() ?? fileManager.temporaryDirectory
+        return directory.appendingPathComponent("session.log.\(index)")
     }
 
     private func safeToken(_ value: String) -> String {

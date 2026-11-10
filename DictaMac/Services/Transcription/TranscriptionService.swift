@@ -22,6 +22,7 @@ enum TranscriptionPreferences {
     static let vocabularyKey = "transcription.vocabulary"
 
     static var configuredModel: String {
+        if SafeModeState.isEnabled { return fallbackModel }
         let value = UserDefaults.standard.string(forKey: modelKey)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return value.flatMap { $0.isEmpty ? nil : $0 } ?? recommendedModel
@@ -132,6 +133,10 @@ actor WhisperKitTranscriptionService: TranscriptionService {
     private var whisperKit: WhisperKit?
     private var preparedForModelRequest: String?
     private var preparationTask: Task<Void, Error>?
+
+    nonisolated func requestEmergencyUnload() {
+        Task { await self.unload(reason: "Whisper déchargé par l’arrêt d’urgence") }
+    }
 
     func prepare() async throws {
         let requestedModel = TranscriptionPreferences.configuredModel
@@ -300,6 +305,10 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         )
         whisperKit = preparedKit
         await TranscriptionModelState.shared.loaded(model)
+        if SafeModeState.isEnabled {
+            await TranscriptionModelState.shared.ready(model)
+            return
+        }
         await TranscriptionModelState.shared.warmingUp(model)
         let warmupStart = ContinuousClock.now
         _ = try await transcribeWithKit(

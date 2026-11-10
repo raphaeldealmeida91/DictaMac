@@ -4,6 +4,12 @@ import OSLog
 /// Incrementally transcribes overlapping audio windows while keeping the
 /// underlying `TranscriptionService` unaware of segmentation.
 actor SegmentedTranscriber {
+    struct FinishResult: Equatable, Sendable {
+        let text: String
+        let isPartial: Bool
+        let segmentCount: Int
+    }
+
     struct Configuration: Sendable {
         let sampleRate: Int
         let segmentDuration: TimeInterval
@@ -91,31 +97,69 @@ actor SegmentedTranscriber {
     /// Finishes incremental work and transcribes only the overlapping tail.
     /// `completeAudio` replaces the accumulated stream to close any capture race.
     func finish(completeAudio: [Float]) async throws -> String {
+        try await finishWithBudget(completeAudio: completeAudio, budget: nil).text
+    }
+
+    /// A bounded final pass. Audio longer than 30 seconds is never sent to the
+    /// transcription service as a single buffer, including error/backlog paths.
+    func finishWithBudget(
+        completeAudio: [Float],
+        budget: TimeInterval?
+    ) async throws -> FinishResult {
         try await withTaskCancellationHandler {
             try Task.checkCancellation()
             guard !isCancelled else { throw CancellationError() }
 
+            let finishStartedAt = MonotonicClock.now
+            let audioDuration = Double(completeAudio.count) / Double(configuration.sampleRate)
+            let allowsCompleteAudioFallback = audioDuration <= 30
+
             if backlogExceeded {
-                return try await transcribeCompleteAudio(reason: "backlog_exceeded")
+                if allowsCompleteAudioFallback {
+                    let text = try await transcribeCompleteAudio(reason: "backlog_exceeded")
+                    return FinishResult(text: text, isPartial: false, segmentCount: 1)
+                }
+                backlogExceeded = false
+                logger.warning("long dictation backlog retained for sequential final processing")
             }
 
             isFinishing = true
             audio = completeAudio
             startWorkerIfNeeded()
             if let worker {
-                await worker.value
+                if let remaining = remainingBudget(budget, since: finishStartedAt) {
+                    do {
+                        try await PipelineWatchdog.run(
+                            stage: "transcription finale",
+                            timeout: .seconds(remaining)
+                        ) {
+                            await worker.value
+                        }
+                    } catch let error as PipelineWatchdogError {
+                        worker.cancel()
+                        logger.warning("final transcription budget exceeded: \(error.localizedDescription, privacy: .public)")
+                        return partialResult()
+                    }
+                } else {
+                    await worker.value
+                }
             }
 
             try Task.checkCancellation()
             guard !isCancelled else { throw CancellationError() }
 
             if segmentFailed {
-                return try await transcribeCompleteAudio(reason: "segment_error")
+                if allowsCompleteAudioFallback {
+                    let text = try await transcribeCompleteAudio(reason: "segment_error")
+                    return FinishResult(text: text, isPartial: false, segmentCount: 1)
+                }
+                return partialResult()
             }
 
             // Preserve the original single-pass behavior for short dictations.
             guard completeAudio.count >= configuration.segmentSampleCount else {
-                return try await transcribeCompleteAudio(reason: "short_dictation")
+                let text = try await transcribeCompleteAudio(reason: "short_dictation")
+                return FinishResult(text: text, isPartial: false, segmentCount: 1)
             }
 
             var completed = segments.sorted { $0.index < $1.index }
@@ -124,10 +168,20 @@ actor SegmentedTranscriber {
                 let finalIndex = nextSegmentIndex
                 let start = ContinuousClock.now
                 do {
-                    let text = try await transcriptionService.transcribe(
-                        finalSamples,
-                        language: language
-                    )
+                    let operation: @Sendable () async throws -> String = {
+                        [transcriptionService, language, finalSamples] in
+                        try await transcriptionService.transcribe(finalSamples, language: language)
+                    }
+                    let text: String
+                    if let remaining = remainingBudget(budget, since: finishStartedAt) {
+                        text = try await PipelineWatchdog.run(
+                            stage: "segment final",
+                            timeout: .seconds(remaining),
+                            operation: operation
+                        )
+                    } else {
+                        text = try await operation()
+                    }
                     let elapsed = Self.seconds(start.duration(to: .now))
                     logger.info(
                         "incremental segment index=\(finalIndex) phase=final audio=\(Double(finalSamples.count) / Double(self.configuration.sampleRate), format: .fixed(precision: 3))s duration=\(elapsed, format: .fixed(precision: 3))s"
@@ -135,18 +189,53 @@ actor SegmentedTranscriber {
                     completed.append(TranscribedSegment(index: finalIndex, text: text))
                 } catch is CancellationError {
                     throw CancellationError()
-                } catch {
-                    logger.warning(
-                        "incremental final segment failed; full fallback error=\(error.localizedDescription, privacy: .public)"
+                } catch is PipelineWatchdogError {
+                    return FinishResult(
+                        text: Self.assemble(completed.map(\.text)),
+                        isPartial: true,
+                        segmentCount: completed.count
                     )
-                    return try await transcribeCompleteAudio(reason: "final_segment_error")
+                } catch {
+                    if allowsCompleteAudioFallback {
+                        logger.warning(
+                            "incremental final segment failed; full fallback error=\(error.localizedDescription, privacy: .public)"
+                        )
+                        let text = try await transcribeCompleteAudio(reason: "final_segment_error")
+                        return FinishResult(text: text, isPartial: false, segmentCount: 1)
+                    }
+                    return FinishResult(
+                        text: Self.assemble(completed.map(\.text)),
+                        isPartial: true,
+                        segmentCount: completed.count
+                    )
                 }
             }
 
-            return Self.assemble(completed.map(\.text))
+            return FinishResult(
+                text: Self.assemble(completed.map(\.text)),
+                isPartial: false,
+                segmentCount: completed.count
+            )
         } onCancel: {
             Task { await self.cancel() }
         }
+    }
+
+    private func remainingBudget(
+        _ budget: TimeInterval?,
+        since start: TimeInterval
+    ) -> TimeInterval? {
+        guard let budget else { return nil }
+        return max(0.001, budget - (MonotonicClock.now - start))
+    }
+
+    private func partialResult() -> FinishResult {
+        let completed = segments.sorted { $0.index < $1.index }
+        return FinishResult(
+            text: Self.assemble(completed.map(\.text)),
+            isPartial: true,
+            segmentCount: completed.count
+        )
     }
 
     func cancel() {

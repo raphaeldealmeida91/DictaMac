@@ -29,6 +29,8 @@
 		A10000000000000000000014 /* DictationSessionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* DictationSessionPolicy.swift */; };
 		A10000000000000000000015 /* TranscriptionHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* TranscriptionHistoryTests.swift */; };
 		A10000000000000000000016 /* DictationSessionPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* DictationSessionPolicyTests.swift */; };
+		A10000000000000000000017 /* EmergencyWatchdog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001A /* EmergencyWatchdog.swift */; };
+		A10000000000000000000018 /* EmergencyWatchdogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001B /* EmergencyWatchdogTests.swift */; };
 		B10000000000000000000001 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000001 /* WhisperKit */; };
 		B10000000000000000000002 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000002 /* MLXLLM */; };
 		B10000000000000000000003 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000003 /* MLXLMCommon */; };
@@ -72,6 +74,8 @@
 		A20000000000000000000017 /* DictationSessionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationSessionPolicy.swift; sourceTree = "<group>"; };
 		A20000000000000000000018 /* TranscriptionHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHistoryTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000019 /* DictationSessionPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationSessionPolicyTests.swift; sourceTree = "<group>"; };
+		A2000000000000000000001A /* EmergencyWatchdog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyWatchdog.swift; sourceTree = "<group>"; };
+		A2000000000000000000001B /* EmergencyWatchdogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyWatchdogTests.swift; sourceTree = "<group>"; };
 		B40000000000000000000001 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -237,6 +241,7 @@
 				A20000000000000000000015 /* SegmentedTranscriberTests.swift */,
 				A20000000000000000000018 /* TranscriptionHistoryTests.swift */,
 				A20000000000000000000019 /* DictationSessionPolicyTests.swift */,
+				A2000000000000000000001B /* EmergencyWatchdogTests.swift */,
 			);
 			path = DictaMacTests;
 			sourceTree = "<group>";
@@ -246,6 +251,7 @@
 			children = (
 				A20000000000000000000012 /* DictationDiagnostics.swift */,
 				A20000000000000000000013 /* WhisperBenchmark.swift */,
+				A2000000000000000000001A /* EmergencyWatchdog.swift */,
 			);
 			path = Diagnostics;
 			sourceTree = "<group>";
@@ -371,6 +377,7 @@
 				A10000000000000000000011 /* SegmentedTranscriber.swift in Sources */,
 				A10000000000000000000013 /* TranscriptionHistory.swift in Sources */,
 				A10000000000000000000014 /* DictationSessionPolicy.swift in Sources */,
+				A10000000000000000000017 /* EmergencyWatchdog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -383,6 +390,7 @@
 				A10000000000000000000012 /* SegmentedTranscriberTests.swift in Sources */,
 				A10000000000000000000015 /* TranscriptionHistoryTests.swift in Sources */,
 				A10000000000000000000016 /* DictationSessionPolicyTests.swift in Sources */,
+				A10000000000000000000018 /* EmergencyWatchdogTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -438,7 +446,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SZKN278HUX;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_INTENTS_METADATA = NO;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -469,7 +477,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SZKN278HUX;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_INTENTS_METADATA = NO;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;

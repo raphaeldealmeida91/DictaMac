@@ -179,6 +179,10 @@ final class LocalCleanupModelState: ObservableObject {
 actor LocalCleanupModelManager: LocalTextGenerating {
     static let shared = LocalCleanupModelManager()
 
+    nonisolated func requestEmergencyUnload() {
+        Task { await self.unload(reason: "Modèle local déchargé par l’arrêt d’urgence") }
+    }
+
     private var container: ModelContainer?
     private var loadedModelID: String?
     private var isWarmedUp = false
