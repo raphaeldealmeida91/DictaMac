@@ -27,7 +27,7 @@ parse_arguments() {
 }
 
 increment_build_number() {
-    [[ "${INCREMENT_BUILD}" == true ]] || return
+    [[ "${INCREMENT_BUILD}" == true ]] || return 0
     print "Incrément du numéro de build…"
     (cd "${PROJECT_DIRECTORY}" && xcrun agvtool next-version -all)
 }
