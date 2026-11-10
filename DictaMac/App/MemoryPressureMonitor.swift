@@ -15,7 +15,7 @@ final class MemoryPressureMonitor {
     private let transcriptionModelUnloader: any ModelUnloading
     private let textCleanupSettings: any TextCleanupSettingsWriting
     private let alertPresenter: any UserAlertPresenting
-    private let diagnosticLog: PersistentDiagnosticLog
+    private let diagnosticLog: any DiagnosticLogging
     private let source: DispatchSourceMemoryPressure
     private var isRunning = false
 
@@ -24,7 +24,7 @@ final class MemoryPressureMonitor {
         transcriptionModelUnloader: any ModelUnloading,
         textCleanupSettings: any TextCleanupSettingsWriting,
         alertPresenter: any UserAlertPresenting,
-        diagnosticLog: PersistentDiagnosticLog,
+        diagnosticLog: any DiagnosticLogging,
         source: DispatchSourceMemoryPressure = DispatchSource.makeMemoryPressureSource(
             eventMask: [.warning, .critical],
             queue: .global(qos: .utility)
@@ -59,7 +59,8 @@ final class MemoryPressureMonitor {
         let isCritical = level == .critical
         diagnosticLog.memoryPressure(critical: isCritical)
         ProcessMemoryDiagnostics.logFootprint(
-            isCritical ? .memoryPressureCritical : .memoryPressureWarning
+            isCritical ? .memoryPressureCritical : .memoryPressureWarning,
+            diagnosticLog: diagnosticLog
         )
         await localModelUnloader.unload(reason: "Modèle local déchargé : pression mémoire")
         if isCritical {

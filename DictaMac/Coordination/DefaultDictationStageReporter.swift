@@ -3,12 +3,12 @@ import OSLog
 
 @MainActor
 final class DefaultDictationStageReporter: DictationStageReporting {
-    private let persistentLog: PersistentDiagnosticLog
+    private let persistentLog: any DiagnosticLogging
     private let emergencyRuntime: EmergencyRuntime
     private var intervals: [UUID: OSSignpostIntervalState] = [:]
 
     init(
-        persistentLog: PersistentDiagnosticLog,
+        persistentLog: any DiagnosticLogging,
         emergencyRuntime: EmergencyRuntime
     ) {
         self.persistentLog = persistentLog

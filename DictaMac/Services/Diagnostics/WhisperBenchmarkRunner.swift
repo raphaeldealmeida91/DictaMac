@@ -6,13 +6,18 @@ import WhisperKit
 
 actor WhisperBenchmarkRunner {
     private let settings: any TranscriptionSettings
+    private let modelLoadingGate: any ModelLoadingGating
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "WhisperBenchmark"
     )
 
-    init(settings: any TranscriptionSettings) {
+    init(
+        settings: any TranscriptionSettings,
+        modelLoadingGate: any ModelLoadingGating
+    ) {
         self.settings = settings
+        self.modelLoadingGate = modelLoadingGate
     }
 
     func run(
@@ -63,7 +68,7 @@ actor WhisperBenchmarkRunner {
 
     private func benchmark(model: String, wavURL: URL) async -> WhisperBenchmarkResult {
         do {
-            let result = try await ModelLoadingGate.shared.run { [settings] in
+            let result = try await modelLoadingGate.run { [settings] in
                 let directory = try Self.modelsDirectory()
                 let folder = try await WhisperKit.download(variant: model, downloadBase: directory)
                 let kit = try await WhisperKit(WhisperKitConfig(

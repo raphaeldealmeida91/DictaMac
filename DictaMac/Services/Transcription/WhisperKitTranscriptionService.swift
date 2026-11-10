@@ -7,6 +7,8 @@ actor WhisperKitTranscriptionService: TranscriptionService {
     private let settings: any TranscriptionSettings
     private let modelPathStore: any TranscriptionModelPathStoring
     private let modelState: TranscriptionModelState
+    private let modelLoadingGate: any ModelLoadingGating
+    private let diagnosticLog: any DiagnosticLogging
     private var whisperKit: WhisperKit?
     private var preparedForModelRequest: String?
     private var preparationTask: Task<Void, Error>?
@@ -18,11 +20,15 @@ actor WhisperKitTranscriptionService: TranscriptionService {
     init(
         settings: any TranscriptionSettings,
         modelPathStore: any TranscriptionModelPathStoring,
-        modelState: TranscriptionModelState
+        modelState: TranscriptionModelState,
+        modelLoadingGate: any ModelLoadingGating,
+        diagnosticLog: any DiagnosticLogging
     ) {
         self.settings = settings
         self.modelPathStore = modelPathStore
         self.modelState = modelState
+        self.modelLoadingGate = modelLoadingGate
+        self.diagnosticLog = diagnosticLog
     }
 
     nonisolated func requestEmergencyUnload() {
@@ -64,7 +70,7 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         whisperKit = nil
         preparedForModelRequest = nil
         await modelState.unloaded(reason)
-        ProcessMemoryDiagnostics.logFootprint(.whisperUnloaded)
+        ProcessMemoryDiagnostics.logFootprint(.whisperUnloaded, diagnosticLog: diagnosticLog)
     }
 
     func transcribe(_ samples: [Float], language: String?) async throws -> String {
@@ -123,7 +129,7 @@ actor WhisperKitTranscriptionService: TranscriptionService {
     }
 
     private func load(model: String) async throws {
-        try await ModelLoadingGate.shared.run { [weak self] in
+        try await modelLoadingGate.run { [weak self] in
             guard let self else { throw CancellationError() }
             try await self.loadWithoutCompetition(model: model)
         }
@@ -131,14 +137,14 @@ actor WhisperKitTranscriptionService: TranscriptionService {
 
     private func loadWithoutCompetition(model: String) async throws {
         let loadStart = ContinuousClock.now
-        PersistentDiagnosticLog.shared.stage(.modelLoad, phase: "begin")
+        diagnosticLog.stage(.modelLoad, phase: "begin")
         let signpostID = PerformanceSignposts.signposter.makeSignpostID()
         let signpostState = PerformanceSignposts.signposter.beginInterval(
             "Model load", id: signpostID, "engine=whisper model=\(model, privacy: .public)"
         )
         defer {
             PerformanceSignposts.signposter.endInterval("Model load", signpostState)
-            ProcessMemoryDiagnostics.logFootprint(.whisperLoaded)
+            ProcessMemoryDiagnostics.logFootprint(.whisperLoaded, diagnosticLog: diagnosticLog)
         }
         let (folder, reusedCompiledCache) = try await modelFolder(for: model)
         await modelState.loading(model)
@@ -208,7 +214,7 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         logger.info(
             "whisper model load duration=\(seconds, format: .fixed(precision: 3))s compiled_cache_reused=\(reusedCompiledCache)"
         )
-        PersistentDiagnosticLog.shared.modelLoadCompleted(
+        diagnosticLog.modelLoadCompleted(
             duration: seconds,
             reusedCompiledCache: reusedCompiledCache
         )

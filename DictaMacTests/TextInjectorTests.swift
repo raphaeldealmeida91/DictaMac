@@ -94,18 +94,42 @@ final class ClipboardTextInjectorTests: XCTestCase {
         XCTAssertEqual(pasteboard.items.first?.representations[.string], Data("à coller".utf8))
     }
 
+    func testInjectedPermissionCacheControlsPasteDecision() {
+        let pasteboard = FakePasteboard(items: [])
+        let scheduler = ManualRestoreScheduler()
+        let permissionCache = PermissionStateCache()
+        let injector = makeInjector(
+            pasteboard: pasteboard,
+            scheduler: scheduler,
+            permissionCache: permissionCache
+        )
+
+        XCTAssertEqual(injector.insert("sans permission"), .copiedToClipboard)
+        permissionCache.updateAccessibility(true)
+        XCTAssertEqual(injector.insert("avec permission"), .pasted)
+    }
+
     private func makeInjector(
         pasteboard: FakePasteboard,
         scheduler: ManualRestoreScheduler,
+        permissionCache: PermissionStateCache? = nil,
         canPasteIntoFocusedElement: @escaping @MainActor () -> Bool = { true },
         pasteCommand: @escaping ClipboardTextInjector.PasteCommand = {}
     ) -> ClipboardTextInjector {
-        ClipboardTextInjector(
+        let resolvedPermissionCache = permissionCache ?? Self.authorizedPermissionCache()
+        return ClipboardTextInjector(
+            permissionCache: resolvedPermissionCache,
             pasteboard: pasteboard,
             canPasteIntoFocusedElement: canPasteIntoFocusedElement,
             pasteCommand: pasteCommand,
             scheduleRestore: scheduler.schedule
         )
+    }
+
+    private static func authorizedPermissionCache() -> PermissionStateCache {
+        let cache = PermissionStateCache()
+        cache.updateAccessibility(true)
+        return cache
     }
 }
 

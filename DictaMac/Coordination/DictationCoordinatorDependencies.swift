@@ -11,6 +11,7 @@ struct DictationCoordinatorDependencies {
     let stageReporter: any DictationStageReporting
     let modelPreparer: any DictationModelPreparing
     let cancellationRegistry: any EmergencyCancellationRegistering
+    let diagnosticLog: any DiagnosticLogging
     let activityModel: AppActivityModel
     let frontmostApplicationName: () -> String?
 }

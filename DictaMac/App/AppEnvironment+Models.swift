@@ -8,17 +8,21 @@ extension AppEnvironment {
         let transcriptionService: WhisperKitTranscriptionService
     }
 
-    static func makeModels(settings: SettingsBundle) -> ModelBundle {
+    static func makeModels(settings: SettingsBundle, shared: SharedServices) -> ModelBundle {
         let transcriptionState = TranscriptionModelState()
         let cleanupState = LocalCleanupModelState()
         let localManager = LocalCleanupModelManager(
             settings: settings.cleanup,
-            modelState: cleanupState
+            modelState: cleanupState,
+            modelLoadingGate: shared.modelLoadingGate,
+            diagnosticLog: shared.diagnosticLog
         )
         let transcriptionService = WhisperKitTranscriptionService(
             settings: settings.transcription,
             modelPathStore: settings.transcription,
-            modelState: transcriptionState
+            modelState: transcriptionState,
+            modelLoadingGate: shared.modelLoadingGate,
+            diagnosticLog: shared.diagnosticLog
         )
         return ModelBundle(
             transcriptionState: transcriptionState,

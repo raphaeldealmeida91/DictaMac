@@ -14,7 +14,7 @@ protocol EmergencyRecovering: Sendable {
 
 // The instance is immutable after initialization; injected collaborators own their synchronization.
 final class EmergencyRecovery: EmergencyRecovering, @unchecked Sendable {
-    private let diagnosticLog: PersistentDiagnosticLog
+    private let diagnosticLog: any DiagnosticLogging
     private let runtime: EmergencyRuntime
     private let cancellationHub: EmergencyCancellationHub
     private let audioRegistry: EmergencyAudioRegistry
@@ -27,7 +27,7 @@ final class EmergencyRecovery: EmergencyRecovering, @unchecked Sendable {
     )
 
     init(
-        diagnosticLog: PersistentDiagnosticLog,
+        diagnosticLog: any DiagnosticLogging,
         runtime: EmergencyRuntime,
         cancellationHub: EmergencyCancellationHub,
         audioRegistry: EmergencyAudioRegistry,

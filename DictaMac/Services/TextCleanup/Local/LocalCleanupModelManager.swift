@@ -12,6 +12,8 @@ actor LocalCleanupModelManager: LocalTextGenerating {
     private let downloader = ResumableModelDownloader()
     private let settings: any TextCleanupSettings & TextCleanupSettingsWriting
     private let modelState: LocalCleanupModelState
+    private let modelLoadingGate: any ModelLoadingGating
+    private let diagnosticLog: any DiagnosticLogging
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "LocalCleanupModel"
@@ -19,10 +21,14 @@ actor LocalCleanupModelManager: LocalTextGenerating {
 
     init(
         settings: any TextCleanupSettings & TextCleanupSettingsWriting,
-        modelState: LocalCleanupModelState
+        modelState: LocalCleanupModelState,
+        modelLoadingGate: any ModelLoadingGating,
+        diagnosticLog: any DiagnosticLogging
     ) {
         self.settings = settings
         self.modelState = modelState
+        self.modelLoadingGate = modelLoadingGate
+        self.diagnosticLog = diagnosticLog
     }
 
     var isReady: Bool { container != nil && isWarmedUp }
@@ -66,7 +72,7 @@ actor LocalCleanupModelManager: LocalTextGenerating {
         MLX.GPU.clearCache()
         Task { @MainActor [modelState] in modelState.unloaded(reason) }
         logger.info("local cleanup model unloaded")
-        ProcessMemoryDiagnostics.logFootprint(.mlxUnloaded)
+        ProcessMemoryDiagnostics.logFootprint(.mlxUnloaded, diagnosticLog: diagnosticLog)
     }
 
     func generate(text: String, messages: [[String: String]], maxTokens: Int) async throws -> String {
@@ -89,7 +95,7 @@ actor LocalCleanupModelManager: LocalTextGenerating {
 
     private func downloadAndLoad(modelID: String) async {
         do {
-            try await ModelLoadingGate.shared.run { [weak self] in
+            try await modelLoadingGate.run { [weak self] in
                 await self?.downloadAndLoadWithoutCompetition(modelID: modelID)
             }
         } catch {
@@ -99,7 +105,7 @@ actor LocalCleanupModelManager: LocalTextGenerating {
 
     private func downloadAndLoadWithoutCompetition(modelID: String) async {
         let loadStart = ContinuousClock.now
-        PersistentDiagnosticLog.shared.stage(.modelLoad, phase: "begin")
+        diagnosticLog.stage(.modelLoad, phase: "begin")
         let signpostID = PerformanceSignposts.signposter.makeSignpostID()
         let signpostState = PerformanceSignposts.signposter.beginInterval(
             "Model load",
@@ -108,8 +114,8 @@ actor LocalCleanupModelManager: LocalTextGenerating {
         )
         defer {
             PerformanceSignposts.signposter.endInterval("Model load", signpostState)
-            ProcessMemoryDiagnostics.logFootprint(.mlxLoadFinished)
-            PersistentDiagnosticLog.shared.stage(
+            ProcessMemoryDiagnostics.logFootprint(.mlxLoadFinished, diagnosticLog: diagnosticLog)
+            diagnosticLog.stage(
                 .modelLoad,
                 phase: "end",
                 duration: Self.seconds(loadStart.duration(to: .now))

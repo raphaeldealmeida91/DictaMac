@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		K10000000000000000000001 /* DiagnosticLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = K20000000000000000000001 /* DiagnosticLogging.swift */; };
+		K10000000000000000000002 /* ModelLoadingGating.swift in Sources */ = {isa = PBXBuildFile; fileRef = K20000000000000000000002 /* ModelLoadingGating.swift */; };
+		K10000000000000000000003 /* AccessibilityPermissionCaching.swift in Sources */ = {isa = PBXBuildFile; fileRef = K20000000000000000000003 /* AccessibilityPermissionCaching.swift */; };
+		K10000000000000000000004 /* PermissionStateCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = K20000000000000000000004 /* PermissionStateCache.swift */; };
+		K10000000000000000000005 /* SharedServicesInjectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = K20000000000000000000005 /* SharedServicesInjectionTests.swift */; };
 		A10000000000000000000001 /* DictaMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* DictaMacApp.swift */; };
 		A10000000000000000000002 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* SettingsView.swift */; };
 		A10000000000000000000003 /* HotkeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* HotkeyService.swift */; };
@@ -165,6 +170,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		K20000000000000000000001 /* DiagnosticLogging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging/DiagnosticLogging.swift; sourceTree = "<group>"; };
+		K20000000000000000000002 /* ModelLoadingGating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pipeline/ModelLoadingGating.swift; sourceTree = "<group>"; };
+		K20000000000000000000003 /* AccessibilityPermissionCaching.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissionCaching.swift; sourceTree = "<group>"; };
+		K20000000000000000000004 /* PermissionStateCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionStateCache.swift; sourceTree = "<group>"; };
+		K20000000000000000000005 /* SharedServicesInjectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedServicesInjectionTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000001 /* DictaMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictaMacApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* HotkeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyService.swift; sourceTree = "<group>"; };
@@ -546,6 +556,8 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000007 /* PermissionsManager.swift */,
+				K20000000000000000000003 /* AccessibilityPermissionCaching.swift */,
+				K20000000000000000000004 /* PermissionStateCache.swift */,
 			);
 			path = Permissions;
 			sourceTree = "<group>";
@@ -636,6 +648,7 @@
 				F2000000000000000000000E /* DictationCoordinatorTests.swift */,
 				F2000000000000000000000F /* DictationPipelineTests.swift */,
 				G20000000000000000000008 /* MemoryPressureMonitorTests.swift */,
+				K20000000000000000000005 /* SharedServicesInjectionTests.swift */,
 			);
 			path = DictaMacTests;
 			sourceTree = "<group>";
@@ -651,10 +664,12 @@
 				E20000000000000000000014 /* DiagnosticStage.swift */,
 				E20000000000000000000015 /* DiagnosticMemoryContext.swift */,
 				E20000000000000000000016 /* PersistentDiagnosticLog.swift */,
+				K20000000000000000000001 /* DiagnosticLogging.swift */,
 				E20000000000000000000017 /* DictationTimings.swift */,
 				E20000000000000000000018 /* ProcessMemoryDiagnostics.swift */,
 				E20000000000000000000019 /* PerformanceSignposts.swift */,
 				E2000000000000000000001A /* ModelLoadingGate.swift */,
+				K20000000000000000000002 /* ModelLoadingGating.swift */,
 				E2000000000000000000001B /* PipelineWatchdogError.swift */,
 				E2000000000000000000001C /* PipelineWatchdog.swift */,
 				E2000000000000000000001D /* MainThreadWatchdog.swift */,
@@ -926,6 +941,10 @@
 				J10000000000000000000001 /* AppActivityModel.swift in Sources */,
 				J10000000000000000000002 /* DictationCoordinatorDependencies.swift in Sources */,
 				J10000000000000000000003 /* MenuBarIcon.swift in Sources */,
+				K10000000000000000000001 /* DiagnosticLogging.swift in Sources */,
+				K10000000000000000000002 /* ModelLoadingGating.swift in Sources */,
+				K10000000000000000000003 /* AccessibilityPermissionCaching.swift in Sources */,
+				K10000000000000000000004 /* PermissionStateCache.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -943,6 +962,7 @@
 				F1000000000000000000000E /* DictationCoordinatorTests.swift in Sources */,
 				F1000000000000000000000F /* DictationPipelineTests.swift in Sources */,
 				G10000000000000000000008 /* MemoryPressureMonitorTests.swift in Sources */,
+				K10000000000000000000005 /* SharedServicesInjectionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

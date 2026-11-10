@@ -108,16 +108,19 @@ final class ClipboardTextInjector: TextInjector {
     typealias RestoreScheduler = @MainActor (@escaping @MainActor () -> Void) -> Void
 
     private let pasteboard: any PasteboardProviding
+    private let permissionCache: any AccessibilityPermissionReading
     private let canPasteIntoFocusedElement: @MainActor () -> Bool
     private let pasteCommand: PasteCommand
     private let scheduleRestore: RestoreScheduler
 
     init(
+        permissionCache: any AccessibilityPermissionReading,
         pasteboard: any PasteboardProviding = GeneralPasteboardProvider(),
         canPasteIntoFocusedElement: @escaping @MainActor () -> Bool = ClipboardTextInjector.defaultDestinationCheck,
         pasteCommand: @escaping PasteCommand = ClipboardTextInjector.postPasteCommand,
         scheduleRestore: @escaping RestoreScheduler = ClipboardTextInjector.scheduleDefaultRestore
     ) {
+        self.permissionCache = permissionCache
         self.pasteboard = pasteboard
         self.canPasteIntoFocusedElement = canPasteIntoFocusedElement
         self.pasteCommand = pasteCommand
@@ -125,7 +128,8 @@ final class ClipboardTextInjector: TextInjector {
     }
 
     func insert(_ text: String) -> TextInjectionOutcome {
-        guard canPasteIntoFocusedElement() else {
+        guard permissionCache.isAccessibilityAuthorized,
+              canPasteIntoFocusedElement() else {
             pasteboard.writeText(text)
             return .copiedToClipboard
         }
@@ -173,8 +177,7 @@ final class ClipboardTextInjector: TextInjector {
     }
 
     private static func defaultDestinationCheck() -> Bool {
-        guard PermissionStateCache.shared.isAccessibilityAuthorized,
-              !IsSecureEventInputEnabled() else { return false }
+        guard !IsSecureEventInputEnabled() else { return false }
 
         let systemWideElement = AXUIElementCreateSystemWide()
         var focusedValue: CFTypeRef?

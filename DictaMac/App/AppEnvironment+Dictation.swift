@@ -6,9 +6,13 @@ extension AppEnvironment {
         models: ModelBundle,
         emergency: EmergencyBundle,
         cleanupService: any TextCleanupService,
-        activity: AppActivityModel
+        activity: AppActivityModel,
+        shared: SharedServices
     ) -> DictationCoordinator {
-        let audioRecorder = AudioRecorder(emergencyAudioRegistry: emergency.audioRegistry)
+        let audioRecorder = AudioRecorder(
+            emergencyAudioRegistry: emergency.audioRegistry,
+            diagnosticLog: emergency.log
+        )
         let reporter = DefaultDictationStageReporter(
             persistentLog: emergency.log,
             emergencyRuntime: emergency.runtime
@@ -17,7 +21,8 @@ extension AppEnvironment {
             cleanupService: cleanupService,
             settings: settings.cleanup,
             models: models,
-            reporter: reporter
+            reporter: reporter,
+            permissionCache: shared.permissionCache
         )
         return DictationCoordinator(dependencies: DictationCoordinatorDependencies(
             hotkeyProvider: makeHotkey(settings: settings.emergency, emergency: emergency),
@@ -33,6 +38,7 @@ extension AppEnvironment {
             stageReporter: reporter,
             modelPreparer: makeModelPreparer(settings: settings.cleanup, models: models),
             cancellationRegistry: emergency.cancellationHub,
+            diagnosticLog: emergency.log,
             activityModel: activity,
             frontmostApplicationName: { NSWorkspace.shared.frontmostApplication?.localizedName }
         ))
@@ -42,7 +48,8 @@ extension AppEnvironment {
         cleanupService: any TextCleanupService,
         settings: StoredTextCleanupSettings,
         models: ModelBundle,
-        reporter: any DictationStageReporting
+        reporter: any DictationStageReporting,
+        permissionCache: any AccessibilityPermissionReading
     ) -> DictationPipeline {
         let recovery = DefaultPipelineModelRecovery {
             await models.localManager.unload(reason: "Modèle déchargé après timeout")
@@ -51,7 +58,7 @@ extension AppEnvironment {
         return DictationPipeline(
             textCleanupService: cleanupService,
             textCleanupSettings: settings,
-            textInjector: ClipboardTextInjector(),
+            textInjector: ClipboardTextInjector(permissionCache: permissionCache),
             historyRecorder: models.history,
             metricsRecorder: models.diagnostics,
             stageReporter: reporter,

@@ -14,6 +14,11 @@ final class MainThreadWatchdog: @unchecked Sendable {
     private var timer: DispatchSourceTimer?
     private let lock = NSLock()
     private var pingOutstanding = false
+    private let diagnosticLog: any DiagnosticLogging
+
+    init(diagnosticLog: any DiagnosticLogging) {
+        self.diagnosticLog = diagnosticLog
+    }
 
     func start() {
         lock.lock()
@@ -51,7 +56,7 @@ final class MainThreadWatchdog: @unchecked Sendable {
             self.lock.withLock { self.pingOutstanding = false }
             if delay > 0.5 {
                 self.logger.fault("main thread stall duration=\(delay, format: .fixed(precision: 3))s")
-                PersistentDiagnosticLog.shared.mainThreadStall(duration: delay)
+                self.diagnosticLog.mainThreadStall(duration: delay)
             }
         }
     }

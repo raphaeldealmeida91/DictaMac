@@ -59,12 +59,17 @@ final class AudioRecorder: AudioRecording, @unchecked Sendable {
     private var engineIsPrepared = false
     private var isHandlingConfigurationChange = false
     private var storedRecordingDuration: TimeInterval = 0
+    private let diagnosticLog: any DiagnosticLogging
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "AudioRecorder"
     )
 
-    init(emergencyAudioRegistry: EmergencyAudioRegistry) {
+    init(
+        emergencyAudioRegistry: EmergencyAudioRegistry,
+        diagnosticLog: any DiagnosticLogging
+    ) {
+        self.diagnosticLog = diagnosticLog
         configurationQueue.name = "com.raphaeldealmeida.DictaMac.audio-configuration"
         configurationQueue.maxConcurrentOperationCount = 1
         permissionObserver = NotificationCenter.default.addObserver(
@@ -282,7 +287,7 @@ final class AudioRecorder: AudioRecording, @unchecked Sendable {
             self.isRecording = false
             if inputWasLost {
                 self.logger.error("input_lost")
-                PersistentDiagnosticLog.shared.inputLost()
+                self.diagnosticLog.inputLost()
                 DispatchQueue.main.async { [weak self] in self?.onError?(.inputUnavailable) }
             }
             engine.stop()
@@ -315,7 +320,7 @@ final class AudioRecorder: AudioRecording, @unchecked Sendable {
                 self.isRecording = false
                 self.tearDownEngine()
                 if wasRecording {
-                    PersistentDiagnosticLog.shared.inputLost()
+                    self.diagnosticLog.inputLost()
                     DispatchQueue.main.async { [weak self] in
                         self?.onError?(.microphonePermissionRequired)
                     }

@@ -48,21 +48,6 @@ enum PermissionStatus: Sendable {
     var isAuthorized: Bool { self == .authorized }
 }
 
-// The cached authorization bit is accessed exclusively under lock.
-final class PermissionStateCache: @unchecked Sendable {
-    static let shared = PermissionStateCache()
-    private let lock = NSLock()
-    private var accessibilityAuthorized = false
-
-    var isAccessibilityAuthorized: Bool {
-        lock.withLock { accessibilityAuthorized }
-    }
-
-    func updateAccessibility(_ authorized: Bool) {
-        lock.withLock { accessibilityAuthorized = authorized }
-    }
-}
-
 @MainActor
 final class PermissionsManager: ObservableObject {
     @Published private(set) var microphoneStatus: PermissionStatus = .notDetermined
@@ -77,6 +62,7 @@ final class PermissionsManager: ObservableObject {
         qos: .utility
     )
     private var refreshTask: Task<Void, Never>?
+    private let permissionCache: any AccessibilityPermissionCaching
 
     private struct Snapshot: Sendable {
         let microphone: PermissionStatus
@@ -84,7 +70,8 @@ final class PermissionsManager: ObservableObject {
         let accessibility: PermissionStatus
     }
 
-    init() {
+    init(permissionCache: any AccessibilityPermissionCaching) {
+        self.permissionCache = permissionCache
         refresh()
         activeObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification,
@@ -164,9 +151,9 @@ final class PermissionsManager: ObservableObject {
         NSWorkspace.shared.open(url)
     }
 
-    static func primeSharedCache() async {
-        let snapshot = await readSnapshot()
-        PermissionStateCache.shared.updateAccessibility(snapshot.accessibility.isAuthorized)
+    func primeCache() async {
+        let snapshot = await Self.readSnapshot()
+        permissionCache.updateAccessibility(snapshot.accessibility.isAuthorized)
     }
 
     private static func readSnapshot() async -> Snapshot {
@@ -191,7 +178,7 @@ final class PermissionsManager: ObservableObject {
         microphoneStatus = snapshot.microphone
         inputMonitoringStatus = snapshot.inputMonitoring
         accessibilityStatus = snapshot.accessibility
-        PermissionStateCache.shared.updateAccessibility(snapshot.accessibility.isAuthorized)
+        permissionCache.updateAccessibility(snapshot.accessibility.isAuthorized)
 
         if microphoneChanged {
             NotificationCenter.default.post(name: .microphonePermissionDidChange, object: nil)

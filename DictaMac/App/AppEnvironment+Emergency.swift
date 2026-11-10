@@ -1,6 +1,6 @@
 extension AppEnvironment {
     struct EmergencyBundle {
-        let log: PersistentDiagnosticLog
+        let log: any DiagnosticLogging
         let runtime: EmergencyRuntime
         let alerts: NSAlertPresenter
         let cancellationHub: EmergencyCancellationHub
@@ -9,8 +9,11 @@ extension AppEnvironment {
         let watchdog: EmergencyWatchdog
     }
 
-    static func makeEmergency(models: ModelBundle) -> EmergencyBundle {
-        let log = PersistentDiagnosticLog.shared
+    static func makeEmergency(
+        models: ModelBundle,
+        diagnosticLog: any DiagnosticLogging
+    ) -> EmergencyBundle {
+        let log = diagnosticLog
         let runtime = EmergencyRuntime()
         let alerts = NSAlertPresenter()
         let cancellationHub = EmergencyCancellationHub()

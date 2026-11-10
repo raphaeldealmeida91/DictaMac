@@ -1,5 +1,4 @@
-actor ModelLoadingGate {
-    static let shared = ModelLoadingGate()
+actor ModelLoadingGate: ModelLoadingGating {
     private var isLocked = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
 

@@ -32,6 +32,7 @@ final class DictationCoordinator: DictationCoordinating {
     private let stageReporter: any DictationStageReporting
     private let modelPreparer: any DictationModelPreparing
     private let cancellationRegistry: any EmergencyCancellationRegistering
+    private let diagnosticLog: any DiagnosticLogging
     private let activityModel: AppActivityModel
     private let frontmostApplicationName: () -> String?
     private var sessionPolicy = DictationSessionPolicy()
@@ -56,6 +57,7 @@ final class DictationCoordinator: DictationCoordinating {
         stageReporter = dependencies.stageReporter
         modelPreparer = dependencies.modelPreparer
         cancellationRegistry = dependencies.cancellationRegistry
+        diagnosticLog = dependencies.diagnosticLog
         activityModel = dependencies.activityModel
         frontmostApplicationName = dependencies.frontmostApplicationName
         bindEvents()
@@ -111,7 +113,7 @@ final class DictationCoordinator: DictationCoordinating {
     private func beginRecording() {
         guard state == .idle else { return }
         stageReporter.report(.recording, phase: "begin", context: StageContext())
-        ProcessMemoryDiagnostics.logFootprint(.dictationStarted)
+        ProcessMemoryDiagnostics.logFootprint(.dictationStarted, diagnosticLog: diagnosticLog)
         let session = makeRecordingSession()
         do {
             try session.start()
@@ -191,8 +193,13 @@ final class DictationCoordinator: DictationCoordinating {
             generation: generation,
             releaseInstant: releaseInstant
         )
-        pipelineTask = Task { [weak self] in
-            defer { ProcessMemoryDiagnostics.logFootprint(.dictationFinished) }
+        pipelineTask = Task { [weak self, diagnosticLog] in
+            defer {
+                ProcessMemoryDiagnostics.logFootprint(
+                    .dictationFinished,
+                    diagnosticLog: diagnosticLog
+                )
+            }
             guard let self else { return }
             let outcome = await self.pipeline.run(samples: result.samples, session: session)
             self.present(outcome)

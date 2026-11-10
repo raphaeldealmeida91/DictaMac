@@ -26,6 +26,7 @@ final class AppEnvironment {
     private let safeModeLauncher: SafeModeLauncher
     private let heartbeat: MainThreadHeartbeat
     private let emergencyWatchdog: EmergencyWatchdog
+    private let diagnosticLog: any DiagnosticLogging
 
     init() {
         let composition = Self.compose()
@@ -48,6 +49,7 @@ final class AppEnvironment {
         safeModeLauncher = composition.lifecycle.safeModeLauncher
         heartbeat = composition.lifecycle.heartbeat
         emergencyWatchdog = composition.emergency.watchdog
+        diagnosticLog = composition.shared.diagnosticLog
         #if DEBUG
         benchmarkState = composition.benchmarkState
         #endif
@@ -56,8 +58,8 @@ final class AppEnvironment {
     func start() {
         textCleanupSettings.migrate()
         safeModeLauncher.launch()
-        Task { await PermissionsManager.primeSharedCache() }
-        ProcessMemoryDiagnostics.logFootprint(.startup)
+        Task { await permissions.primeCache() }
+        ProcessMemoryDiagnostics.logFootprint(.startup, diagnosticLog: diagnosticLog)
         heartbeat.start()
         emergencyWatchdog.start()
         memoryPressureMonitor.start()

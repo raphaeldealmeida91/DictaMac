@@ -8,9 +8,12 @@ enum ProcessMemoryDiagnostics {
         category: "Memory"
     )
 
-    static func logFootprint(_ context: DiagnosticMemoryContext) {
+    static func logFootprint(
+        _ context: DiagnosticMemoryContext,
+        diagnosticLog: any DiagnosticLogging
+    ) {
         let bytes = physicalFootprint
-        PersistentDiagnosticLog.shared.memory(context: context, bytes: bytes)
+        diagnosticLog.memory(context: context, bytes: bytes)
         guard let bytes else {
             logger.error("phys_footprint unavailable context=\(context.rawValue, privacy: .public)")
             return

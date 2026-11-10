@@ -23,7 +23,7 @@ final class HotkeyService: HotkeyProviding {
         emergencySettings: any EmergencyHotkeySettings,
         emergencyRuntime: EmergencyRuntime,
         emergencyRecovery: any EmergencyRecovering,
-        diagnosticLog: PersistentDiagnosticLog
+        diagnosticLog: any DiagnosticLogging
     ) {
         precondition(triggerDelay >= 0, "triggerDelay must not be negative")
 
@@ -87,7 +87,7 @@ private final class EventTapWorker: @unchecked Sendable {
     private let emergencySettings: any EmergencyHotkeySettings
     private let emergencyRuntime: EmergencyRuntime
     private let emergencyRecovery: any EmergencyRecovering
-    private let diagnosticLog: PersistentDiagnosticLog
+    private let diagnosticLog: any DiagnosticLogging
     private let lifecycleLock = NSLock()
     private let eventQueue = DispatchQueue(
         label: "com.raphaeldealmeida.DictaMac.fn-event-processing",
@@ -121,7 +121,7 @@ private final class EventTapWorker: @unchecked Sendable {
         emergencySettings: any EmergencyHotkeySettings,
         emergencyRuntime: EmergencyRuntime,
         emergencyRecovery: any EmergencyRecovering,
-        diagnosticLog: PersistentDiagnosticLog
+        diagnosticLog: any DiagnosticLogging
     ) {
         self.triggerDelay = triggerDelay
         self.emergencySettings = emergencySettings

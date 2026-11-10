@@ -92,6 +92,7 @@ private final class Fixture {
             stageReporter: stageReporter,
             modelPreparer: FakeModelPreparer(),
             cancellationRegistry: FakeCancellationRegistry(),
+            diagnosticLog: PersistentDiagnosticLog(),
             activityModel: AppActivityModel(),
             frontmostApplicationName: { "Tests" }
         ))

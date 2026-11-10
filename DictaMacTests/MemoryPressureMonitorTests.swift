@@ -62,7 +62,7 @@ final class MemoryPressureMonitorTests: XCTestCase {
             transcriptionModelUnloader: transcription,
             textCleanupSettings: settings,
             alertPresenter: alerts,
-            diagnosticLog: PersistentDiagnosticLog.shared
+            diagnosticLog: PersistentDiagnosticLog()
         )
     }
 }

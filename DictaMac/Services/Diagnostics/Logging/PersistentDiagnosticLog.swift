@@ -1,8 +1,7 @@
 import Foundation
 
 // File rotation and writes are serialized by the private lock; no mutable state escapes it.
-final class PersistentDiagnosticLog: @unchecked Sendable {
-    static let shared = PersistentDiagnosticLog()
+final class PersistentDiagnosticLog: DiagnosticLogging, @unchecked Sendable {
     static let maximumFileSize = 2 * 1_024 * 1_024
     static let retainedFileCount = 3
 
@@ -33,7 +32,7 @@ final class PersistentDiagnosticLog: @unchecked Sendable {
     private var logURL: URL?
     private let formatter: ISO8601DateFormatter
 
-    private init() {
+    init() {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         self.formatter = formatter
