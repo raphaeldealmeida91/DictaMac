@@ -120,14 +120,27 @@ final class AudioRecorder: AudioRecording, @unchecked Sendable {
     private func observeEnvironment() {
         environmentObserver.start(
             permissionChanged: { [weak self] in self?.refreshMicrophonePermission() },
-            configurationChanged: { [weak self] in self?.handleConfigurationChange() }
+            configurationChanged: { [weak self] in self?.handleConfigurationChange() },
+            systemWillSleep: { [weak self] in self?.handleSystemWillSleep() },
+            systemDidWake: { [weak self] in self?.handleSystemDidWake() }
         )
     }
 
     private func handleConfigurationChange() {
-        engine.handleConfigurationChange(
-            shouldPrepare: permissionProvider.isAuthorized
-        ) { [weak self] inputWasLost in
+        resetAudioEngine(shouldPrepare: permissionProvider.isAuthorized)
+    }
+
+    private func handleSystemWillSleep() {
+        resetAudioEngine(shouldPrepare: false)
+    }
+
+    private func handleSystemDidWake() {
+        guard permissionProvider.isAuthorized else { return }
+        engine.prepareWhenIdle()
+    }
+
+    private func resetAudioEngine(shouldPrepare: Bool) {
+        engine.handleConfigurationChange(shouldPrepare: shouldPrepare) { [weak self] inputWasLost in
             guard inputWasLost else { return }
             self?.reportInputLoss(error: .inputUnavailable)
         }

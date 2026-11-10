@@ -71,13 +71,61 @@ final class AudioRecorderTests: XCTestCase {
 
     func testConfigurationChangeOutsideRecordingPreparesWithoutCallback() {
         let fixture = AudioRecorderFixture()
-        let initialPrepareCount = fixture.engine.prepareCount
 
         fixture.observer.sendConfigurationChange()
 
         XCTAssertEqual(fixture.engine.configurationChangeCount, 1)
-        XCTAssertEqual(fixture.engine.prepareCount, initialPrepareCount)
+        XCTAssertEqual(fixture.engine.configurationPreparationRequests, [true])
         XCTAssertEqual(fixture.diagnosticLog.inputLostCount, 0)
+    }
+
+    func testSleepResetsEngineAndWakePreparesNextCapture() {
+        let fixture = AudioRecorderFixture()
+        let initialPrepareCount = fixture.engine.prepareCount
+
+        fixture.observer.sendSystemWillSleep()
+        fixture.observer.sendSystemDidWake()
+
+        XCTAssertEqual(fixture.engine.configurationPreparationRequests, [false])
+        XCTAssertEqual(fixture.engine.prepareCount, initialPrepareCount + 1)
+    }
+
+    func testSleepDuringRecordingReportsInputLoss() async throws {
+        let fixture = AudioRecorderFixture()
+        try fixture.recorder.start()
+        let errorReported = expectation(description: "input loss during sleep")
+        fixture.recorder.onError = { error in
+            XCTAssertEqual(error, .inputUnavailable)
+            errorReported.fulfill()
+        }
+
+        fixture.observer.sendSystemWillSleep()
+
+        await fulfillment(of: [errorReported], timeout: 1)
+        XCTAssertEqual(fixture.diagnosticLog.inputLostCount, 1)
+    }
+
+    func testEnvironmentObserverForwardsPowerNotifications() async {
+        let applicationCenter = NotificationCenter()
+        let workspaceCenter = NotificationCenter()
+        let observer = AudioEnvironmentObserver(
+            applicationNotificationCenter: applicationCenter,
+            workspaceNotificationCenter: workspaceCenter
+        )
+        let sleepReported = expectation(description: "system will sleep")
+        let wakeReported = expectation(description: "system did wake")
+        observer.start(
+            permissionChanged: {},
+            configurationChanged: {},
+            systemWillSleep: { sleepReported.fulfill() },
+            systemDidWake: { wakeReported.fulfill() }
+        )
+
+        workspaceCenter.post(name: NSWorkspace.willSleepNotification, object: nil)
+        workspaceCenter.post(name: NSWorkspace.didWakeNotification, object: nil)
+
+        await fulfillment(of: [sleepReported, wakeReported], timeout: 1)
+        observer.stop()
     }
 
     func testEmergencyStopPropagatesTimeoutResult() throws {
@@ -172,6 +220,7 @@ private final class FakeAudioCaptureEngine: AudioCaptureEngineManaging, @uncheck
     private(set) var stopCount = 0
     private(set) var prepareCount = 0
     private(set) var configurationChangeCount = 0
+    private(set) var configurationPreparationRequests: [Bool] = []
     private(set) var emergencyStopCount = 0
     var emergencyStopResult = true
 
@@ -194,10 +243,11 @@ private final class FakeAudioCaptureEngine: AudioCaptureEngineManaging, @uncheck
     func prepareWhenIdle() { prepareCount += 1 }
 
     func handleConfigurationChange(
-        shouldPrepare _: Bool,
+        shouldPrepare: Bool,
         completion: @escaping @Sendable (Bool) -> Void
     ) {
         configurationChangeCount += 1
+        configurationPreparationRequests.append(shouldPrepare)
         let wasRecording = isRecording
         isRecording = false
         completion(wasRecording)
@@ -230,21 +280,31 @@ private final class FakeMicrophonePermission: MicrophonePermissionProviding, @un
 private final class FakeAudioEnvironmentObserver: AudioEnvironmentObserving, @unchecked Sendable {
     private var permissionChanged: (@Sendable () -> Void)?
     private var configurationChanged: (@Sendable () -> Void)?
+    private var systemWillSleep: (@Sendable () -> Void)?
+    private var systemDidWake: (@Sendable () -> Void)?
 
     func start(
         permissionChanged: @escaping @Sendable () -> Void,
-        configurationChanged: @escaping @Sendable () -> Void
+        configurationChanged: @escaping @Sendable () -> Void,
+        systemWillSleep: @escaping @Sendable () -> Void,
+        systemDidWake: @escaping @Sendable () -> Void
     ) {
         self.permissionChanged = permissionChanged
         self.configurationChanged = configurationChanged
+        self.systemWillSleep = systemWillSleep
+        self.systemDidWake = systemDidWake
     }
 
     func stop() {
         permissionChanged = nil
         configurationChanged = nil
+        systemWillSleep = nil
+        systemDidWake = nil
     }
 
     func sendConfigurationChange() { configurationChanged?() }
+    func sendSystemWillSleep() { systemWillSleep?() }
+    func sendSystemDidWake() { systemDidWake?() }
 }
 
 private final class FakeAudioEmergencyStopRegistrar: AudioEmergencyStopRegistering, @unchecked Sendable {
