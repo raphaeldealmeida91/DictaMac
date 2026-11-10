@@ -40,3 +40,12 @@ Contraintes du projet :
 - Pour valider, préfère `build-for-testing` puis `test-without-building`, et -only-testing sur les
   suites concernées quand la tâche est locale.
 - Ne lance jamais de build complet pendant que l'utilisateur teste l'app (demande-lui).
+
+## Conventions de code
+
+- Un type principal par fichier.
+- Injecter les dépendances par protocole ; ne pas utiliser `.shared` dans les types métier.
+- Utiliser des constantes nommées plutôt que des nombres magiques.
+- Limiter les fonctions à moins de 30 lignes.
+- Choisir des noms qui expriment l'intention.
+- Réserver les commentaires à l'explication du « pourquoi ».
