@@ -87,6 +87,22 @@
 		E10000000000000000000027 /* CleanupDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000027 /* CleanupDecision.swift */; };
 		E10000000000000000000028 /* WhisperBenchmarkResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000028 /* WhisperBenchmarkResult.swift */; };
 		E10000000000000000000029 /* WhisperBenchmarkState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000029 /* WhisperBenchmarkState.swift */; };
+		F10000000000000000000001 /* HotkeyProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000001 /* HotkeyProviding.swift */; };
+		F10000000000000000000002 /* AudioRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000002 /* AudioRecording.swift */; };
+		F10000000000000000000003 /* OverlayPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000003 /* OverlayPresenting.swift */; };
+		F10000000000000000000004 /* FeedbackSoundPlaying.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000004 /* FeedbackSoundPlaying.swift */; };
+		F10000000000000000000005 /* DictationHistoryRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000005 /* DictationHistoryRecording.swift */; };
+		F10000000000000000000006 /* DictationMetricsRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000006 /* DictationMetricsRecording.swift */; };
+		F10000000000000000000007 /* DictationStageReporting.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000007 /* DictationStageReporting.swift */; };
+		F10000000000000000000008 /* SystemFeedbackSoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000008 /* SystemFeedbackSoundPlayer.swift */; };
+		F10000000000000000000009 /* DefaultDictationStageReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000009 /* DefaultDictationStageReporter.swift */; };
+		F1000000000000000000000A /* InstrumentedStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000A /* InstrumentedStage.swift */; };
+		F1000000000000000000000B /* RecordingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000B /* RecordingSession.swift */; };
+		F1000000000000000000000C /* DictationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000C /* DictationPipeline.swift */; };
+		F1000000000000000000000D /* DictationModelPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000D /* DictationModelPreparer.swift */; };
+		F1000000000000000000000E /* DictationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000E /* DictationCoordinatorTests.swift */; };
+		F1000000000000000000000F /* DictationPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000F /* DictationPipelineTests.swift */; };
+		F10000000000000000000010 /* DictationCompositionRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000010 /* DictationCompositionRoot.swift */; };
 		B10000000000000000000001 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000001 /* WhisperKit */; };
 		B10000000000000000000002 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000002 /* MLXLLM */; };
 		B10000000000000000000003 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000003 /* MLXLMCommon */; };
@@ -188,6 +204,22 @@
 		E20000000000000000000027 /* CleanupDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupDecision.swift; sourceTree = "<group>"; };
 		E20000000000000000000028 /* WhisperBenchmarkResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperBenchmarkResult.swift; sourceTree = "<group>"; };
 		E20000000000000000000029 /* WhisperBenchmarkState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperBenchmarkState.swift; sourceTree = "<group>"; };
+		F20000000000000000000001 /* HotkeyProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyProviding.swift; sourceTree = "<group>"; };
+		F20000000000000000000002 /* AudioRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecording.swift; sourceTree = "<group>"; };
+		F20000000000000000000003 /* OverlayPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPresenting.swift; sourceTree = "<group>"; };
+		F20000000000000000000004 /* FeedbackSoundPlaying.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackSoundPlaying.swift; sourceTree = "<group>"; };
+		F20000000000000000000005 /* DictationHistoryRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationHistoryRecording.swift; sourceTree = "<group>"; };
+		F20000000000000000000006 /* DictationMetricsRecording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationMetricsRecording.swift; sourceTree = "<group>"; };
+		F20000000000000000000007 /* DictationStageReporting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationStageReporting.swift; sourceTree = "<group>"; };
+		F20000000000000000000008 /* SystemFeedbackSoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemFeedbackSoundPlayer.swift; sourceTree = "<group>"; };
+		F20000000000000000000009 /* DefaultDictationStageReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultDictationStageReporter.swift; sourceTree = "<group>"; };
+		F2000000000000000000000A /* InstrumentedStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentedStage.swift; sourceTree = "<group>"; };
+		F2000000000000000000000B /* RecordingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingSession.swift; sourceTree = "<group>"; };
+		F2000000000000000000000C /* DictationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationPipeline.swift; sourceTree = "<group>"; };
+		F2000000000000000000000D /* DictationModelPreparer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationModelPreparer.swift; sourceTree = "<group>"; };
+		F2000000000000000000000E /* DictationCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationCoordinatorTests.swift; sourceTree = "<group>"; };
+		F2000000000000000000000F /* DictationPipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationPipelineTests.swift; sourceTree = "<group>"; };
+		F20000000000000000000010 /* DictationCompositionRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationCompositionRoot.swift; sourceTree = "<group>"; };
 		B40000000000000000000001 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -241,6 +273,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000001 /* DictaMacApp.swift */,
+				F20000000000000000000010 /* DictationCompositionRoot.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -321,8 +354,29 @@
 			children = (
 				A20000000000000000000008 /* DictationCoordinator.swift */,
 				A20000000000000000000017 /* DictationSessionPolicy.swift */,
+				F20000000000000000000008 /* SystemFeedbackSoundPlayer.swift */,
+				F20000000000000000000009 /* DefaultDictationStageReporter.swift */,
+				F2000000000000000000000A /* InstrumentedStage.swift */,
+				F2000000000000000000000B /* RecordingSession.swift */,
+				F2000000000000000000000C /* DictationPipeline.swift */,
+				F2000000000000000000000D /* DictationModelPreparer.swift */,
+				F40000000000000000000001 /* Protocols */,
 			);
 			path = Coordination;
+			sourceTree = "<group>";
+		};
+		F40000000000000000000001 /* Protocols */ = {
+			isa = PBXGroup;
+			children = (
+				F20000000000000000000001 /* HotkeyProviding.swift */,
+				F20000000000000000000002 /* AudioRecording.swift */,
+				F20000000000000000000003 /* OverlayPresenting.swift */,
+				F20000000000000000000004 /* FeedbackSoundPlaying.swift */,
+				F20000000000000000000005 /* DictationHistoryRecording.swift */,
+				F20000000000000000000006 /* DictationMetricsRecording.swift */,
+				F20000000000000000000007 /* DictationStageReporting.swift */,
+			);
+			path = Protocols;
 			sourceTree = "<group>";
 		};
 		A4000000000000000000000C /* Resources */ = {
@@ -376,6 +430,8 @@
 				A20000000000000000000019 /* DictationSessionPolicyTests.swift */,
 				A2000000000000000000001B /* EmergencyWatchdogTests.swift */,
 				D2000000000000000000000F /* SettingsTests.swift */,
+				F2000000000000000000000E /* DictationCoordinatorTests.swift */,
+				F2000000000000000000000F /* DictationPipelineTests.swift */,
 			);
 			path = DictaMacTests;
 			sourceTree = "<group>";
@@ -609,6 +665,20 @@
 				E10000000000000000000027 /* CleanupDecision.swift in Sources */,
 				E10000000000000000000028 /* WhisperBenchmarkResult.swift in Sources */,
 				E10000000000000000000029 /* WhisperBenchmarkState.swift in Sources */,
+				F10000000000000000000001 /* HotkeyProviding.swift in Sources */,
+				F10000000000000000000002 /* AudioRecording.swift in Sources */,
+				F10000000000000000000003 /* OverlayPresenting.swift in Sources */,
+				F10000000000000000000004 /* FeedbackSoundPlaying.swift in Sources */,
+				F10000000000000000000005 /* DictationHistoryRecording.swift in Sources */,
+				F10000000000000000000006 /* DictationMetricsRecording.swift in Sources */,
+				F10000000000000000000007 /* DictationStageReporting.swift in Sources */,
+				F10000000000000000000008 /* SystemFeedbackSoundPlayer.swift in Sources */,
+				F10000000000000000000009 /* DefaultDictationStageReporter.swift in Sources */,
+				F1000000000000000000000A /* InstrumentedStage.swift in Sources */,
+				F1000000000000000000000B /* RecordingSession.swift in Sources */,
+				F1000000000000000000000C /* DictationPipeline.swift in Sources */,
+				F1000000000000000000000D /* DictationModelPreparer.swift in Sources */,
+				F10000000000000000000010 /* DictationCompositionRoot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -623,6 +693,8 @@
 				A10000000000000000000016 /* DictationSessionPolicyTests.swift in Sources */,
 				A10000000000000000000018 /* EmergencyWatchdogTests.swift in Sources */,
 				D1000000000000000000000F /* SettingsTests.swift in Sources */,
+				F1000000000000000000000E /* DictationCoordinatorTests.swift in Sources */,
+				F1000000000000000000000F /* DictationPipelineTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

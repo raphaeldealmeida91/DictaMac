@@ -88,3 +88,9 @@ final class TranscriptionHistoryStore: ObservableObject {
             .appendingPathComponent("transcriptions.json", isDirectory: false)
     }
 }
+
+extension TranscriptionHistoryStore: DictationHistoryRecording {
+    func record(text: String, targetApplication: String) throws {
+        try add(text: text, targetApplication: targetApplication)
+    }
+}

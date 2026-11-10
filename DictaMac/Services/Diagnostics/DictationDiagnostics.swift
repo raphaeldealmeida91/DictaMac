@@ -3,7 +3,7 @@ import Foundation
 import OSLog
 
 @MainActor
-final class DictationDiagnostics: ObservableObject {
+final class DictationDiagnostics: ObservableObject, DictationMetricsRecording {
     static let shared = DictationDiagnostics()
 
     @Published private(set) var lastTimings: DictationTimings?

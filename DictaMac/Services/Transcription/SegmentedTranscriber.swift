@@ -364,3 +364,5 @@ actor SegmentedTranscriber {
         Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18
     }
 }
+
+extension SegmentedTranscriber: SegmentedTranscribing {}

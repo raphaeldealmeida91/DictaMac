@@ -2,7 +2,11 @@ import AppKit
 import SwiftUI
 
 @MainActor
-final class DictationOverlayController {
+final class DictationOverlayController: OverlayPresenting {
+    private enum Constants {
+        static let messageDisplayDuration = Duration.seconds(2)
+    }
+
     private let model = DictationOverlayModel()
     private var panel: NonActivatingOverlayPanel?
     private var errorDismissalTask: Task<Void, Never>?
@@ -35,7 +39,7 @@ final class DictationOverlayController {
         show()
 
         errorDismissalTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: Constants.messageDisplayDuration)
             guard !Task.isCancelled else { return }
             self?.hide()
         }
@@ -47,7 +51,7 @@ final class DictationOverlayController {
         show()
 
         errorDismissalTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: Constants.messageDisplayDuration)
             guard !Task.isCancelled else { return }
             self?.hide()
         }

@@ -24,7 +24,7 @@ enum AudioRecorderError: LocalizedError {
 }
 
 /// Captures microphone audio as mono, 16 kHz Float32 samples.
-final class AudioRecorder: @unchecked Sendable {
+final class AudioRecorder: AudioRecording, @unchecked Sendable {
     typealias LevelHandler = @MainActor @Sendable (Float) -> Void
     typealias ErrorHandler = @MainActor @Sendable (AudioRecorderError) -> Void
 

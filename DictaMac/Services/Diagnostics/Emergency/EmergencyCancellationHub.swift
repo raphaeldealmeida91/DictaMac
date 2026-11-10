@@ -1,6 +1,10 @@
 import Foundation
 
-final class EmergencyCancellationHub: @unchecked Sendable {
+protocol EmergencyCancellationRegistering: AnyObject {
+    func replaceHandlers(_ handlers: [@Sendable () -> Void])
+}
+
+final class EmergencyCancellationHub: EmergencyCancellationRegistering, @unchecked Sendable {
     static let shared = EmergencyCancellationHub()
 
     private let lock = NSLock()

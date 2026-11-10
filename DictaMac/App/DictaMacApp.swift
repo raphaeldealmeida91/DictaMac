@@ -54,7 +54,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
             settings: textCleanupSettings,
             registry: registry
         )
-        let coordinator = DictationCoordinator(
+        let coordinator = DictationCompositionRoot.makeCoordinator(
             textCleanupService: cleanupService,
             transcriptionSettings: transcriptionSettings,
             textCleanupSettings: textCleanupSettings,

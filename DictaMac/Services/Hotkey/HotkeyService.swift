@@ -8,7 +8,7 @@ import OSLog
 /// recognition lives on a separate serial queue, and consumer callbacks are
 /// delivered on the main actor.
 @MainActor
-final class HotkeyService {
+final class HotkeyService: HotkeyProviding {
     var onPress: (() -> Void)?
     var onRelease: (() -> Void)?
     var onCancel: (() -> Void)?
