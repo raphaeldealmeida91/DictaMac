@@ -5,6 +5,7 @@ struct SettingsView: View {
     private let generalViewModel: GeneralSettingsViewModel
     private let transcriptionViewModel: TranscriptionSettingsViewModel
     private let textCleanupViewModel: TextCleanupSettingsViewModel
+    private let dictionaryViewModel: DictionarySettingsViewModel
     private let permissionsViewModel: PermissionsSettingsViewModel
     private let diagnosticViewModel: DiagnosticSettingsViewModel
     private let firstLaunchAssistant: FirstLaunchAssistantController
@@ -31,6 +32,7 @@ struct SettingsView: View {
             recommendedLocalModel: environment.textCleanupSettings.recommendedLocalModel,
             isLowMemoryMac: environment.transcriptionSettings.isLowMemoryMac
         )
+        dictionaryViewModel = DictionarySettingsViewModel(dictionary: environment.personalDictionary)
         permissionsViewModel = PermissionsSettingsViewModel(manager: environment.permissions)
         #if DEBUG
         diagnosticViewModel = DiagnosticSettingsViewModel(
@@ -76,6 +78,8 @@ struct SettingsView: View {
             TranscriptionSettingsView(viewModel: transcriptionViewModel)
         case .textCleanup:
             TextCleanupSettingsView(viewModel: textCleanupViewModel)
+        case .dictionary:
+            DictionarySettingsView(viewModel: dictionaryViewModel)
         case .permissions:
             PermissionsSettingsView(viewModel: permissionsViewModel)
         case .diagnostic:

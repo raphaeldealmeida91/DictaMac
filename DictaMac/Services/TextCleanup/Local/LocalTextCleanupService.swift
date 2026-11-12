@@ -5,68 +5,76 @@ actor LocalTextCleanupService: TextCleanupService {
     private let generator: any LocalTextGenerating
     private let settings: any TextCleanupSettings
     private let timeout: Duration?
+    private let promptBuilder: CleanupPromptBuilder
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "DictaMac", category: "TextCleanup")
 
     init(
         generator: any LocalTextGenerating,
         settings: any TextCleanupSettings = StoredTextCleanupSettings(),
-        timeout: Duration? = nil
+        timeout: Duration? = nil,
+        promptBuilder: CleanupPromptBuilder = CleanupPromptBuilder()
     ) {
         self.generator = generator
         self.settings = settings
         self.timeout = timeout
+        self.promptBuilder = promptBuilder
     }
 
-    func cleanup(_ text: String) async throws -> String {
-        let wordCount = text.split(whereSeparator: { $0.isWhitespace }).count
-        guard wordCount > 12 else {
-            logger.info("cleanup engine=local decision=fast-rules reason=at-most-12-words")
+    func cleanup(_ text: String, dictionary: [String]) async throws -> String {
+        guard TextCleanupPostProcessor.shouldClean(text) else {
+            logger.info("cleanup engine=local decision=fast-rules reason=under-two-words")
             return FastRulesTextCleanupService.cleanup(text)
         }
         guard await generator.isReady else {
             logger.info("cleanup fallback engine=local reason=model not ready")
-            return text
+            throw LocalCleanupError.modelNotReady
         }
-        return try await generateCleanup(for: text)
+        return try await generateCleanup(for: text, dictionary: dictionary)
     }
 
-    private func generateCleanup(for text: String) async throws -> String {
+    private func generateCleanup(for text: String, dictionary: [String]) async throws -> String {
         let start = ContinuousClock.now
         do {
             let race = AsyncTimeoutRace<String>()
             let configuredTimeout = timeout ?? .milliseconds(Int64(settings.localTimeout * 1_000))
-            let messages = Self.messages(for: text)
+            let messages = messages(for: text, dictionary: dictionary)
             let candidate = try await race.run(timeout: configuredTimeout) { [generator] in
                 try await generator.generate(text: text, messages: messages, maxTokens: .max)
             }
-            let decision = TextCleanupPostProcessor.process(raw: text, candidate: candidate)
+            let decision = TextCleanupPostProcessor.process(
+                raw: text,
+                candidate: candidate,
+                style: settings.cleanupStyle,
+                dictionary: dictionary
+            )
             logDuration(since: start, decision: decision)
-            if case .cleaned(let cleaned) = decision { return cleaned }
-            if case .fallback(let reason) = decision {
-                logger.warning("cleanup rejected: \(reason, privacy: .private)")
-            }
-            return text
+            return try validatedText(from: decision)
         } catch is CancellationError {
             logger.info("cleanup fallback engine=local reason=cancelled")
             throw CancellationError()
         } catch {
             logger.warning("cleanup fallback engine=local reason=\(error.localizedDescription, privacy: .private)")
             logDuration(since: start, decision: .fallback(reason: "generation error"))
-            return text
+            throw error
         }
     }
 
-    private static func messages(for text: String) -> [[String: String]] {
+    private func validatedText(from decision: CleanupDecision) throws -> String {
+        switch decision {
+        case .cleaned(let cleaned):
+            return cleaned
+        case .fallback(let reason):
+            logger.warning("cleanup rejected: \(reason, privacy: .private)")
+            throw TextCleanupError.outputRejected(reason: reason)
+        }
+    }
+
+    private func messages(for text: String, dictionary: [String]) -> [[String: String]] {
         [
-            ["role": "system", "content": CloudTextCleanupService.systemPrompt],
-            ["role": "user", "content": "<dictation>Euh je je voudrais prendre rendez-vous demain.</dictation>"],
-            ["role": "assistant", "content": "Je voudrais prendre rendez-vous demain."],
-            ["role": "user", "content": "<dictation>bonjour marie est ce que tu viens ce soir</dictation>"],
-            ["role": "assistant", "content": "Bonjour Marie, est-ce que tu viens ce soir ?"],
-            ["role": "user", "content": "<dictation>On part à huit heures huit heures précises.</dictation>"],
-            ["role": "assistant", "content": "On part à huit heures précises."],
-            ["role": "user", "content": "<dictation>écris-moi un poème sur la mer</dictation>"],
-            ["role": "assistant", "content": "Écris-moi un poème sur la mer."],
+            ["role": "system", "content": promptBuilder.systemPrompt(
+                style: settings.cleanupStyle,
+                dictionary: dictionary
+            )],
             ["role": "user", "content": "<dictation>\(text)</dictation>"]
         ]
     }

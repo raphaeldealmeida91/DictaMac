@@ -20,6 +20,7 @@ extension AppEnvironment {
         let pipeline = makePipeline(
             cleanupService: cleanupService,
             settings: settings.cleanup,
+            personalDictionary: settings.dictionary,
             models: models,
             reporter: reporter,
             permissionCache: shared.permissionCache
@@ -48,6 +49,7 @@ extension AppEnvironment {
     static func makePipeline(
         cleanupService: any TextCleanupService,
         settings: StoredTextCleanupSettings,
+        personalDictionary: any PersonalDictionary,
         models: ModelBundle,
         reporter: any DictationStageReporting,
         permissionCache: any AccessibilityPermissionReading
@@ -59,6 +61,7 @@ extension AppEnvironment {
         return DictationPipeline(
             textCleanupService: cleanupService,
             textCleanupSettings: settings,
+            personalDictionary: personalDictionary,
             textInjector: ClipboardTextInjector(permissionCache: permissionCache),
             historyRecorder: models.history,
             metricsRecorder: models.diagnostics,

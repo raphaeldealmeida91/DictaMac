@@ -266,6 +266,8 @@ final class DictationCoordinator: DictationCoordinating {
         switch outcome {
         case .inserted, .empty, .cancelled:
             overlayPresenter.hide()
+        case .cleanupUnavailable:
+            overlayPresenter.showMessage("Nettoyage IA indisponible")
         case .copiedToClipboard:
             overlayPresenter.showMessage("Copié : ⌘V pour coller")
         case .partial:

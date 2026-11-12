@@ -118,6 +118,10 @@ actor SegmentedTranscriber {
             let audioDuration = Double(completeAudio.count) / Double(configuration.sampleRate)
             let allowsCompleteAudioFallback = audioDuration <= 30
 
+            if completeAudio.count <= configuration.segmentSampleCount {
+                return try await transcribeSingleWindow(completeAudio)
+            }
+
             if backlogExceeded {
                 if allowsCompleteAudioFallback {
                     let text = try await transcribeCompleteAudio(reason: "backlog_exceeded")
@@ -158,12 +162,6 @@ actor SegmentedTranscriber {
                     return FinishResult(text: text, isPartial: false, segmentCount: 1)
                 }
                 return partialResult()
-            }
-
-            // Preserve the original single-pass behavior for short dictations.
-            guard completeAudio.count >= configuration.segmentSampleCount else {
-                let text = try await transcribeCompleteAudio(reason: "short_dictation")
-                return FinishResult(text: text, isPartial: false, segmentCount: 1)
             }
 
             var completed = segments.sorted { $0.index < $1.index }
@@ -253,25 +251,18 @@ actor SegmentedTranscriber {
         var assembled: [String] = []
 
         for text in texts {
-            let words = text.split(whereSeparator: \.isWhitespace).map(String.init)
+            let rawWords = text.split(whereSeparator: \.isWhitespace).map(String.init)
+            let words = TranscriptionOverlapMatcher.removingRepeatedPassage(from: rawWords)
             guard !words.isEmpty else { continue }
             guard !assembled.isEmpty else {
                 assembled = words
                 continue
             }
 
-            let maximumOverlap = min(assembled.count, words.count)
-            var overlap = 0
-            if maximumOverlap > 0 {
-                for candidate in stride(from: maximumOverlap, through: 1, by: -1) {
-                    let suffix = assembled.suffix(candidate).map(Self.comparableWord)
-                    let prefix = words.prefix(candidate).map(Self.comparableWord)
-                    if suffix == prefix {
-                        overlap = candidate
-                        break
-                    }
-                }
-            }
+            let overlap = TranscriptionOverlapMatcher.overlapCount(
+                existing: assembled,
+                incoming: words
+            )
             if overlap > 0, let incomingBoundary = words.prefix(overlap).last {
                 assembled[assembled.count - 1] = Self.mergingBoundaryPunctuation(
                     existing: assembled[assembled.count - 1],
@@ -348,10 +339,25 @@ actor SegmentedTranscriber {
         return text
     }
 
-    private static func comparableWord(_ word: String) -> String {
-        word
-            .trimmingCharacters(in: .punctuationCharacters)
-            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+    private func transcribeSingleWindow(_ completeAudio: [Float]) async throws -> FinishResult {
+        isFinishing = true
+        audio = completeAudio
+        if let worker {
+            await worker.value
+        }
+        try Task.checkCancellation()
+        guard !isCancelled else { throw CancellationError() }
+
+        let completed = segments.sorted { $0.index < $1.index }
+        if !completed.isEmpty, !segmentFailed {
+            return FinishResult(
+                text: Self.assemble(completed.map(\.text)),
+                isPartial: false,
+                segmentCount: completed.count
+            )
+        }
+        let text = try await transcribeCompleteAudio(reason: "single_window")
+        return FinishResult(text: text, isPartial: false, segmentCount: 1)
     }
 
     private static func mergingBoundaryPunctuation(existing: String, incoming: String) -> String {

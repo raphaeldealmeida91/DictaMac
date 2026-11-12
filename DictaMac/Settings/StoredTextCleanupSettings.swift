@@ -4,7 +4,9 @@ struct StoredTextCleanupSettings: TextCleanupSettings, TextCleanupSettingsWritin
     static let defaultModel = "gpt-4.1-mini"
     static let defaultLocalModel = "mlx-community/Qwen2.5-3B-Instruct-4bit"
     static let lightLocalModel = "mlx-community/Qwen2.5-1.5B-Instruct-4bit"
-    static let defaultLocalTimeout = 2.5
+    static let qualityLocalModel = "mlx-community/Qwen2.5-7B-Instruct-4bit"
+    static let defaultLocalTimeout = 8.0
+    static let defaultCloudTimeout = 8.0
 
     private let store: any SettingsStoring
     private let physicalMemory: @Sendable () -> UInt64
@@ -26,6 +28,10 @@ struct StoredTextCleanupSettings: TextCleanupSettings, TextCleanupSettingsWritin
     var isEnabled: Bool { configuredEngine != .disabled }
     var configuredModel: String { nonEmptyString(for: .textCleanupModel) ?? Self.defaultModel }
 
+    var cleanupStyle: CleanupStyle {
+        store.string(for: .textCleanupStyle).flatMap(CleanupStyle.init(rawValue:)) ?? .polished
+    }
+
     var configuredLocalModel: String {
         if SafeModeState.isEnabled { return Self.lightLocalModel }
         return nonEmptyString(for: .textCleanupLocalModel) ?? recommendedLocalModel
@@ -38,6 +44,11 @@ struct StoredTextCleanupSettings: TextCleanupSettings, TextCleanupSettingsWritin
     var localTimeout: TimeInterval {
         let value = store.double(for: .textCleanupLocalTimeout) ?? 0
         return value > 0 ? value : Self.defaultLocalTimeout
+    }
+
+    var cloudTimeout: TimeInterval {
+        let value = store.double(for: .textCleanupCloudTimeout) ?? 0
+        return value > 0 ? value : Self.defaultCloudTimeout
     }
 
     var localDownloadApproved: Bool {

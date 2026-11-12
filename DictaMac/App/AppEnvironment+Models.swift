@@ -20,6 +20,7 @@ extension AppEnvironment {
         let transcriptionService = WhisperKitTranscriptionService(
             settings: settings.transcription,
             modelPathStore: settings.transcription,
+            personalDictionary: settings.dictionary,
             modelState: transcriptionState,
             modelLoadingGate: shared.modelLoadingGate,
             diagnosticLog: shared.diagnosticLog

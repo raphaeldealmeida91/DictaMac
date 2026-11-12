@@ -77,6 +77,23 @@ struct PreviewAPIKeyStore: APIKeyStoring {
     func save(_ value: String) throws {}
 }
 
+final class PreviewPersonalDictionary: PersonalDictionary, @unchecked Sendable {
+    private var storedEntries = DictionaryEntry.defaults
+
+    func entries() -> [DictionaryEntry] { storedEntries }
+    func replaceEntries(_ entries: [DictionaryEntry]) throws { storedEntries = entries }
+    func addCanonicalTerm(_ canonical: String) throws -> Bool {
+        storedEntries.append(DictionaryEntry(canonical: canonical, variants: []))
+        return true
+    }
+}
+
+@MainActor
+struct PreviewDictionaryFileManager: DictionaryFileManaging {
+    func importEntries() throws -> [DictionaryEntry]? { nil }
+    func export(_ entries: [DictionaryEntry]) throws -> Bool { false }
+}
+
 @MainActor
 final class PreviewDiagnostics: DictationDiagnosticsProviding {
     @Published var lastTimings: DictationTimings?

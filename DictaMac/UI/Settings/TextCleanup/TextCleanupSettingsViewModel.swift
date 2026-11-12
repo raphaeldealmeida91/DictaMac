@@ -11,10 +11,14 @@ final class TextCleanupSettingsViewModel: ObservableObject {
     }
     @Published var cloudModel: String { didSet { store.set(.string(cloudModel), for: .textCleanupModel) } }
     @Published var localModel: String { didSet { store.set(.string(localModel), for: .textCleanupLocalModel) } }
+    @Published var cleanupStyle: CleanupStyle {
+        didSet { store.set(.string(cleanupStyle.rawValue), for: .textCleanupStyle) }
+    }
     @Published var removeIsolatedGenre: Bool {
         didSet { store.set(.bool(removeIsolatedGenre), for: .textCleanupRemoveIsolatedGenre) }
     }
     @Published var localTimeout: Double { didSet { store.set(.double(localTimeout), for: .textCleanupLocalTimeout) } }
+    @Published var cloudTimeout: Double { didSet { store.set(.double(cloudTimeout), for: .textCleanupCloudTimeout) } }
     @Published var apiKey = ""
     @Published private(set) var apiKeyStatus = ""
     @Published private(set) var modelStatus = ""
@@ -23,7 +27,11 @@ final class TextCleanupSettingsViewModel: ObservableObject {
     @Published private(set) var modelBadge: StatusBadge.Status = .loading
 
     let isLowMemoryMac: Bool
-    let localModelChoices = [StoredTextCleanupSettings.defaultLocalModel, StoredTextCleanupSettings.lightLocalModel]
+    let localModelChoices = [
+        StoredTextCleanupSettings.qualityLocalModel,
+        StoredTextCleanupSettings.defaultLocalModel,
+        StoredTextCleanupSettings.lightLocalModel
+    ]
     private let store: any SettingsStoring
     private let manager: any LocalCleanupModelManaging
     private let keyStore: any APIKeyStoring
@@ -45,9 +53,11 @@ final class TextCleanupSettingsViewModel: ObservableObject {
         engine = store.string(for: .textCleanupEngine).flatMap(TextCleanupEngine.init(rawValue:)) ?? .fast
         cloudModel = store.string(for: .textCleanupModel) ?? StoredTextCleanupSettings.defaultModel
         localModel = store.string(for: .textCleanupLocalModel) ?? recommendedLocalModel
+        cleanupStyle = store.string(for: .textCleanupStyle).flatMap(CleanupStyle.init(rawValue:)) ?? .polished
         removeIsolatedGenre = store.bool(for: .textCleanupRemoveIsolatedGenre) ?? true
         let storedTimeout = store.double(for: .textCleanupLocalTimeout) ?? StoredTextCleanupSettings.defaultLocalTimeout
         localTimeout = storedTimeout
+        cloudTimeout = store.double(for: .textCleanupCloudTimeout) ?? StoredTextCleanupSettings.defaultCloudTimeout
         readModelState = { (state.status, state.downloadProgress, state.isBusy, state.isReady, state.hasError) }
         state.objectWillChange.sink { [weak self] in
             Task { @MainActor in

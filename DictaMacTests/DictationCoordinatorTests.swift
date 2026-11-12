@@ -99,6 +99,17 @@ final class DictationCoordinatorTests: XCTestCase {
         )
     }
 
+    func testCleanupFailureShowsNonBlockingMessageAfterInsertion() async {
+        let fixture = Fixture()
+        fixture.pipeline.outcome = .cleanupUnavailable
+
+        fixture.hotkey.press()
+        fixture.hotkey.release()
+        await fixture.waitUntilIdle()
+
+        XCTAssertEqual(fixture.overlay.events.last, .message("Nettoyage IA indisponible"))
+    }
+
     func testRecordingSessionCapturesPostRollBeforeStoppingAudio() throws {
         let audio = FakeAudioRecorder()
         let session = RecordingSession(

@@ -62,6 +62,35 @@ final class SegmentedTranscriberTests: XCTestCase {
         )
     }
 
+    func testDeduplicatesFuzzyAccentInsensitiveOverlap() {
+        XCTAssertEqual(
+            SegmentedTranscriber.assemble([
+                "Le dossier validé part demain matin",
+                "dossier valide part demin matin à neuf heures"
+            ]),
+            "Le dossier validé part demain matin à neuf heures"
+        )
+    }
+
+    func testFuzzyOverlapRejectsTooManySubstitutions() {
+        XCTAssertEqual(
+            SegmentedTranscriber.assemble([
+                "Le dossier validé part demain matin",
+                "dossier refusé revient vendredi matin"
+            ]),
+            "Le dossier validé part demain matin dossier refusé revient vendredi matin"
+        )
+    }
+
+    func testRemovesOneRepeatedCompletePassage() {
+        XCTAssertEqual(
+            SegmentedTranscriber.assemble([
+                "on part à huit heures on part à huit heures"
+            ]),
+            "on part à huit heures"
+        )
+    }
+
     func testShortFinalSegmentIsTranscribedFromNextOverlappingStart() async throws {
         let service = FakeTranscriptionService(results: [.success("premier"), .success("fin")])
         let transcriber = SegmentedTranscriber(
@@ -91,6 +120,22 @@ final class SegmentedTranscriberTests: XCTestCase {
         XCTAssertEqual(result, "dictée courte")
         let sampleCounts = await service.sampleCounts()
         XCTAssertEqual(sampleCounts, [30])
+    }
+
+    func testDictationFittingExactlyOneWindowUsesOneCompletePass() async throws {
+        let service = FakeTranscriptionService(results: [.success("une seule passe")])
+        let transcriber = SegmentedTranscriber(
+            transcriptionService: service,
+            language: "fr",
+            configuration: configuration
+        )
+
+        await transcriber.append(Array(repeating: 0, count: 40))
+        let result = try await transcriber.finish(completeAudio: Array(repeating: 0, count: 40))
+
+        XCTAssertEqual(result, "une seule passe")
+        let sampleCounts = await service.sampleCounts()
+        XCTAssertEqual(sampleCounts, [40])
     }
 
     func testSegmentErrorFallsBackToCompleteTranscription() async throws {

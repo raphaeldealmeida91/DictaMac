@@ -1,3 +1,3 @@
 struct PassthroughTextCleanupService: TextCleanupService {
-    func cleanup(_ text: String) async throws -> String { text }
+    func cleanup(_ text: String, dictionary: [String]) async throws -> String { text }
 }

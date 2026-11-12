@@ -12,6 +12,7 @@ actor WhisperKitTranscriptionService: TranscriptionService {
 
     private let settings: any TranscriptionSettings
     private let modelPathStore: any TranscriptionModelPathStoring
+    private let personalDictionary: any PersonalDictionary
     private let modelState: TranscriptionModelState
     private let modelLoadingGate: any ModelLoadingGating
     private let diagnosticLog: any DiagnosticLogging
@@ -26,12 +27,14 @@ actor WhisperKitTranscriptionService: TranscriptionService {
     init(
         settings: any TranscriptionSettings,
         modelPathStore: any TranscriptionModelPathStoring,
+        personalDictionary: any PersonalDictionary,
         modelState: TranscriptionModelState,
         modelLoadingGate: any ModelLoadingGating,
         diagnosticLog: any DiagnosticLogging
     ) {
         self.settings = settings
         self.modelPathStore = modelPathStore
+        self.personalDictionary = personalDictionary
         self.modelState = modelState
         self.modelLoadingGate = modelLoadingGate
         self.diagnosticLog = diagnosticLog
@@ -91,7 +94,7 @@ actor WhisperKitTranscriptionService: TranscriptionService {
             whisperKit,
             samples: samples,
             language: language,
-            vocabulary: settings.vocabulary
+            dictionary: personalDictionary.entries().map(\.canonical)
         )
     }
 
@@ -99,18 +102,18 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         _ whisperKit: WhisperKit,
         samples: [Float],
         language: String?,
-        vocabulary: String
+        dictionary: [String]
     ) async throws -> String {
         let options = Self.decodingOptions(
             language: language,
-            promptTokens: promptTokens(for: vocabulary, whisperKit: whisperKit)
+            promptTokens: promptTokens(for: dictionary, whisperKit: whisperKit)
         )
         let results = try await whisperKit.transcribe(audioArray: samples, decodeOptions: options)
         return WhisperTranscriptionTextCleaner.clean(results.map(\.text).joined(separator: " "))
     }
 
-    private func promptTokens(for vocabulary: String, whisperKit: WhisperKit) -> [Int]? {
-        guard let prompt = Self.vocabularyPrompt(for: vocabulary),
+    private func promptTokens(for dictionary: [String], whisperKit: WhisperKit) -> [Int]? {
+        guard let prompt = Self.dictionaryPrompt(for: dictionary),
               let tokenizer = whisperKit.tokenizer else { return nil }
         let tokens = tokenizer.encode(text: prompt)
             .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
@@ -136,12 +139,16 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         )
     }
 
-    static func vocabularyPrompt(for vocabulary: String) -> String? {
-        let words = vocabulary
-            .split(whereSeparator: { $0 == "," || $0 == "\n" })
+    static func dictionaryPrompt(for canonicalTerms: [String]) -> String? {
+        let terms = canonicalTerms
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        return words.isEmpty ? nil : words.joined(separator: ", ")
+        guard let last = terms.last else { return nil }
+        if terms.count == 1 {
+            return "La dictée peut contenir le terme \(last)."
+        }
+        let beginning = terms.dropLast().joined(separator: ", ")
+        return "La dictée peut contenir notamment \(beginning) et \(last)."
     }
 
     private func prepare(requestedModel: String) async throws {
@@ -242,7 +249,7 @@ actor WhisperKitTranscriptionService: TranscriptionService {
             kit,
             samples: Array(repeating: 0, count: 16_000),
             language: "fr",
-            vocabulary: ""
+            dictionary: []
         )
         let seconds = Self.seconds(start.duration(to: .now))
         logger.info("whisper warmup duration=\(seconds, format: .fixed(precision: 3))s audio=1.000s")

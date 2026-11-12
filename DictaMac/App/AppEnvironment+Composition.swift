@@ -14,6 +14,7 @@ extension AppEnvironment {
         let feedback: StoredFeedbackSoundSettings
         let emergency: StoredEmergencyHotkeySettings
         let history: StoredHistorySettings
+        let dictionary: StoredPersonalDictionary
 
         init(store: any SettingsStoring) {
             transcription = StoredTranscriptionSettings(store: store)
@@ -22,6 +23,9 @@ extension AppEnvironment {
             feedback = StoredFeedbackSoundSettings(store: store)
             emergency = StoredEmergencyHotkeySettings(store: store)
             history = StoredHistorySettings(store: store)
+            dictionary = StoredPersonalDictionary(
+                storage: JSONDictionaryStore(settingsStore: store)
+            )
         }
     }
 

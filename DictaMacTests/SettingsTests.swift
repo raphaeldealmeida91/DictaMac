@@ -23,12 +23,13 @@ final class SettingsTests: XCTestCase {
 
         XCTAssertEqual(transcription.configuredModel, StoredTranscriptionSettings.defaultModel)
         XCTAssertEqual(transcription.configuredLanguage, "fr")
-        XCTAssertEqual(transcription.vocabulary, "")
         XCTAssertEqual(cleanup.configuredEngine, .fast)
         XCTAssertEqual(cleanup.configuredModel, StoredTextCleanupSettings.defaultModel)
         XCTAssertEqual(cleanup.configuredLocalModel, StoredTextCleanupSettings.defaultLocalModel)
+        XCTAssertEqual(cleanup.cleanupStyle, .polished)
         XCTAssertTrue(cleanup.removeIsolatedGenre)
         XCTAssertEqual(cleanup.localTimeout, StoredTextCleanupSettings.defaultLocalTimeout)
+        XCTAssertEqual(cleanup.cloudTimeout, StoredTextCleanupSettings.defaultCloudTimeout)
         XCTAssertTrue(StoredHistorySettings(store: store).isEnabled)
         XCTAssertTrue(StoredFeedbackSoundSettings(store: store).isEnabled)
         XCTAssertEqual(StoredRecordingSettings(store: store).maximumDuration, 120)
@@ -106,13 +107,16 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(version.description, "Version 1.0 (build 42)")
     }
 
-    func testVocabularyPromptContainsOnlyNormalizedTerms() {
-        let prompt = WhisperKitTranscriptionService.vocabularyPrompt(
-            for: " WhisperKit,\n DictaMac ,, SwiftUI "
+    func testDictionaryPromptUsesCanonicalTermsInNaturalSentence() {
+        let prompt = WhisperKitTranscriptionService.dictionaryPrompt(
+            for: ["SFM30", "Prazo Elevator", "devis", "ChatGPT"]
         )
 
-        XCTAssertEqual(prompt, "WhisperKit, DictaMac, SwiftUI")
-        XCTAssertNil(WhisperKitTranscriptionService.vocabularyPrompt(for: " \n, "))
+        XCTAssertEqual(
+            prompt,
+            "La dictée peut contenir notamment SFM30, Prazo Elevator, devis et ChatGPT."
+        )
+        XCTAssertNil(WhisperKitTranscriptionService.dictionaryPrompt(for: []))
     }
 
     @MainActor

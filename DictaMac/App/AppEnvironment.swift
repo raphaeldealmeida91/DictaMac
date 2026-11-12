@@ -15,6 +15,7 @@ final class AppEnvironment {
     let launchAtLogin: LaunchAtLoginService
     let transcriptionSettings: StoredTranscriptionSettings
     let textCleanupSettings: StoredTextCleanupSettings
+    let personalDictionary: StoredPersonalDictionary
     let localModelManager: LocalCleanupModelManager
     let transcriptionService: WhisperKitTranscriptionService
     let firstLaunchAssistant: FirstLaunchAssistantController
@@ -43,6 +44,7 @@ final class AppEnvironment {
         launchAtLogin = composition.launchAtLogin
         transcriptionSettings = composition.settings.transcription
         textCleanupSettings = composition.settings.cleanup
+        personalDictionary = composition.settings.dictionary
         localModelManager = composition.models.localManager
         transcriptionService = composition.models.transcriptionService
         firstLaunchAssistant = FirstLaunchAssistantController(

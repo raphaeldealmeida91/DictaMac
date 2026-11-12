@@ -3,7 +3,7 @@ import XCTest
 
 @MainActor
 final class DictationPipelineTests: XCTestCase {
-    func testCleanupFailureFallsBackToRawText() async {
+    func testCleanupFailureFallsBackToDeterministicRulesAndSignalsAvailability() async {
         let injector = PipelineFakeInjector()
         let stageReporter = PipelineFakeStageReporter()
         let pipeline = makePipeline(
@@ -17,8 +17,8 @@ final class DictationPipelineTests: XCTestCase {
             session: makeSession(transcriber: PipelineFakeTranscriber())
         )
 
-        XCTAssertEqual(outcome, .inserted)
-        XCTAssertEqual(injector.insertedText, "texte brut")
+        XCTAssertEqual(outcome, .cleanupUnavailable)
+        XCTAssertEqual(injector.insertedText, "Texte brut.")
         XCTAssertEqual(stageReporter.beginStages, [.transcription, .cleanup, .injection])
         XCTAssertEqual(stageReporter.endStages, [.transcription, .cleanup, .injection])
     }
@@ -61,6 +61,30 @@ final class DictationPipelineTests: XCTestCase {
         XCTAssertEqual(history.text, "Texte nettoyé.")
     }
 
+    func testDictionaryCorrectionRunsBeforeCleanupAndProvidesCanonicalTerms() async {
+        let cleanup = PipelineCleanupSpy()
+        let injector = PipelineFakeInjector()
+        let dictionary = PipelinePersonalDictionary(entries: [
+            DictionaryEntry(canonical: "devis", variants: ["de vie"])
+        ])
+        let pipeline = makePipeline(
+            cleanupService: cleanup,
+            injector: injector,
+            stageReporter: PipelineFakeStageReporter(),
+            personalDictionary: dictionary
+        )
+
+        _ = await pipeline.run(
+            samples: [0.1],
+            session: makeSession(transcriber: PipelineFakeTranscriber(text: "le de vie est prêt"))
+        )
+
+        let received = await cleanup.received()
+        XCTAssertEqual(received.text, "le devis est prêt")
+        XCTAssertEqual(received.dictionary, ["devis"])
+        XCTAssertEqual(injector.insertedText, "le devis est prêt")
+    }
+
     func testModelPreparationFailureDoesNotStartTranscriptionStage() async {
         let stageReporter = PipelineFakeStageReporter()
         let injector = PipelineFakeInjector()
@@ -84,11 +108,13 @@ final class DictationPipelineTests: XCTestCase {
         cleanupService: any TextCleanupService,
         injector: PipelineFakeInjector,
         stageReporter: PipelineFakeStageReporter,
-        historyRecorder: PipelineFakeHistoryRecorder = PipelineFakeHistoryRecorder()
+        historyRecorder: PipelineFakeHistoryRecorder = PipelineFakeHistoryRecorder(),
+        personalDictionary: any PersonalDictionary = PipelinePersonalDictionary(entries: [])
     ) -> DictationPipeline {
         DictationPipeline(
             textCleanupService: cleanupService,
             textCleanupSettings: PipelineCleanupSettings(),
+            personalDictionary: personalDictionary,
             textInjector: injector,
             historyRecorder: historyRecorder,
             metricsRecorder: PipelineFakeMetricsRecorder(),
@@ -113,6 +139,12 @@ final class DictationPipelineTests: XCTestCase {
 }
 
 private actor PipelineFakeTranscriber: SegmentedTranscribing {
+    private let text: String
+
+    init(text: String = "texte brut") {
+        self.text = text
+    }
+
     func append(_ samples: [Float]) {}
 
     func finishWithBudget(
@@ -120,7 +152,7 @@ private actor PipelineFakeTranscriber: SegmentedTranscribing {
         budget: TimeInterval?
     ) async throws -> SegmentedTranscriber.FinishResult {
         SegmentedTranscriber.FinishResult(
-            text: "texte brut",
+            text: text,
             isPartial: false,
             segmentCount: 1
         )
@@ -164,7 +196,7 @@ private actor PreparationFailingTranscriber: SegmentedTranscribing {
 private actor FailingCleanupService: TextCleanupService {
     enum Failure: Error { case cleanup }
 
-    func cleanup(_ text: String) async throws -> String {
+    func cleanup(_ text: String, dictionary: [String]) async throws -> String {
         throw Failure.cleanup
     }
 }
@@ -176,16 +208,45 @@ private actor SuccessfulCleanupService: TextCleanupService {
         self.output = output
     }
 
-    func cleanup(_ text: String) async throws -> String { output }
+    func cleanup(_ text: String, dictionary: [String]) async throws -> String { output }
+}
+
+private actor PipelineCleanupSpy: TextCleanupService {
+    private var text = ""
+    private var dictionary: [String] = []
+
+    func cleanup(_ text: String, dictionary: [String]) async throws -> String {
+        self.text = text
+        self.dictionary = dictionary
+        return text
+    }
+
+    func received() -> (text: String, dictionary: [String]) {
+        (text, dictionary)
+    }
+}
+
+private struct PipelinePersonalDictionary: PersonalDictionary {
+    let storedEntries: [DictionaryEntry]
+
+    init(entries: [DictionaryEntry]) {
+        storedEntries = entries
+    }
+
+    func entries() -> [DictionaryEntry] { storedEntries }
+    func replaceEntries(_ entries: [DictionaryEntry]) throws {}
+    func addCanonicalTerm(_ canonical: String) throws -> Bool { false }
 }
 
 private struct PipelineCleanupSettings: TextCleanupSettings {
-    let configuredEngine = TextCleanupEngine.fast
+    let configuredEngine = TextCleanupEngine.cloud
     let isEnabled = true
     let configuredModel = ""
     let configuredLocalModel = ""
+    let cleanupStyle = CleanupStyle.polished
     let removeIsolatedGenre = false
     let localTimeout: TimeInterval = 1
+    let cloudTimeout: TimeInterval = 1
     let localDownloadApproved = false
 }
 

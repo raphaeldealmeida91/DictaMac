@@ -3,7 +3,6 @@ import Foundation
 protocol TranscriptionSettings: Sendable {
     var configuredModel: String { get }
     var configuredLanguage: String? { get }
-    var vocabulary: String { get }
     var isLowMemoryMac: Bool { get }
 }
 

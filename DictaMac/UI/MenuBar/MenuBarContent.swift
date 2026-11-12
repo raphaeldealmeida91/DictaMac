@@ -7,7 +7,9 @@ struct MenuBarContent: View {
     @ObservedObject private var cleanupState: LocalCleanupModelState
     @ObservedObject private var history: TranscriptionHistoryStore
     @State private var copiedEntryID: UUID?
+    @State private var addedDictionaryTerm: String?
     private let textCleanupSettings: any TextCleanupSettings
+    private let personalDictionary: any PersonalDictionary
 
     init(environment: AppEnvironment) {
         activity = environment.activity
@@ -15,6 +17,7 @@ struct MenuBarContent: View {
         cleanupState = environment.cleanupModelState
         history = environment.history
         textCleanupSettings = environment.textCleanupSettings
+        personalDictionary = environment.personalDictionary
     }
 
     var body: some View {
@@ -81,36 +84,58 @@ struct MenuBarContent: View {
     }
 
     private func historyButton(_ entry: TranscriptionHistoryEntry) -> some View {
+        HStack(spacing: Theme.Spacing.small) {
+            historyCopyButton(entry)
+            dictionaryMenu(for: entry)
+        }
+        .frame(minHeight: Theme.MenuBar.historyRowHeight)
+    }
+
+    private func historyCopyButton(_ entry: TranscriptionHistoryEntry) -> some View {
         Button { copy(entry) } label: {
             HStack(spacing: Theme.Spacing.medium) {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xSmall) {
-                    Text(excerpt(for: entry))
-                        .lineLimit(1)
-                    if let rawText = entry.rawText, rawText != entry.text {
-                        Text("Brut : \(excerpt(rawText))")
-                            .font(Theme.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
+                    Text(entry.text).lineLimit(2)
                     Text("\(entry.date.formatted(date: .omitted, time: .shortened)) · \(entry.targetApplication)")
                         .font(Theme.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
-                Spacer()
-                if copiedEntryID == entry.id {
-                    Label("Copié", systemImage: "checkmark.circle.fill")
-                        .font(Theme.Typography.caption.weight(.medium))
-                        .foregroundStyle(Color.accentColor)
-                } else {
-                    Image(systemName: "doc.on.doc")
-                        .foregroundStyle(Color.secondary)
-                        .accessibilityLabel("Copier")
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                copyIndicator(for: entry)
             }
-            .contentShape(Rectangle())
         }
+        .contentShape(Rectangle())
+        .help(entry.text)
         .buttonStyle(.plain)
-        .frame(minHeight: Theme.MenuBar.historyRowHeight)
+    }
+
+    @ViewBuilder
+    private func copyIndicator(for entry: TranscriptionHistoryEntry) -> some View {
+        if copiedEntryID == entry.id {
+            Label("Copié", systemImage: "checkmark.circle.fill")
+                .font(Theme.Typography.caption.weight(.medium))
+                .foregroundStyle(Color.accentColor)
+        } else {
+            Image(systemName: "doc.on.doc")
+                .foregroundStyle(Color.secondary)
+                .accessibilityLabel("Copier")
+        }
+    }
+
+    private func dictionaryMenu(for entry: TranscriptionHistoryEntry) -> some View {
+        let words = Array(HistoryWordExtractor.words(in: entry.text).prefix(Theme.MenuBar.historyWordLimit))
+        return Menu {
+            ForEach(words, id: \.self) { word in
+                Button(word) { addToDictionary(word) }
+            }
+        } label: {
+            let wasAdded = words.contains(addedDictionaryTerm ?? "")
+            Image(systemName: wasAdded ? "checkmark" : "character.book.closed")
+        }
+        .menuStyle(.borderlessButton)
+        .help("Ajouter un mot au dictionnaire")
+        .accessibilityLabel("Ajouter au dictionnaire")
+        .disabled(words.isEmpty)
     }
 
     private var footer: some View {
@@ -138,16 +163,6 @@ struct MenuBarContent: View {
         }
     }
 
-    private func excerpt(for entry: TranscriptionHistoryEntry) -> String {
-        excerpt(entry.text)
-    }
-
-    private func excerpt(_ text: String) -> String {
-        let oneLine = text.replacingOccurrences(of: "\n", with: " ")
-        guard oneLine.count > Theme.MenuBar.excerptLimit else { return oneLine }
-        return String(oneLine.prefix(Theme.MenuBar.excerptLimit)) + "…"
-    }
-
     private func copy(_ entry: TranscriptionHistoryEntry) {
         history.copyToPasteboard(entry)
         copiedEntryID = entry.id
@@ -156,5 +171,10 @@ struct MenuBarContent: View {
             guard copiedEntryID == entry.id else { return }
             copiedEntryID = nil
         }
+    }
+
+    private func addToDictionary(_ word: String) {
+        guard (try? personalDictionary.addCanonicalTerm(word)) == true else { return }
+        addedDictionaryTerm = word
     }
 }

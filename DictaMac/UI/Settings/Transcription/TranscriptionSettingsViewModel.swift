@@ -8,7 +8,6 @@ final class TranscriptionSettingsViewModel: ObservableObject {
         didSet { store.set(.bool(automaticLanguage), for: .transcriptionAutomaticLanguage) }
     }
     @Published var language: String { didSet { store.set(.string(language), for: .transcriptionLanguage) } }
-    @Published var vocabulary: String { didSet { store.set(.string(vocabulary), for: .transcriptionVocabulary) } }
     @Published private(set) var modelStatus = ""
     @Published private(set) var downloadProgress: Double?
     @Published private(set) var modelIsBusy = false
@@ -34,7 +33,6 @@ final class TranscriptionSettingsViewModel: ObservableObject {
         model = store.string(for: .transcriptionModel) ?? recommendedModel
         automaticLanguage = store.bool(for: .transcriptionAutomaticLanguage) ?? false
         language = store.string(for: .transcriptionLanguage) ?? "fr"
-        vocabulary = store.string(for: .transcriptionVocabulary) ?? ""
         reloadModel = { try await loader.reloadConfiguredModel() }
         readModelState = { (state.status, state.downloadProgress, state.isBusy, state.isReady) }
         state.objectWillChange.sink { [weak self] in

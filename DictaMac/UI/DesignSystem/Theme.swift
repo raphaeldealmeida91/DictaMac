@@ -89,6 +89,7 @@ enum Theme {
         static let compactControlWidth: CGFloat = 96
         static let valueWidth: CGFloat = 56
         static let editorHeight: CGFloat = 76
+        static let dictionaryTermWidth: CGFloat = 160
         static let progressHeight: CGFloat = 3
         static let durationStep: Double = 10
         static let localTimeoutRange = 0.5...10.0
@@ -104,7 +105,7 @@ enum Theme {
         static let width: CGFloat = 340
         static let historyRowHeight: CGFloat = 48
         static let historyLimit = 6
-        static let excerptLimit = 70
+        static let historyWordLimit = 24
         static let copiedFeedbackDuration = Duration.seconds(1.4)
         static let statusDotSize: CGFloat = 7
     }

@@ -8,6 +8,7 @@ enum PipelineFailure: Equatable, Sendable {
 
 enum DictationOutcome: Equatable, Sendable {
     case inserted
+    case cleanupUnavailable
     case copiedToClipboard
     case partial
     case empty
@@ -70,10 +71,12 @@ final class DictationPipeline: DictationPipelineRunning {
         let transcriptionDuration: TimeInterval
         let cleanupDuration: TimeInterval
         let cleanupEngine: TextCleanupEngine
+        let cleanupUnavailable: Bool
     }
 
     private let textCleanupService: any TextCleanupService
     private let textCleanupSettings: any TextCleanupSettings
+    private let personalDictionary: any PersonalDictionary
     private let textInjector: any TextInjector
     private let historyRecorder: any DictationHistoryRecording
     private let metricsRecorder: any DictationMetricsRecording
@@ -87,6 +90,7 @@ final class DictationPipeline: DictationPipelineRunning {
     init(
         textCleanupService: any TextCleanupService,
         textCleanupSettings: any TextCleanupSettings,
+        personalDictionary: any PersonalDictionary,
         textInjector: any TextInjector,
         historyRecorder: any DictationHistoryRecording,
         metricsRecorder: any DictationMetricsRecording,
@@ -95,6 +99,7 @@ final class DictationPipeline: DictationPipelineRunning {
     ) {
         self.textCleanupService = textCleanupService
         self.textCleanupSettings = textCleanupSettings
+        self.personalDictionary = personalDictionary
         self.textInjector = textInjector
         self.historyRecorder = historyRecorder
         self.metricsRecorder = metricsRecorder
@@ -137,16 +142,24 @@ final class DictationPipeline: DictationPipelineRunning {
         let result = try await transcribe(samples: samples, session: session)
         try Task.checkCancellation()
         let transcriptionDuration = Self.seconds(transcriptionStartedAt.duration(to: .now))
+        let dictionaryEntries = personalDictionary.entries()
+        let correctedText = DictionaryCorrector.correct(result.text, entries: dictionaryEntries)
         let cleanupStartedAt = ContinuousClock.now
-        let text = try await cleanup(result.text, result: result, session: session)
+        let cleanupResult = try await cleanup(
+            correctedText,
+            dictionary: dictionaryEntries.map(\.canonical),
+            result: result,
+            session: session
+        )
         try Task.checkCancellation()
         return ProcessedText(
             rawValue: result.text,
-            value: text,
+            value: cleanupResult.text,
             finishResult: result,
             transcriptionDuration: transcriptionDuration,
             cleanupDuration: Self.seconds(cleanupStartedAt.duration(to: .now)),
-            cleanupEngine: textCleanupSettings.configuredEngine
+            cleanupEngine: textCleanupSettings.configuredEngine,
+            cleanupUnavailable: cleanupResult.isUnavailable
         )
     }
 
@@ -202,10 +215,11 @@ final class DictationPipeline: DictationPipelineRunning {
 
     private func cleanup(
         _ rawText: String,
+        dictionary: [String],
         result: SegmentedTranscriber.FinishResult,
         session: DictationPipelineSession
-    ) async throws -> String {
-        guard textCleanupSettings.isEnabled, !rawText.isEmpty else { return rawText }
+    ) async throws -> (text: String, isUnavailable: Bool) {
+        guard textCleanupSettings.isEnabled, !rawText.isEmpty else { return (rawText, false) }
         let context = StageContext(
             audioDuration: session.audioDuration,
             segmentCount: result.segmentCount,
@@ -213,19 +227,30 @@ final class DictationPipeline: DictationPipelineRunning {
         )
         let cleanupService = textCleanupService
         return try await instrumentedStage.run(.cleanup, context: context) {
-            do {
-                let text = try await PipelineWatchdog.run(stage: "nettoyage") {
-                    try await cleanupService.cleanup(rawText)
-                }
-                self.logger.info("Nettoyage du texte terminé")
-                return text
-            } catch is CancellationError {
-                throw CancellationError()
-            } catch {
-                if error is PipelineWatchdogError { throw error }
-                self.logger.warning("Nettoyage indisponible, texte brut conservé")
-                return rawText
+            try await self.performCleanup(rawText, dictionary: dictionary, service: cleanupService)
+        }
+    }
+
+    private func performCleanup(
+        _ text: String,
+        dictionary: [String],
+        service: any TextCleanupService
+    ) async throws -> (text: String, isUnavailable: Bool) {
+        do {
+            let cleaned = try await PipelineWatchdog.run(stage: "nettoyage") {
+                try await service.cleanup(text, dictionary: dictionary)
             }
+            logger.info("Nettoyage du texte terminé")
+            return (cleaned, false)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            logger.warning("Nettoyage IA indisponible, règles déterministes appliquées")
+            let fallback = FastRulesTextCleanupService.cleanup(
+                text,
+                removeIsolatedGenre: textCleanupSettings.removeIsolatedGenre
+            )
+            return (fallback, textCleanupSettings.configuredEngine.isAI)
         }
     }
 
@@ -282,6 +307,7 @@ final class DictationPipeline: DictationPipelineRunning {
         injectionOutcome: TextInjectionOutcome
     ) -> DictationOutcome {
         if processed.value.isEmpty { return .empty }
+        if processed.cleanupUnavailable { return .cleanupUnavailable }
         if processed.finishResult.isPartial { return .partial }
         if injectionOutcome == .copiedToClipboard { return .copiedToClipboard }
         return .inserted
@@ -290,4 +316,8 @@ final class DictationPipeline: DictationPipelineRunning {
     private static func seconds(_ duration: Duration) -> Double {
         Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18
     }
+}
+
+private extension TextCleanupEngine {
+    var isAI: Bool { self == .local || self == .cloud }
 }

@@ -37,19 +37,6 @@ struct TranscriptionSettingsView: View {
             }
 
             SettingsCard(
-                title: "Vocabulaire",
-                footer: "Séparez les mots ou expressions par une virgule ou un retour à la ligne."
-            ) {
-                TextEditor(text: $viewModel.vocabulary)
-                    .font(Theme.Typography.body)
-                    .frame(height: Theme.Settings.editorHeight)
-                    .padding(Theme.Spacing.small)
-                    .background(.quaternary.opacity(Theme.Border.standardOpacity), in: RoundedRectangle(
-                        cornerRadius: Theme.Radius.control
-                    ))
-            }
-
-            SettingsCard(
                 title: "État du modèle",
                 footer: viewModel.loadError ?? "Le chargement et la transcription restent entièrement sur ce Mac."
             ) {

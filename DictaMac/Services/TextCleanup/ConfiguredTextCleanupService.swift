@@ -7,8 +7,8 @@ actor ConfiguredTextCleanupService: TextCleanupService {
         self.registry = registry
     }
 
-    func cleanup(_ text: String) async throws -> String {
+    func cleanup(_ text: String, dictionary: [String]) async throws -> String {
         guard let service = registry.service(for: settings.configuredEngine) else { return text }
-        return try await service.cleanup(text)
+        return try await service.cleanup(text, dictionary: dictionary)
     }
 }

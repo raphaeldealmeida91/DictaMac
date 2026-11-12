@@ -1,6 +1,122 @@
 {
   "sourceLanguage" : "fr",
   "strings" : {
+    "" : {
+
+    },
+    " s" : {
+
+    },
+    "%@ : %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ : %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "⌃ Contrôle" : {
+
+    },
+    "⌘ Commande" : {
+
+    },
+    "⌥ Option" : {
+
+    },
+    "Annuler" : {
+
+    },
+    "Appliquer et charger" : {
+
+    },
+    "Aucune dictée pour le moment" : {
+
+    },
+    "Aucune mesure disponible." : {
+
+    },
+    "Automatique" : {
+
+    },
+    "Autoriser" : {
+
+    },
+    "Brut : %@" : {
+
+    },
+    "Copié" : {
+
+    },
+    "Copier" : {
+
+    },
+    "Dernières dictées" : {
+
+    },
+    "DictaMac" : {
+
+    },
+    "Écoute…" : {
+
+    },
+    "Effacer" : {
+
+    },
+    "Enregistrement en cours" : {
+
+    },
+    "Enregistrer" : {
+
+    },
+    "fr" : {
+
+    },
+    "Modèle local" : {
+
+    },
+    "Moteur" : {
+
+    },
+    "Ouvrir le dossier" : {
+
+    },
+    "Quitter" : {
+
+    },
+    "Qwen 2.5 1,5B — léger (~869 Mo)" : {
+
+    },
+    "Qwen 2.5 3B — recommandé (~1,74 Go)" : {
+
+    },
+    "Réglages Système" : {
+
+    },
+    "Réglages…" : {
+
+    },
+    "sk-…" : {
+
+    },
+    "Stockage local dans Application Support ; un téléchargement interrompu reprend les fichiers présents." : {
+
+    },
+    "Télécharger / charger" : {
+
+    }
   },
   "version" : "1.0"
 }

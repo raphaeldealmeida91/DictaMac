@@ -1,0 +1,324 @@
+[
+  {
+    "id": "spacing-001",
+    "raw": "  bonjour   à tous  ",
+    "expected": "Bonjour à tous.",
+    "tags": ["espaces", "ponctuation"]
+  },
+  {
+    "id": "punctuation-001",
+    "raw": "bonjour , comment ça va ?",
+    "expected": "Bonjour, comment ça va ?",
+    "tags": ["ponctuation", "espaces"]
+  },
+  {
+    "id": "punctuation-002",
+    "raw": "le rendez-vous est confirmé",
+    "expected": "Le rendez-vous est confirmé.",
+    "tags": ["ponctuation-absente"]
+  },
+  {
+    "id": "punctuation-003",
+    "raw": "merci beaucoup !",
+    "expected": "Merci beaucoup !",
+    "tags": ["ponctuation", "espaces"]
+  },
+  {
+    "id": "punctuation-004",
+    "raw": "on valide ça , puis on envoie le devis ; d'accord ?",
+    "expected": "On valide ça, puis on envoie le devis ; d'accord ?",
+    "tags": ["ponctuation", "devis"]
+  },
+  {
+    "id": "punctuation-005",
+    "raw": "bonjour,, tu peux venir?.",
+    "expected": "Bonjour, tu peux venir ?",
+    "tags": ["ponctuation-fantaisiste"]
+  },
+  {
+    "id": "ellipsis-001",
+    "raw": "je pense... que nous pouvons partir",
+    "expected": "Je pense. Que nous pouvons partir.",
+    "tags": ["points-de-suspension", "ponctuation-parasite"]
+  },
+  {
+    "id": "ellipsis-002",
+    "raw": "le dossier est... terminé...",
+    "expected": "Le dossier est terminé.",
+    "tags": ["points-de-suspension", "ponctuation-parasite"],
+    "knownFailure": true
+  },
+  {
+    "id": "ellipsis-003",
+    "raw": "donc … on se retrouve demain",
+    "expected": "Donc. On se retrouve demain.",
+    "tags": ["ellipse", "ponctuation-parasite"]
+  },
+  {
+    "id": "duplicate-001",
+    "raw": "je je voudrais confirmer le rendez-vous",
+    "expected": "Je voudrais confirmer le rendez-vous.",
+    "tags": ["doublon", "transcription"],
+    "knownFailure": true
+  },
+  {
+    "id": "duplicate-002",
+    "raw": "c'est c'est bien reçu",
+    "expected": "C'est bien reçu.",
+    "tags": ["doublon", "apostrophe"],
+    "knownFailure": true
+  },
+  {
+    "id": "duplicate-003",
+    "raw": "on part à huit heures on part à huit heures",
+    "expected": "On part à huit heures.",
+    "tags": ["doublon-sequence", "transcription"]
+  },
+  {
+    "id": "duplicate-004",
+    "raw": "le devis est prêt le devis est prêt pour envoi",
+    "expected": "Le devis est prêt pour envoi.",
+    "tags": ["doublon-sequence", "devis"]
+  },
+  {
+    "id": "duplicate-005",
+    "raw": "merci merci merci de ton retour",
+    "expected": "Merci de ton retour.",
+    "tags": ["doublon-triple", "transcription"]
+  },
+  {
+    "id": "legitimate-repeat-001",
+    "raw": "c'est très très bien",
+    "expected": "C'est très très bien.",
+    "tags": ["repetition-legitime", "intensite"]
+  },
+  {
+    "id": "legitimate-repeat-002",
+    "raw": "nous nous retrouvons devant la gare",
+    "expected": "Nous nous retrouvons devant la gare.",
+    "tags": ["repetition-legitime", "pronom"]
+  },
+  {
+    "id": "legitimate-repeat-003",
+    "raw": "il faut que que chacun vérifie son accès",
+    "expected": "Il faut que que chacun vérifie son accès.",
+    "tags": ["repetition-legitime", "oral"]
+  },
+  {
+    "id": "hesitation-001",
+    "raw": "euh je voudrais déplacer la réunion",
+    "expected": "Je voudrais déplacer la réunion.",
+    "tags": ["hesitation", "euh"]
+  },
+  {
+    "id": "hesitation-002",
+    "raw": "hum le fichier est prêt",
+    "expected": "Le fichier est prêt.",
+    "tags": ["hesitation", "hum"]
+  },
+  {
+    "id": "hesitation-003",
+    "raw": "c'est genre vraiment urgent",
+    "expected": "C'est vraiment urgent.",
+    "tags": ["hesitation", "genre"]
+  },
+  {
+    "id": "hesitation-004",
+    "raw": "bah je te rappelle demain",
+    "expected": "Je te rappelle demain.",
+    "tags": ["hesitation", "bah"]
+  },
+  {
+    "id": "hesitation-005",
+    "raw": "le client est euh plutôt satisfait",
+    "expected": "Le client est plutôt satisfait.",
+    "tags": ["hesitation", "euh"]
+  },
+  {
+    "id": "autocorrection-001",
+    "raw": "le rendez-vous est mardi, non mercredi à dix heures",
+    "expected": "Le rendez-vous est mercredi à dix heures.",
+    "tags": ["auto-correction", "date"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "autocorrection-002",
+    "raw": "envoie-le à Paul, pardon à Pauline",
+    "expected": "Envoie-le à Pauline.",
+    "tags": ["auto-correction", "nom-propre"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "autocorrection-003",
+    "raw": "prévois quinze, non vingt exemplaires",
+    "expected": "Prévois vingt exemplaires.",
+    "tags": ["auto-correction", "nombre"],
+    "knownFailure": true
+  },
+  {
+    "id": "spelling-001",
+    "raw": "il faut que tu vérifie les accès",
+    "expected": "Il faut que tu vérifies les accès.",
+    "tags": ["orthographe", "conjugaison"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "spelling-002",
+    "raw": "les facture sont arrivé hier",
+    "expected": "Les factures sont arrivées hier.",
+    "tags": ["orthographe", "accord"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "spelling-003",
+    "raw": "j'ai envoyer le compte rendu",
+    "expected": "J'ai envoyé le compte rendu.",
+    "tags": ["orthographe", "participe-passe"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "spelling-004",
+    "raw": "elles se sont parler ce matin",
+    "expected": "Elles se sont parlé ce matin.",
+    "tags": ["orthographe", "accord"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "spelling-005",
+    "raw": "sa devrait être terminer demain",
+    "expected": "Ça devrait être terminé demain.",
+    "tags": ["orthographe", "homophone"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "rephrase-001",
+    "raw": "le dossier que je t'ai parlé il est terminé",
+    "expected": "Le dossier dont je t'ai parlé est terminé.",
+    "tags": ["reformulation", "syntaxe"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "rephrase-002",
+    "raw": "moi ce que je pense c'est qu'on devrait peut-être attendre",
+    "expected": "Je pense que nous devrions peut-être attendre.",
+    "tags": ["reformulation", "syntaxe"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "rephrase-003",
+    "raw": "du coup le truc il marche pas comme prévu",
+    "expected": "Le système ne fonctionne pas comme prévu.",
+    "tags": ["reformulation", "registre"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "rephrase-004",
+    "raw": "c'est le document là que tu m'as envoyé hier",
+    "expected": "C'est le document que tu m'as envoyé hier.",
+    "tags": ["reformulation", "oral"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "proper-term-001",
+    "raw": "SFM30 est prêt pour la démonstration",
+    "expected": "SFM30 est prêt pour la démonstration.",
+    "tags": ["terme-propre", "SFM30"]
+  },
+  {
+    "id": "proper-term-002",
+    "raw": "envoie le dossier à Prazo Elevator",
+    "expected": "Envoie le dossier à Prazo Elevator.",
+    "tags": ["terme-propre", "Prazo Elevator"]
+  },
+  {
+    "id": "proper-term-003",
+    "raw": "Solutions 30 a validé le devis",
+    "expected": "Solutions 30 a validé le devis.",
+    "tags": ["terme-propre", "Solutions 30", "devis"]
+  },
+  {
+    "id": "proper-term-004",
+    "raw": "ChatGPT a résumé le compte rendu",
+    "expected": "ChatGPT a résumé le compte rendu.",
+    "tags": ["terme-propre", "ChatGPT"]
+  },
+  {
+    "id": "proper-term-005",
+    "raw": "Claude peut relire ce message",
+    "expected": "Claude peut relire ce message.",
+    "tags": ["terme-propre", "Claude"]
+  },
+  {
+    "id": "proper-term-006",
+    "raw": "achat de gpt ou à Claude",
+    "expected": "ChatGPT ou Claude",
+    "tags": ["terme-propre", "ChatGPT", "Claude", "dictionnaire"],
+    "knownFailure": true
+  },
+  {
+    "id": "dictionary-001",
+    "raw": "il va l'écrire de vie",
+    "expected": "Il va l'écrire devis.",
+    "tags": ["dictionnaire", "devis", "variant:de vie"]
+  },
+  {
+    "id": "dictionary-002",
+    "raw": "le de vie doit partir avant midi",
+    "expected": "Le devis doit partir avant midi.",
+    "tags": ["dictionnaire", "devis", "variant:de vie"]
+  },
+  {
+    "id": "dictionary-003",
+    "raw": "le projet s f m trente est en production",
+    "expected": "Le projet SFM30 est en production.",
+    "tags": ["dictionnaire", "SFM30", "variante-phonetique"]
+  },
+  {
+    "id": "mixed-001",
+    "raw": "euh   le devis  est est prêt , tu peux l'envoyer ?",
+    "expected": "Le devis est prêt, tu peux l'envoyer ?",
+    "tags": ["hesitation", "doublon", "ponctuation", "devis"],
+    "knownFailure": true
+  },
+  {
+    "id": "mixed-002",
+    "raw": "genre ChatGPT ChatGPT a proposé une réponse",
+    "expected": "ChatGPT a proposé une réponse.",
+    "tags": ["hesitation", "doublon", "ChatGPT"],
+    "knownFailure": true
+  },
+  {
+    "id": "mixed-003",
+    "raw": "euh Prazo Elevator a envoyer envoyer les pièces...",
+    "expected": "Prazo Elevator a envoyé les pièces.",
+    "tags": ["hesitation", "Prazo Elevator", "orthographe", "doublon", "points-de-suspension"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "mixed-004",
+    "raw": "bah Solutions 30 doit doit rappeler mardi, non mercredi",
+    "expected": "Solutions 30 doit rappeler mercredi.",
+    "tags": ["hesitation", "Solutions 30", "doublon", "auto-correction"],
+    "knownFailure": false,
+    "requiresAI": true
+  },
+  {
+    "id": "mixed-005",
+    "raw": "heu Claude a a relu le devis",
+    "expected": "Claude a relu le devis.",
+    "tags": ["hesitation", "Claude", "doublon", "devis"],
+    "knownFailure": true
+  }
+]

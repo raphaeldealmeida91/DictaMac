@@ -29,8 +29,6 @@ struct StoredTranscriptionSettings: TranscriptionSettings, TranscriptionModelPat
         return nonEmptyString(for: .transcriptionLanguage) ?? "fr"
     }
 
-    var vocabulary: String { store.string(for: .transcriptionVocabulary) ?? "" }
-
     func storedModelPath(for model: String) -> String? {
         store.stringDictionary(for: .transcriptionStoredModelPaths)?[model]
     }
