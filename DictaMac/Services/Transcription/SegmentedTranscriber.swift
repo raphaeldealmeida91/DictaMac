@@ -57,15 +57,18 @@ actor SegmentedTranscriber {
     private let transcriptionService: any TranscriptionService
     private let language: String?
     private let configuration: Configuration
+    private let wordDiagnostics: (any TextWordDiagnosticsRecording)?
     private var audio: [Float] = []
     private var segments: [TranscribedSegment] = []
     private var nextSegmentStart = 0
     private var nextSegmentIndex = 0
     private var worker: Task<Void, Never>?
     private var segmentFailed = false
+    private var hadSegmentFailure = false
     private var backlogExceeded = false
     private var isCancelled = false
     private var isFinishing = false
+    private var rawWordCounts: [Int: Int] = [:]
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "IncrementalTranscription"
@@ -74,11 +77,13 @@ actor SegmentedTranscriber {
     init(
         transcriptionService: any TranscriptionService,
         language: String?,
-        configuration: Configuration = .standard
+        configuration: Configuration = .standard,
+        wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil
     ) {
         self.transcriptionService = transcriptionService
         self.language = language
         self.configuration = configuration
+        self.wordDiagnostics = wordDiagnostics
     }
 
     /// Adds newly captured, contiguous samples and starts any complete segment.
@@ -88,7 +93,7 @@ actor SegmentedTranscriber {
         if pendingCompleteSegmentCount > configuration.maximumBacklog {
             backlogExceeded = true
             logger.warning(
-                "incremental backlog exceeded limit=\(self.configuration.maximumBacklog); intermediate segments dropped"
+                "incremental backlog exceeded limit=\(self.configuration.maximumBacklog); processing deferred to final pass"
             )
         }
         startWorkerIfNeeded()
@@ -104,8 +109,8 @@ actor SegmentedTranscriber {
         try await transcriptionService.prepare()
     }
 
-    /// A bounded final pass. Audio longer than 30 seconds is never sent to the
-    /// transcription service as a single buffer, including error/backlog paths.
+    /// Completes every queued window. The budget is advisory: returning all text
+    /// takes precedence over a bounded latency for long dictations.
     func finishWithBudget(
         completeAudio: [Float],
         budget: TimeInterval?
@@ -114,9 +119,9 @@ actor SegmentedTranscriber {
             try Task.checkCancellation()
             guard !isCancelled else { throw CancellationError() }
 
-            let finishStartedAt = MonotonicClock.now
             let audioDuration = Double(completeAudio.count) / Double(configuration.sampleRate)
             let allowsCompleteAudioFallback = audioDuration <= 30
+            audio = completeAudio
 
             if completeAudio.count <= configuration.segmentSampleCount {
                 return try await transcribeSingleWindow(completeAudio)
@@ -125,43 +130,34 @@ actor SegmentedTranscriber {
             if backlogExceeded {
                 if allowsCompleteAudioFallback {
                     let text = try await transcribeCompleteAudio(reason: "backlog_exceeded")
-                    return FinishResult(text: text, isPartial: false, segmentCount: 1)
+                    return await diagnosedResult(text: text, isPartial: false, segmentCount: 1)
                 }
                 backlogExceeded = false
                 logger.warning("long dictation backlog retained for sequential final processing")
             }
 
             isFinishing = true
-            audio = completeAudio
+            hadSegmentFailure = segmentFailed
+            segmentFailed = false
             startWorkerIfNeeded()
             if let worker {
-                if let remaining = remainingBudget(budget, since: finishStartedAt) {
-                    do {
-                        try await PipelineWatchdog.run(
-                            stage: "transcription finale",
-                            timeout: .seconds(remaining)
-                        ) {
-                            await worker.value
-                        }
-                    } catch let error as PipelineWatchdogError {
-                        worker.cancel()
-                        logger.warning("final transcription budget exceeded: \(error.localizedDescription, privacy: .public)")
-                        return partialResult()
-                    }
-                } else {
-                    await worker.value
-                }
+                await worker.value
             }
 
             try Task.checkCancellation()
             guard !isCancelled else { throw CancellationError() }
 
+            if hadSegmentFailure, allowsCompleteAudioFallback {
+                let text = try await transcribeCompleteAudio(reason: "segment_error")
+                return await diagnosedResult(text: text, isPartial: false, segmentCount: 1)
+            }
+
             if segmentFailed {
                 if allowsCompleteAudioFallback {
                     let text = try await transcribeCompleteAudio(reason: "segment_error")
-                    return FinishResult(text: text, isPartial: false, segmentCount: 1)
+                    return await diagnosedResult(text: text, isPartial: false, segmentCount: 1)
                 }
-                return partialResult()
+                return await diagnosedPartialResult()
             }
 
             var completed = segments.sorted { $0.index < $1.index }
@@ -174,38 +170,24 @@ actor SegmentedTranscriber {
                         [transcriptionService, language, finalSamples] in
                         try await transcriptionService.transcribe(finalSamples, language: language)
                     }
-                    let text: String
-                    if let remaining = remainingBudget(budget, since: finishStartedAt) {
-                        text = try await PipelineWatchdog.run(
-                            stage: "segment final",
-                            timeout: .seconds(remaining),
-                            operation: operation
-                        )
-                    } else {
-                        text = try await operation()
-                    }
+                    let text = try await operation()
                     let elapsed = Self.seconds(start.duration(to: .now))
                     logger.info(
                         "incremental segment index=\(finalIndex) phase=final audio=\(Double(finalSamples.count) / Double(self.configuration.sampleRate), format: .fixed(precision: 3))s duration=\(elapsed, format: .fixed(precision: 3))s"
                     )
+                    await recordRawWhisper(text, index: finalIndex)
                     completed.append(TranscribedSegment(index: finalIndex, text: text))
                 } catch is CancellationError {
                     throw CancellationError()
-                } catch is PipelineWatchdogError {
-                    return FinishResult(
-                        text: Self.assemble(completed.map(\.text)),
-                        isPartial: true,
-                        segmentCount: completed.count
-                    )
                 } catch {
                     if allowsCompleteAudioFallback {
                         logger.warning(
                             "incremental final segment failed; full fallback error=\(error.localizedDescription, privacy: .public)"
                         )
                         let text = try await transcribeCompleteAudio(reason: "final_segment_error")
-                        return FinishResult(text: text, isPartial: false, segmentCount: 1)
+                        return await diagnosedResult(text: text, isPartial: false, segmentCount: 1)
                     }
-                    return FinishResult(
+                    return await diagnosedResult(
                         text: Self.assemble(completed.map(\.text)),
                         isPartial: true,
                         segmentCount: completed.count
@@ -213,9 +195,9 @@ actor SegmentedTranscriber {
                 }
             }
 
-            return FinishResult(
+            return await diagnosedResult(
                 text: Self.assemble(completed.map(\.text)),
-                isPartial: false,
+                isPartial: hadSegmentFailure,
                 segmentCount: completed.count
             )
         } onCancel: {
@@ -223,21 +205,23 @@ actor SegmentedTranscriber {
         }
     }
 
-    private func remainingBudget(
-        _ budget: TimeInterval?,
-        since start: TimeInterval
-    ) -> TimeInterval? {
-        guard let budget else { return nil }
-        return max(0.001, budget - (MonotonicClock.now - start))
-    }
-
-    private func partialResult() -> FinishResult {
+    private func diagnosedPartialResult() async -> FinishResult {
         let completed = segments.sorted { $0.index < $1.index }
-        return FinishResult(
+        return await diagnosedResult(
             text: Self.assemble(completed.map(\.text)),
             isPartial: true,
             segmentCount: completed.count
         )
+    }
+
+    private func diagnosedResult(text: String, isPartial: Bool, segmentCount: Int) async -> FinishResult {
+        await wordDiagnostics?.recordWordCount(
+            rawWordCounts.values.reduce(0, +),
+            stage: .whisperTotal,
+            segmentIndex: nil
+        )
+        await wordDiagnostics?.recordWordCount(text, stage: .segmentedMerge)
+        return FinishResult(text: text, isPartial: isPartial, segmentCount: segmentCount)
     }
 
     func cancel() {
@@ -252,7 +236,7 @@ actor SegmentedTranscriber {
 
         for text in texts {
             let rawWords = text.split(whereSeparator: \.isWhitespace).map(String.init)
-            let words = TranscriptionOverlapMatcher.removingRepeatedPassage(from: rawWords)
+            let words = rawWords
             guard !words.isEmpty else { continue }
             guard !assembled.isEmpty else {
                 assembled = words
@@ -311,6 +295,7 @@ actor SegmentedTranscriber {
             do {
                 let text = try await transcriptionService.transcribe(samples, language: language)
                 let elapsed = Self.seconds(start.duration(to: .now))
+                await recordRawWhisper(text, index: index)
                 segments.append(TranscribedSegment(index: index, text: text))
                 logger.info(
                     "incremental segment index=\(index) phase=streaming audio=\(Double(samples.count) / Double(self.configuration.sampleRate), format: .fixed(precision: 3))s duration=\(elapsed, format: .fixed(precision: 3))s"
@@ -319,7 +304,8 @@ actor SegmentedTranscriber {
                 isCancelled = true
                 break
             } catch {
-                segmentFailed = true
+                hadSegmentFailure = true
+                segmentFailed = !isFinishing
                 logger.warning(
                     "incremental segment failed index=\(index) duration=\(Self.seconds(start.duration(to: .now)), format: .fixed(precision: 3))s error=\(error.localizedDescription, privacy: .public)"
                 )
@@ -332,6 +318,8 @@ actor SegmentedTranscriber {
         try Task.checkCancellation()
         let start = ContinuousClock.now
         let text = try await transcriptionService.transcribe(audio, language: language)
+        rawWordCounts.removeAll()
+        await recordRawWhisper(text, index: 0)
         let elapsed = Self.seconds(start.duration(to: .now))
         logger.info(
             "incremental full transcription reason=\(reason, privacy: .public) audio=\(Double(self.audio.count) / Double(self.configuration.sampleRate), format: .fixed(precision: 3))s duration=\(elapsed, format: .fixed(precision: 3))s"
@@ -350,14 +338,20 @@ actor SegmentedTranscriber {
 
         let completed = segments.sorted { $0.index < $1.index }
         if !completed.isEmpty, !segmentFailed {
-            return FinishResult(
+            return await diagnosedResult(
                 text: Self.assemble(completed.map(\.text)),
                 isPartial: false,
                 segmentCount: completed.count
             )
         }
         let text = try await transcribeCompleteAudio(reason: "single_window")
-        return FinishResult(text: text, isPartial: false, segmentCount: 1)
+        return await diagnosedResult(text: text, isPartial: false, segmentCount: 1)
+    }
+
+    private func recordRawWhisper(_ text: String, index: Int) async {
+        let count = text.split(whereSeparator: \.isWhitespace).count
+        rawWordCounts[index] = count
+        await wordDiagnostics?.recordWordCount(count, stage: .whisperSegment, segmentIndex: index)
     }
 
     private static func mergingBoundaryPunctuation(existing: String, incoming: String) -> String {

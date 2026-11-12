@@ -97,11 +97,13 @@ struct PreviewDictionaryFileManager: DictionaryFileManaging {
 @MainActor
 final class PreviewDiagnostics: DictationDiagnosticsProviding {
     @Published var lastTimings: DictationTimings?
+    @Published var lastWordDiagnostics: TextWordDiagnostics?
     private let store: any SettingsStoring
 
     init(store: any SettingsStoring, lastTimings: DictationTimings? = nil) {
         self.store = store
         self.lastTimings = lastTimings
+        lastWordDiagnostics = nil
     }
 }
 

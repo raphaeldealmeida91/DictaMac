@@ -82,6 +82,7 @@ final class DictationPipeline: DictationPipelineRunning {
     private let metricsRecorder: any DictationMetricsRecording
     private let instrumentedStage: InstrumentedStage
     private let modelRecovery: any PipelineModelRecovering
+    private let wordDiagnostics: (any TextWordDiagnosticsRecording)?
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "DictationPipeline"
@@ -95,7 +96,8 @@ final class DictationPipeline: DictationPipelineRunning {
         historyRecorder: any DictationHistoryRecording,
         metricsRecorder: any DictationMetricsRecording,
         stageReporter: any DictationStageReporting,
-        modelRecovery: any PipelineModelRecovering
+        modelRecovery: any PipelineModelRecovering,
+        wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil
     ) {
         self.textCleanupService = textCleanupService
         self.textCleanupSettings = textCleanupSettings
@@ -105,6 +107,7 @@ final class DictationPipeline: DictationPipelineRunning {
         self.metricsRecorder = metricsRecorder
         self.instrumentedStage = InstrumentedStage(reporter: stageReporter)
         self.modelRecovery = modelRecovery
+        self.wordDiagnostics = wordDiagnostics
     }
 
     func run(samples: [Float], session: DictationPipelineSession) async -> DictationOutcome {
@@ -144,14 +147,21 @@ final class DictationPipeline: DictationPipelineRunning {
         let transcriptionDuration = Self.seconds(transcriptionStartedAt.duration(to: .now))
         let dictionaryEntries = personalDictionary.entries()
         let correctedText = DictionaryCorrector.correct(result.text, entries: dictionaryEntries)
+        wordDiagnostics?.recordWordCount(correctedText, stage: .dictionary)
+        let deterministicText = FastRulesTextCleanupService.cleanup(
+            correctedText,
+            removeIsolatedGenre: textCleanupSettings.removeIsolatedGenre
+        )
+        wordDiagnostics?.recordWordCount(deterministicText, stage: .deterministicRules)
         let cleanupStartedAt = ContinuousClock.now
         let cleanupResult = try await cleanup(
-            correctedText,
+            deterministicText,
             dictionary: dictionaryEntries.map(\.canonical),
             result: result,
             session: session
         )
         try Task.checkCancellation()
+        wordDiagnostics?.recordWordCount(cleanupResult.text, stage: .postProcessor)
         return ProcessedText(
             rawValue: result.text,
             value: cleanupResult.text,
@@ -270,6 +280,7 @@ final class DictationPipeline: DictationPipelineRunning {
             try Task.checkCancellation()
             return self.textInjector.insert(text)
         }
+        wordDiagnostics?.recordWordCount(text, stage: .injected)
         return (outcome, Self.seconds(startedAt.duration(to: .now)))
     }
 

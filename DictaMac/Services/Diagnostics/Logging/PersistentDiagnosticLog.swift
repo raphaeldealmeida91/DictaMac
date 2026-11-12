@@ -110,6 +110,12 @@ final class PersistentDiagnosticLog: DiagnosticLogging, @unchecked Sendable {
         enqueue("event=event_tap_disabled reason=\(safeToken(reason))")
     }
 
+    func wordCount(stage: TextWordDiagnosticStage, segmentIndex: Int?, count: Int) {
+        var line = "event=text_word_count stage=\(stage.rawValue) words=\(count)"
+        if let segmentIndex { line += " segment=\(segmentIndex)" }
+        enqueue(line)
+    }
+
     private func enqueue(_ message: String) {
         queue.async { [weak self] in self?.writeLine(message) }
     }

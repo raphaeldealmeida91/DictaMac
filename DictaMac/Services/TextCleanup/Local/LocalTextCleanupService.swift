@@ -6,18 +6,21 @@ actor LocalTextCleanupService: TextCleanupService {
     private let settings: any TextCleanupSettings
     private let timeout: Duration?
     private let promptBuilder: CleanupPromptBuilder
+    private let wordDiagnostics: (any TextWordDiagnosticsRecording)?
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "DictaMac", category: "TextCleanup")
 
     init(
         generator: any LocalTextGenerating,
         settings: any TextCleanupSettings = StoredTextCleanupSettings(),
         timeout: Duration? = nil,
-        promptBuilder: CleanupPromptBuilder = CleanupPromptBuilder()
+        promptBuilder: CleanupPromptBuilder = CleanupPromptBuilder(),
+        wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil
     ) {
         self.generator = generator
         self.settings = settings
         self.timeout = timeout
         self.promptBuilder = promptBuilder
+        self.wordDiagnostics = wordDiagnostics
     }
 
     func cleanup(_ text: String, dictionary: [String]) async throws -> String {
@@ -41,6 +44,7 @@ actor LocalTextCleanupService: TextCleanupService {
             let candidate = try await race.run(timeout: configuredTimeout) { [generator] in
                 try await generator.generate(text: text, messages: messages, maxTokens: .max)
             }
+            await wordDiagnostics?.recordWordCount(candidate, stage: .llmRaw)
             let decision = TextCleanupPostProcessor.process(
                 raw: text,
                 candidate: candidate,

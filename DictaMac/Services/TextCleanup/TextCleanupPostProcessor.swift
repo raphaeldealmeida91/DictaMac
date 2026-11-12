@@ -17,6 +17,12 @@ enum TextCleanupPostProcessor {
         guard rawCount > 0 else { return .fallback(reason: "empty input") }
         let ratio = Double(cleaned.count) / Double(rawCount)
         guard acceptedRatio(style).contains(ratio) else { return .fallback(reason: "length ratio") }
+        let inputWordCount = wordCount(raw)
+        let outputWordCount = wordCount(cleaned)
+        guard inputWordCount > 0 else { return .fallback(reason: "empty input") }
+        guard Double(outputWordCount) / Double(inputWordCount) >= minimumWordRatio(style) else {
+            return .fallback(reason: "word ratio")
+        }
         guard inputNumbers(raw).isSubset(of: inputNumbers(cleaned)) else {
             return .fallback(reason: "missing number")
         }
@@ -42,6 +48,17 @@ enum TextCleanupPostProcessor {
         case .correction: 0.7...1.3
         case .polished: 0.5...1.6
         }
+    }
+
+    private static func minimumWordRatio(_ style: CleanupStyle) -> Double {
+        switch style {
+        case .correction: 0.5
+        case .polished: 0.4
+        }
+    }
+
+    private static func wordCount(_ text: String) -> Int {
+        text.split(whereSeparator: \.isWhitespace).count
     }
 
     private static func inputNumbers(_ text: String) -> Set<String> {

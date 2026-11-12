@@ -12,6 +12,7 @@ actor CloudTextCleanupService: TextCleanupService {
     private let modelProvider: @Sendable () -> String
     private let settings: any TextCleanupSettings
     private let promptBuilder: CleanupPromptBuilder
+    private let wordDiagnostics: (any TextWordDiagnosticsRecording)?
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "DictaMac", category: "TextCleanup")
 
     init(
@@ -20,7 +21,8 @@ actor CloudTextCleanupService: TextCleanupService {
         apiKeyProvider: @escaping @Sendable () throws -> String? = { try TextCleanupAPIKeyStore.load() },
         settings: any TextCleanupSettings = StoredTextCleanupSettings(),
         modelProvider: (@Sendable () -> String)? = nil,
-        promptBuilder: CleanupPromptBuilder = CleanupPromptBuilder()
+        promptBuilder: CleanupPromptBuilder = CleanupPromptBuilder(),
+        wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil
     ) {
         if let session {
             self.session = session
@@ -35,6 +37,7 @@ actor CloudTextCleanupService: TextCleanupService {
         self.modelProvider = modelProvider ?? { settings.configuredModel }
         self.settings = settings
         self.promptBuilder = promptBuilder
+        self.wordDiagnostics = wordDiagnostics
     }
 
     func cleanup(_ text: String, dictionary: [String]) async throws -> String {
@@ -69,7 +72,7 @@ actor CloudTextCleanupService: TextCleanupService {
         guard (200..<300).contains(http.statusCode) else {
             throw TextCleanupError.requestFailed(statusCode: http.statusCode)
         }
-        return try candidate(from: data)
+        return try await candidate(from: data)
     }
 
     private func makeRequest(text: String, dictionary: [String], key: String) throws -> URLRequest {
@@ -87,13 +90,14 @@ actor CloudTextCleanupService: TextCleanupService {
         return request
     }
 
-    private func candidate(from data: Data) throws -> String {
+    private func candidate(from data: Data) async throws -> String {
         let body = try JSONDecoder().decode(CleanupResponse.self, from: data)
         guard let candidate = body.output
             .flatMap({ $0.content ?? [] })
             .first(where: { $0.type == "output_text" })?.text else {
             throw TextCleanupError.invalidResponse
         }
+        await wordDiagnostics?.recordWordCount(candidate, stage: .llmRaw)
         return candidate
     }
 

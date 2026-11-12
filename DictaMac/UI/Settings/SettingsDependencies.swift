@@ -65,6 +65,7 @@ protocol APIKeyStoring: Sendable {
 @MainActor
 protocol DictationDiagnosticsProviding: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     var lastTimings: DictationTimings? { get }
+    var lastWordDiagnostics: TextWordDiagnostics? { get }
 }
 
 protocol DiagnosticLogOpening: Sendable {

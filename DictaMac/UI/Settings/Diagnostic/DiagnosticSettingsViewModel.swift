@@ -4,6 +4,7 @@ import Foundation
 @MainActor
 final class DiagnosticSettingsViewModel: ObservableObject {
     @Published private(set) var timings: DictationTimings?
+    @Published private(set) var wordDiagnostics: TextWordDiagnostics?
     #if DEBUG
     @Published private(set) var benchmarkIsRunning = false
     @Published private(set) var benchmarkStatus = ""
@@ -12,6 +13,7 @@ final class DiagnosticSettingsViewModel: ObservableObject {
 
     private let openLogs: () -> Void
     private let readTimings: () -> DictationTimings?
+    private let readWordDiagnostics: () -> TextWordDiagnostics?
     #if DEBUG
     private let runBenchmark: () -> Void
     private let readBenchmark: () -> (Bool, String, [WhisperBenchmarkResult])
@@ -26,6 +28,7 @@ final class DiagnosticSettingsViewModel: ObservableObject {
     ) {
         openLogs = logOpener.openLogsDirectory
         readTimings = { diagnostics.lastTimings }
+        readWordDiagnostics = { diagnostics.lastWordDiagnostics }
         runBenchmark = benchmark.chooseWAVAndRun
         readBenchmark = { (benchmark.isRunning, benchmark.status, benchmark.results) }
         observe(benchmark.objectWillChange)
@@ -39,6 +42,7 @@ final class DiagnosticSettingsViewModel: ObservableObject {
     ) {
         openLogs = logOpener.openLogsDirectory
         readTimings = { diagnostics.lastTimings }
+        readWordDiagnostics = { diagnostics.lastWordDiagnostics }
         observe(diagnostics.objectWillChange)
         synchronize()
     }
@@ -67,6 +71,7 @@ final class DiagnosticSettingsViewModel: ObservableObject {
 
     private func synchronize() {
         timings = readTimings()
+        wordDiagnostics = readWordDiagnostics()
         #if DEBUG
         let benchmark = readBenchmark()
         benchmarkIsRunning = benchmark.0

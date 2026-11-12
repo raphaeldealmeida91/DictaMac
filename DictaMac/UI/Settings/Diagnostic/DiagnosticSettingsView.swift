@@ -20,6 +20,10 @@ struct DiagnosticSettingsView: View {
                         .font(Theme.Typography.description)
                         .foregroundStyle(.secondary)
                 }
+                if let diagnostics = viewModel.wordDiagnostics {
+                    Divider()
+                    wordCountTable(diagnostics)
+                }
             }
 
             SettingsCard(
@@ -63,6 +67,24 @@ struct DiagnosticSettingsView: View {
                 .fontWeight(emphasized ? .semibold : .regular)
                 .monospacedDigit()
         }
+    }
+
+    private func wordCountTable(_ diagnostics: TextWordDiagnostics) -> some View {
+        Grid(alignment: .leading, horizontalSpacing: Theme.Spacing.xLarge, verticalSpacing: Theme.Spacing.small) {
+            ForEach(Array(diagnostics.entries.enumerated()), id: \.offset) { _, entry in
+                GridRow {
+                    Text(wordCountTitle(entry))
+                    Spacer()
+                    Text("\(entry.wordCount) mots")
+                        .monospacedDigit()
+                }
+            }
+        }
+    }
+
+    private func wordCountTitle(_ entry: TextWordDiagnosticEntry) -> String {
+        guard let segmentIndex = entry.segmentIndex else { return entry.stage.title }
+        return "\(entry.stage.title) \(segmentIndex + 1)"
     }
 
     #if DEBUG

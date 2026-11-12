@@ -160,27 +160,32 @@ final class DefaultRecordingSessionFactory: RecordingSessionBuilding {
     private let transcriptionService: any TranscriptionService
     private let transcriptionSettings: any TranscriptionSettings
     private let recordingSettings: any RecordingSettings
+    private let wordDiagnostics: any TextWordDiagnosticsRecording
 
     init(
         audioRecorder: any AudioRecording,
         transcriptionService: any TranscriptionService,
         transcriptionSettings: any TranscriptionSettings,
-        recordingSettings: any RecordingSettings
+        recordingSettings: any RecordingSettings,
+        wordDiagnostics: any TextWordDiagnosticsRecording
     ) {
         self.audioRecorder = audioRecorder
         self.transcriptionService = transcriptionService
         self.transcriptionSettings = transcriptionSettings
         self.recordingSettings = recordingSettings
+        self.wordDiagnostics = wordDiagnostics
     }
 
     func makeSession(
         onMaximumDuration: @escaping @MainActor () -> Void
     ) -> any RecordingSessionManaging {
-        RecordingSession(
+        wordDiagnostics.beginWordDiagnostics()
+        return RecordingSession(
             audioRecorder: audioRecorder,
             transcriber: SegmentedTranscriber(
                 transcriptionService: transcriptionService,
-                language: transcriptionSettings.configuredLanguage
+                language: transcriptionSettings.configuredLanguage,
+                wordDiagnostics: wordDiagnostics
             ),
             maximumDuration: recordingSettings.maximumDuration,
             onMaximumDuration: onMaximumDuration

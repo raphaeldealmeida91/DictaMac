@@ -95,7 +95,11 @@ extension AppEnvironment {
             modelLoadingGate: shared.modelLoadingGate
         )
         let lifecycle = makeLifecycle(settings: settings, models: models, emergency: emergency)
-        let cleanup = makeCleanupService(settings: settings.cleanup, manager: models.localManager)
+        let cleanup = makeCleanupService(
+            settings: settings.cleanup,
+            manager: models.localManager,
+            wordDiagnostics: models.diagnostics
+        )
         let activity = AppActivityModel()
         let coordinator = makeCoordinator(
             settings: settings,

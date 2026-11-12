@@ -80,9 +80,9 @@ final class DictationPipelineTests: XCTestCase {
         )
 
         let received = await cleanup.received()
-        XCTAssertEqual(received.text, "le devis est prêt")
+        XCTAssertEqual(received.text, "Le devis est prêt.")
         XCTAssertEqual(received.dictionary, ["devis"])
-        XCTAssertEqual(injector.insertedText, "le devis est prêt")
+        XCTAssertEqual(injector.insertedText, "Le devis est prêt.")
     }
 
     func testModelPreparationFailureDoesNotStartTranscriptionStage() async {
@@ -104,12 +104,32 @@ final class DictationPipelineTests: XCTestCase {
         XCTAssertNil(injector.insertedText)
     }
 
+    func testRecordsPipelineWordCountsThroughInjection() async {
+        let diagnostics = PipelineWordDiagnosticsSpy()
+        let pipeline = makePipeline(
+            cleanupService: SuccessfulCleanupService(output: "Texte final conservé."),
+            injector: PipelineFakeInjector(),
+            stageReporter: PipelineFakeStageReporter(),
+            wordDiagnostics: diagnostics
+        )
+
+        _ = await pipeline.run(
+            samples: [0.1],
+            session: makeSession(transcriber: PipelineFakeTranscriber(text: "texte brut conservé"))
+        )
+
+        XCTAssertEqual(diagnostics.stages, [
+            .dictionary, .deterministicRules, .postProcessor, .injected
+        ])
+    }
+
     private func makePipeline(
         cleanupService: any TextCleanupService,
         injector: PipelineFakeInjector,
         stageReporter: PipelineFakeStageReporter,
         historyRecorder: PipelineFakeHistoryRecorder = PipelineFakeHistoryRecorder(),
-        personalDictionary: any PersonalDictionary = PipelinePersonalDictionary(entries: [])
+        personalDictionary: any PersonalDictionary = PipelinePersonalDictionary(entries: []),
+        wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil
     ) -> DictationPipeline {
         DictationPipeline(
             textCleanupService: cleanupService,
@@ -119,7 +139,8 @@ final class DictationPipelineTests: XCTestCase {
             historyRecorder: historyRecorder,
             metricsRecorder: PipelineFakeMetricsRecorder(),
             stageReporter: stageReporter,
-            modelRecovery: PipelineFakeRecovery()
+            modelRecovery: PipelineFakeRecovery(),
+            wordDiagnostics: wordDiagnostics
         )
     }
 
@@ -302,4 +323,15 @@ private final class PipelineFakeStageReporter: DictationStageReporting {
 @MainActor
 private final class PipelineFakeRecovery: PipelineModelRecovering {
     func recoverAfterWatchdog() async {}
+}
+
+@MainActor
+private final class PipelineWordDiagnosticsSpy: TextWordDiagnosticsRecording {
+    private(set) var stages: [TextWordDiagnosticStage] = []
+
+    func beginWordDiagnostics() { stages = [] }
+
+    func recordWordCount(_ count: Int, stage: TextWordDiagnosticStage, segmentIndex: Int?) {
+        stages.append(stage)
+    }
 }

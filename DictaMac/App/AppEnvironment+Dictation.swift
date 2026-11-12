@@ -33,7 +33,8 @@ extension AppEnvironment {
             recordingSessionFactory: makeRecordingFactory(
                 audioRecorder: audioRecorder,
                 settings: settings,
-                transcriptionService: models.transcriptionService
+                transcriptionService: models.transcriptionService,
+                wordDiagnostics: models.diagnostics
             ),
             pipeline: pipeline,
             stageReporter: reporter,
@@ -66,20 +67,23 @@ extension AppEnvironment {
             historyRecorder: models.history,
             metricsRecorder: models.diagnostics,
             stageReporter: reporter,
-            modelRecovery: recovery
+            modelRecovery: recovery,
+            wordDiagnostics: models.diagnostics
         )
     }
 
     static func makeRecordingFactory(
         audioRecorder: AudioRecorder,
         settings: SettingsBundle,
-        transcriptionService: WhisperKitTranscriptionService
+        transcriptionService: WhisperKitTranscriptionService,
+        wordDiagnostics: any TextWordDiagnosticsRecording
     ) -> DefaultRecordingSessionFactory {
         DefaultRecordingSessionFactory(
             audioRecorder: audioRecorder,
             transcriptionService: transcriptionService,
             transcriptionSettings: settings.transcription,
-            recordingSettings: settings.recording
+            recordingSettings: settings.recording,
+            wordDiagnostics: wordDiagnostics
         )
     }
 

@@ -29,7 +29,7 @@ extension AppEnvironment {
             transcriptionState: transcriptionState,
             cleanupState: cleanupState,
             history: TranscriptionHistoryStore(settings: settings.history),
-            diagnostics: DictationDiagnostics(),
+            diagnostics: DictationDiagnostics(diagnosticLog: shared.diagnosticLog),
             localManager: localManager,
             transcriptionService: transcriptionService
         )

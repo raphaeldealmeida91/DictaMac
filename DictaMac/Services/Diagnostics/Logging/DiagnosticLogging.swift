@@ -21,9 +21,12 @@ protocol DiagnosticLogging: Sendable {
     func memoryPressure(critical: Bool)
     func mainThreadStall(duration: TimeInterval)
     func eventTapDisabled(reason: String)
+    func wordCount(stage: TextWordDiagnosticStage, segmentIndex: Int?, count: Int)
 }
 
 extension DiagnosticLogging {
+    func wordCount(stage: TextWordDiagnosticStage, segmentIndex: Int?, count: Int) {}
+
     func modelLoadEnded(
         duration: TimeInterval,
         reusedCompiledCache: Bool?,

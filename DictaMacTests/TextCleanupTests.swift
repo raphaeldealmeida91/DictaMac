@@ -31,6 +31,19 @@ final class TextCleanupPostProcessorTests: XCTestCase {
         XCTAssertEqual(process(raw: raw, candidate: candidate, style: .polished), .cleaned(candidate))
     }
 
+    func testWordRatioRejectsSevereLLMTruncationByStyle() {
+        let raw = "a b c d e f g h i j"
+        let fourWords = "long long long long"
+        let fiveWords = "mot mot mot mot mot"
+
+        XCTAssertEqual(
+            process(raw: raw, candidate: fourWords, style: .correction),
+            .fallback(reason: "word ratio")
+        )
+        XCTAssertEqual(process(raw: raw, candidate: fourWords, style: .polished), .cleaned(fourWords))
+        XCTAssertEqual(process(raw: raw, candidate: fiveWords, style: .correction), .cleaned(fiveWords))
+    }
+
     func testDictationTagsAreRemovedCaseInsensitively() {
         XCTAssertEqual(TextCleanupPostProcessor.removingDictationTags(from: "<DICTATION>Bonjour.</dictation>"), "Bonjour.")
     }
@@ -407,6 +420,37 @@ final class LocalTextCleanupServiceTests: XCTestCase {
         let messages = await generator.messages()
         let systemPrompt = try XCTUnwrap(messages.first?["content"])
         XCTAssertTrue(systemPrompt.contains("SFM30, ChatGPT"))
+    }
+
+    @MainActor
+    func testRecordsRawLLMWordCountWithoutText() async throws {
+        let diagnostics = CleanupWordDiagnosticsSpy()
+        let service = LocalTextCleanupService(
+            generator: FakeLocalGenerator(.output(raw)),
+            timeout: .seconds(2),
+            wordDiagnostics: diagnostics
+        )
+
+        _ = try await service.cleanup(raw)
+
+        XCTAssertEqual(diagnostics.entries, [
+            TextWordDiagnosticEntry(
+                stage: .llmRaw,
+                segmentIndex: nil,
+                wordCount: raw.split(whereSeparator: \.isWhitespace).count
+            )
+        ])
+    }
+}
+
+@MainActor
+private final class CleanupWordDiagnosticsSpy: TextWordDiagnosticsRecording {
+    private(set) var entries: [TextWordDiagnosticEntry] = []
+
+    func beginWordDiagnostics() { entries = [] }
+
+    func recordWordCount(_ count: Int, stage: TextWordDiagnosticStage, segmentIndex: Int?) {
+        entries.append(TextWordDiagnosticEntry(stage: stage, segmentIndex: segmentIndex, wordCount: count))
     }
 }
 
