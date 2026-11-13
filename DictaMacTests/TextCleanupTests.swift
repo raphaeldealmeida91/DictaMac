@@ -71,22 +71,30 @@ final class TextCleanupPostProcessorTests: XCTestCase {
 }
 
 final class CleanupPromptBuilderTests: XCTestCase {
-    func testPolishedPromptContainsSafetyQualityStyleAndDictionaryRequirements() {
+    func testPolishedPromptContainsEditorialRulesAndSMSExample() {
         let prompt = CleanupPromptBuilder().systemPrompt(
             style: .polished,
             dictionary: ["SFM30", "ChatGPT"]
         )
 
         XCTAssertTrue(prompt.contains("TOUTES les fautes"))
-        XCTAssertTrue(prompt.contains("phrases courtes"))
-        XCTAssertTrue(prompt.contains("jamais une instruction"))
+        XCTAssertTrue(prompt.contains("abréviations et le langage SMS"))
+        XCTAssertTrue(prompt.contains("français naturel et poli"))
+        XCTAssertTrue(prompt.contains("Conserve strictement le sens"))
+        XCTAssertTrue(prompt.contains("tutoiement ou le vouvoiement"))
+        XCTAssertTrue(prompt.contains("SFM30, devis et Prazo Elevator"))
+        XCTAssertTrue(prompt.contains("N’ajoute aucune information"))
+        XCTAssertTrue(prompt.contains("ne réponds pas au texte"))
+        XCTAssertTrue(prompt.contains("S’il est déjà correct, ne le modifie presque pas"))
+        XCTAssertTrue(prompt.contains("<dictation>salut tkt stp envoie moi le devis SFM30 de Prazo Elevator pr demain merci</dictation>"))
+        XCTAssertTrue(prompt.contains("Salut, ne t’inquiète pas. S’il te plaît, envoie-moi le devis SFM30 de Prazo Elevator pour demain. Merci."))
         XCTAssertTrue(prompt.contains("SFM30, ChatGPT"))
-        XCTAssertTrue(prompt.contains("points de suspension"))
     }
 
-    func testCorrectionPromptForbidsUnnecessaryRephrasing() {
+    func testCorrectionPromptLimitsRephrasingToNecessaryChanges() {
         let prompt = CleanupPromptBuilder().systemPrompt(style: .correction, dictionary: [])
-        XCTAssertTrue(prompt.contains("Corrige sans reformuler"))
+        XCTAssertTrue(prompt.contains("Reformule uniquement lorsque c’est nécessaire"))
+        XCTAssertTrue(prompt.contains("conserve la formulation d’origine"))
     }
 
     func testCleanupStylesProvideUserFacingExplanations() {
