@@ -122,6 +122,17 @@ final class PersistentDiagnosticLog: DiagnosticLogging, @unchecked Sendable {
         enqueue(line)
     }
 
+    func selectionCorrectionLatency(
+        detectionToInference: TimeInterval,
+        inference: TimeInterval,
+        inferenceToPresentation: TimeInterval,
+        modelAlreadyLoaded: Bool
+    ) {
+        enqueue(
+            "event=selection_correction_latency detection_to_inference_s=\(fixed(detectionToInference)) inference_s=\(fixed(inference)) inference_to_bubble_s=\(fixed(inferenceToPresentation)) model_already_loaded=\(modelAlreadyLoaded)"
+        )
+    }
+
     private func enqueue(_ message: String) {
         queue.async { [weak self] in self?.writeLine(message) }
     }

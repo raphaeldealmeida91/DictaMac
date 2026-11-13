@@ -50,22 +50,48 @@ actor ConfiguredSelectionCorrectionService: SelectionCorrectionService {
     }
 
     func correct(_ text: String, dictionary: [String]) async throws -> SelectionCorrection {
+        try await correctWithMetrics(text, dictionary: dictionary).correction
+    }
+
+    func correctWithMetrics(
+        _ text: String,
+        dictionary: [String]
+    ) async throws -> SelectionCorrectionExecution {
         try Task.checkCancellation()
         let engine = await engineStatus()
         logger.info("engine selected engine=\(engine.rawValue, privacy: .public) length=\(text.count)")
+        let modelAlreadyLoaded = await localGenerator.isReady
+        if engine == .local { try await localGenerator.prepare() }
+        let inferenceStartedAt = ContinuousClock.now
         let candidate = try await candidate(for: text, dictionary: dictionary, engine: engine)
+        let inferenceFinishedAt = ContinuousClock.now
         try Task.checkCancellation()
-        guard validator.accepts(original: text, candidate: candidate, dictionary: dictionary) else {
-            logger.info("result=validator_rejected length=\(text.count)")
-            return .unchanged(text)
+        let correction = validatedCorrection(candidate, original: text, dictionary: dictionary)
+        return SelectionCorrectionExecution(
+            correction: correction,
+            engine: engine,
+            inferenceStartedAt: inferenceStartedAt,
+            inferenceFinishedAt: inferenceFinishedAt,
+            modelAlreadyLoaded: modelAlreadyLoaded
+        )
+    }
+
+    private func validatedCorrection(
+        _ candidate: String,
+        original: String,
+        dictionary: [String]
+    ) -> SelectionCorrection {
+        guard validator.accepts(original: original, candidate: candidate, dictionary: dictionary) else {
+            logger.info("result=validator_rejected length=\(original.count)")
+            return .unchanged(original)
         }
         let correction = SelectionCorrection(
-            original: text,
+            original: original,
             corrected: candidate,
-            changes: diff.changes(from: text, to: candidate)
+            changes: diff.changes(from: original, to: candidate)
         )
         let result = correction.changes.isEmpty ? "unchanged" : "suggestion"
-        logger.info("result=\(result, privacy: .public) length=\(text.count)")
+        logger.info("result=\(result, privacy: .public) length=\(original.count)")
         return correction
     }
 
@@ -74,7 +100,7 @@ actor ConfiguredSelectionCorrectionService: SelectionCorrectionService {
             return .cloud
         }
         guard !safeMode.isEnabled else { return .rulesOnly }
-        if await localGenerator.isReady {
+        if cleanupSettings.configuredEngine == .local, cleanupSettings.localDownloadApproved {
             return .local
         }
         return .rulesOnly
@@ -90,6 +116,12 @@ actor ConfiguredSelectionCorrectionService: SelectionCorrectionService {
               cleanupSettings.localDownloadApproved,
               !isReady else { return }
         await activateLocalModel()
+    }
+
+    func requiresPreparation() async -> Bool {
+        let engine = await engineStatus()
+        let isReady = await localGenerator.isReady
+        return engine == .local && !isReady
     }
 
     private func candidate(

@@ -10,6 +10,13 @@ protocol TextCleanupSettings: Sendable {
     var localTimeout: TimeInterval { get }
     var cloudTimeout: TimeInterval { get }
     var localDownloadApproved: Bool { get }
+    var localModelInactivityTimeout: TimeInterval? { get }
+}
+
+extension TextCleanupSettings {
+    var localModelInactivityTimeout: TimeInterval? {
+        StoredTextCleanupSettings.defaultLocalModelInactivityTimeout
+    }
 }
 
 protocol TextCleanupSettingsWriting: Sendable {

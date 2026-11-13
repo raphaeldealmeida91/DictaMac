@@ -79,7 +79,8 @@ extension AppEnvironment {
             let selection = AppEnvironment.makeSelectionBundle(
                 settings: settings,
                 permissionReader: shared.permissionCache,
-                localGenerator: models.localManager
+                localGenerator: models.localManager,
+                diagnosticLog: shared.diagnosticLog
             )
             selectionWatcher = selection.watcher
             selectionCorrectionService = selection.correctionService

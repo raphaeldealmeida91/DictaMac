@@ -9,12 +9,16 @@ actor LocalCleanupModelManager: LocalTextGenerating {
     private var loadedModelID: String?
     private var isWarmedUp = false
     private var activationTask: Task<Void, Never>?
+    private var activatingModelID: String?
+    private var activationID: UUID?
+    private var activeGenerationCount = 0
     private let downloader = ResumableModelDownloader()
     private let settings: any TextCleanupSettings & TextCleanupSettingsWriting
     private let modelState: LocalCleanupModelState
     private let modelLoadingGate: any ModelLoadingGating
     private let diagnosticLog: any DiagnosticLogging
     private let safeMode: any SafeModeControlling
+    private let inactivityPolicy: any LocalModelInactivityPolicy
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "LocalCleanupModel"
@@ -25,13 +29,17 @@ actor LocalCleanupModelManager: LocalTextGenerating {
         modelState: LocalCleanupModelState,
         modelLoadingGate: any ModelLoadingGating,
         diagnosticLog: any DiagnosticLogging,
-        safeMode: any SafeModeControlling = SafeModeState()
+        safeMode: any SafeModeControlling = SafeModeState(),
+        inactivityPolicy: (any LocalModelInactivityPolicy)? = nil
     ) {
         self.settings = settings
         self.modelState = modelState
         self.modelLoadingGate = modelLoadingGate
         self.diagnosticLog = diagnosticLog
         self.safeMode = safeMode
+        self.inactivityPolicy = inactivityPolicy ?? DefaultLocalModelInactivityPolicy(
+            timeout: { settings.localModelInactivityTimeout }
+        )
     }
 
     var isReady: Bool { container != nil && isWarmedUp }
@@ -64,8 +72,14 @@ actor LocalCleanupModelManager: LocalTextGenerating {
             logger.info("local cleanup activation skipped reason=already_ready")
             return
         }
-        activationTask?.cancel()
-        activationTask = Task { [weak self] in await self?.downloadAndLoad(modelID: requested) }
+        startActivation(for: requested)
+    }
+
+    func prepare() async throws {
+        guard !isReady else { return }
+        activateConfiguredModel()
+        await activationTask?.value
+        guard isReady else { throw LocalCleanupError.modelNotReady }
     }
 
     func approveDownloadAndActivate() {
@@ -76,14 +90,19 @@ actor LocalCleanupModelManager: LocalTextGenerating {
     func cancelDownload() {
         activationTask?.cancel()
         activationTask = nil
+        activatingModelID = nil
+        activationID = nil
         Task { @MainActor in
             modelState.unloaded("Téléchargement annulé — reprise disponible")
         }
     }
 
     func unload(reason: String = "Modèle déchargé") {
+        inactivityPolicy.cancel()
         activationTask?.cancel()
         activationTask = nil
+        activatingModelID = nil
+        activationID = nil
         container = nil
         loadedModelID = nil
         isWarmedUp = false
@@ -93,40 +112,75 @@ actor LocalCleanupModelManager: LocalTextGenerating {
         ProcessMemoryDiagnostics.logFootprint(.mlxUnloaded, diagnosticLog: diagnosticLog)
     }
 
+    func refreshInactivityPolicy() {
+        guard isReady else { return }
+        scheduleInactivityUnload()
+    }
+
     func generate(text: String, messages: [[String: String]], maxTokens: Int) async throws -> String {
         guard let container else { throw LocalCleanupError.modelNotReady }
-        return try await container.perform { context in
+        beginGeneration()
+        defer { endGeneration() }
+        return try await performGeneration(
+            container: container,
+            text: text,
+            messages: messages,
+            maxTokens: maxTokens
+        )
+    }
+
+    private func performGeneration(
+        container: ModelContainer,
+        text: String,
+        messages: [[String: String]],
+        maxTokens: Int
+    ) async throws -> String {
+        try await container.perform { context in
             let rawInput = try await context.processor.prepare(input: UserInput(prompt: text))
-            let textTokenLimit = max(1, Int((Double(rawInput.text.tokens.size) * 1.3).rounded(.up)))
-            let effectiveMaxTokens = min(maxTokens, textTokenLimit)
+            let tokenLimit = max(1, Int((Double(rawInput.text.tokens.size) * 1.3).rounded(.up)))
             let input = try await context.processor.prepare(input: UserInput(messages: messages))
             return try MLXLMCommon.generate(
                 input: input,
                 parameters: GenerateParameters(temperature: 0),
                 context: context
             ) { tokens in
-                if Task.isCancelled || tokens.count >= effectiveMaxTokens { return .stop }
+                if Task.isCancelled || tokens.count >= min(maxTokens, tokenLimit) { return .stop }
                 return .more
             }.output
         }
     }
 
-    private func downloadAndLoad(modelID: String) async {
+    private func startActivation(for modelID: String) {
+        if activationTask != nil, activatingModelID == modelID {
+            logger.info("local cleanup activation skipped reason=already_activating")
+            return
+        }
+        activationTask?.cancel()
+        inactivityPolicy.cancel()
+        isWarmedUp = false
+        let id = UUID()
+        activatingModelID = modelID
+        activationID = id
+        activationTask = Task { [weak self] in
+            await self?.downloadAndLoad(modelID: modelID, activationID: id)
+        }
+    }
+
+    private func downloadAndLoad(modelID: String, activationID: UUID) async {
         if modelLoadingGate.isLoading {
             await MainActor.run { modelState.waitingForTranscriptionModel() }
             logger.info("local cleanup activation waiting reason=model_loading_gate_busy")
         }
         do {
             try await modelLoadingGate.run { [weak self] in
-                await self?.downloadAndLoadWithoutCompetition(modelID: modelID)
+                try Task.checkCancellation()
+                try await self?.downloadAndLoadWithoutCompetition(modelID: modelID)
             }
+            finishActivation(id: activationID)
         } catch is CancellationError {
-            activationTask = nil
-            await MainActor.run {
-                modelState.unloaded("Téléchargement annulé — reprise disponible")
-            }
+            await reportCancellationIfCurrent(id: activationID)
         } catch {
-            await MainActor.run { modelState.failed(error) }
+            await reportFailureIfCurrent(error, id: activationID)
         }
     }
 
@@ -135,7 +189,7 @@ actor LocalCleanupModelManager: LocalTextGenerating {
         logger.info("local cleanup activation skipped reason=\(reason, privacy: .public)")
     }
 
-    private func downloadAndLoadWithoutCompetition(modelID: String) async {
+    private func downloadAndLoadWithoutCompetition(modelID: String) async throws {
         let loadStart = ContinuousClock.now
         diagnosticLog.stage(.modelLoad, phase: "begin")
         let signpostID = PerformanceSignposts.signposter.makeSignpostID()
@@ -153,18 +207,7 @@ actor LocalCleanupModelManager: LocalTextGenerating {
                 duration: Self.seconds(loadStart.duration(to: .now))
             )
         }
-        do {
-            try await loadModel(modelID: modelID)
-        } catch is CancellationError {
-            activationTask = nil
-            await MainActor.run {
-                modelState.unloaded("Téléchargement annulé — reprise disponible")
-            }
-        } catch {
-            activationTask = nil
-            await MainActor.run { modelState.failed(error) }
-            logger.error("local cleanup model load failed: \(error.localizedDescription, privacy: .private)")
-        }
+        try await loadModel(modelID: modelID)
     }
 
     private func loadModel(modelID: String) async throws {
@@ -204,11 +247,61 @@ actor LocalCleanupModelManager: LocalTextGenerating {
             messages: [["role": "user", "content": "Réponds uniquement: Bonjour."]],
             maxTokens: 8
         )
+        try Task.checkCancellation()
         let duration = Self.seconds(start.duration(to: .now))
         isWarmedUp = true
-        activationTask = nil
         await MainActor.run { modelState.ready(model: modelID) }
+        scheduleInactivityUnload()
         logger.info("local cleanup warmup duration=\(duration, format: .fixed(precision: 3))s tokens=8")
+    }
+
+    private func finishActivation(id: UUID) {
+        guard activationID == id else { return }
+        activationTask = nil
+        activatingModelID = nil
+        activationID = nil
+    }
+
+    private func reportCancellationIfCurrent(id: UUID) async {
+        guard activationID == id else { return }
+        finishActivation(id: id)
+        await MainActor.run {
+            modelState.unloaded("Téléchargement annulé — reprise disponible")
+        }
+    }
+
+    private func reportFailureIfCurrent(_ error: Error, id: UUID) async {
+        guard activationID == id else { return }
+        finishActivation(id: id)
+        await MainActor.run { modelState.failed(error) }
+        logger.error("local cleanup model load failed: \(error.localizedDescription, privacy: .private)")
+    }
+
+    private func beginGeneration() {
+        activeGenerationCount += 1
+        inactivityPolicy.activityStarted()
+    }
+
+    private func endGeneration() {
+        activeGenerationCount = max(0, activeGenerationCount - 1)
+        scheduleInactivityUnloadAfterActivity()
+    }
+
+    private func scheduleInactivityUnloadAfterActivity() {
+        inactivityPolicy.activityEnded { [weak self] in
+            await self?.unloadIfInactive()
+        }
+    }
+
+    private func scheduleInactivityUnload() {
+        inactivityPolicy.modelBecameReady { [weak self] in
+            await self?.unloadIfInactive()
+        }
+    }
+
+    private func unloadIfInactive() {
+        guard activeGenerationCount == 0, container != nil else { return }
+        unload(reason: "Modèle local déchargé après inactivité")
     }
 
     private static func seconds(_ duration: Duration) -> Double {

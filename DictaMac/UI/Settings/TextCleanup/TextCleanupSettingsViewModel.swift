@@ -19,6 +19,12 @@ final class TextCleanupSettingsViewModel: ObservableObject {
     }
     @Published var localTimeout: Double { didSet { store.set(.double(localTimeout), for: .textCleanupLocalTimeout) } }
     @Published var cloudTimeout: Double { didSet { store.set(.double(cloudTimeout), for: .textCleanupCloudTimeout) } }
+    @Published var localModelInactivityDelay: LocalModelInactivityDelay {
+        didSet {
+            store.set(.double(localModelInactivityDelay.rawValue), for: .textCleanupLocalModelInactivityDelay)
+            Task { await manager.refreshInactivityPolicy() }
+        }
+    }
     @Published var apiKey = ""
     @Published private(set) var apiKeyStatus = ""
     @Published private(set) var modelStatus = ""
@@ -63,6 +69,9 @@ final class TextCleanupSettingsViewModel: ObservableObject {
         let storedTimeout = store.double(for: .textCleanupLocalTimeout) ?? StoredTextCleanupSettings.defaultLocalTimeout
         localTimeout = storedTimeout
         cloudTimeout = store.double(for: .textCleanupCloudTimeout) ?? StoredTextCleanupSettings.defaultCloudTimeout
+        localModelInactivityDelay = LocalModelInactivityDelay.storedValue(
+            StoredTextCleanupSettings(store: store).localModelInactivityTimeout
+        )
         readModelState = { (state.status, state.downloadProgress, state.isBusy, state.isReady, state.hasError) }
         state.objectWillChange.sink { [weak self] in
             Task { @MainActor in

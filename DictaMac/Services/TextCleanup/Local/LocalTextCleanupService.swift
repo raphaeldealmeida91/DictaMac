@@ -28,10 +28,7 @@ actor LocalTextCleanupService: TextCleanupService {
             logger.info("cleanup engine=local decision=fast-rules reason=under-two-words")
             return FastRulesTextCleanupService.cleanup(text)
         }
-        guard await generator.isReady else {
-            logger.info("cleanup fallback engine=local reason=model not ready")
-            throw LocalCleanupError.modelNotReady
-        }
+        try await generator.prepare()
         return try await generateCleanup(for: text, dictionary: dictionary)
     }
 

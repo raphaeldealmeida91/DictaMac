@@ -119,6 +119,18 @@ struct TextCleanupSettingsView: View {
                 }
                 .frame(width: Theme.Settings.controlWidth)
             }
+            SettingsRow(
+                title: "Déchargement après inactivité",
+                description: "Libère la mémoire du modèle ; il sera rechargé au prochain besoin."
+            ) {
+                Picker("Déchargement après inactivité", selection: $viewModel.localModelInactivityDelay) {
+                    ForEach(LocalModelInactivityDelay.allCases) { delay in
+                        Text(delay.title).tag(delay)
+                    }
+                }
+                .labelsHidden()
+                .frame(width: Theme.Settings.controlWidth)
+            }
             if viewModel.isLowMemoryMac {
                 InfoCallout(
                     kind: .warning,

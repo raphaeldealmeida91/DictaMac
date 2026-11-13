@@ -23,11 +23,23 @@ protocol DiagnosticLogging: Sendable {
     func eventTapDisabled(reason: String)
     func wordCount(stage: TextWordDiagnosticStage, segmentIndex: Int?, count: Int)
     func cleanupResult(engine: TextCleanupEngine, outcome: CleanupOutcome)
+    func selectionCorrectionLatency(
+        detectionToInference: TimeInterval,
+        inference: TimeInterval,
+        inferenceToPresentation: TimeInterval,
+        modelAlreadyLoaded: Bool
+    )
 }
 
 extension DiagnosticLogging {
     func cleanupResult(engine: TextCleanupEngine, outcome: CleanupOutcome) {}
     func wordCount(stage: TextWordDiagnosticStage, segmentIndex: Int?, count: Int) {}
+    func selectionCorrectionLatency(
+        detectionToInference: TimeInterval,
+        inference: TimeInterval,
+        inferenceToPresentation: TimeInterval,
+        modelAlreadyLoaded: Bool
+    ) {}
 
     func modelLoadEnded(
         duration: TimeInterval,

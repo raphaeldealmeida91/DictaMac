@@ -8,6 +8,7 @@ final class SelectionCorrectionViewModel: ObservableObject {
         case suggestion
         case copied
         case engineUnavailable
+        case preparing
     }
 
     static let dismissalDuration = Duration.seconds(8)
@@ -77,6 +78,12 @@ final class SelectionCorrectionViewModel: ObservableObject {
         engineUnavailableMessage = message ?? "Aucun moteur de correction complet disponible"
         state = .engineUnavailable
         scheduleDismissal(after: dismissalDuration)
+    }
+
+    func presentPreparing(onDismiss: @escaping @MainActor () -> Void) {
+        dismissalTask?.cancel()
+        self.onDismiss = onDismiss
+        state = .preparing
     }
 
     func activateCloud() {

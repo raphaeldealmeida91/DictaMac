@@ -145,6 +145,38 @@ final class SettingsTests: XCTestCase {
         await manager.cancelDownload()
     }
 
+    @MainActor
+    func testActivationCoalescesSameModelAndReplacesDifferentModel() async {
+        let settings = TestMutableCleanupSettings(modelID: "model-a")
+        let gate = TestSuspendingModelLoadingGate()
+        let manager = LocalCleanupModelManager(
+            settings: settings,
+            modelState: LocalCleanupModelState(),
+            modelLoadingGate: gate,
+            diagnosticLog: TestDiagnosticLog(),
+            safeMode: TestSafeModeController(isEnabled: false)
+        )
+
+        await manager.activateConfiguredModel()
+        let firstActivationStarted = await gate.waitForInvocationCount(1)
+        XCTAssertTrue(firstActivationStarted)
+        await manager.activateConfiguredModel()
+        let countAfterDuplicate = await gate.invocationCount
+        let cancellationsAfterDuplicate = await gate.cancellationCount
+        XCTAssertEqual(countAfterDuplicate, 1)
+        XCTAssertEqual(cancellationsAfterDuplicate, 0)
+
+        settings.setModelID("model-b")
+        await manager.activateConfiguredModel()
+        let replacementStarted = await gate.waitForInvocationCount(2)
+        let previousActivationCancelled = await gate.waitForCancellationCount(1)
+        XCTAssertTrue(replacementStarted)
+        XCTAssertTrue(previousActivationCancelled)
+        let countAfterReplacement = await gate.invocationCount
+        XCTAssertEqual(countAfterReplacement, 2)
+        await manager.cancelDownload()
+    }
+
     func testFrenchDecodingOptionsFavorDeterministicQuality() {
         let options = WhisperKitTranscriptionService.decodingOptions(
             language: "fr",
@@ -393,6 +425,33 @@ private struct TestCleanupSettings: TextCleanupSettings, TextCleanupSettingsWrit
     func setEngine(_ engine: TextCleanupEngine) {}
 }
 
+private final class TestMutableCleanupSettings: TextCleanupSettings, TextCleanupSettingsWriting, @unchecked Sendable {
+    private let lock = NSLock()
+    private var modelID: String
+
+    init(modelID: String) {
+        self.modelID = modelID
+    }
+
+    let configuredEngine = TextCleanupEngine.local
+    let isEnabled = true
+    let configuredModel = "test"
+    var configuredLocalModel: String { lock.withLock { modelID } }
+    let cleanupStyle = CleanupStyle.correction
+    let removeIsolatedGenre = false
+    let localTimeout: TimeInterval = 1
+    let cloudTimeout: TimeInterval = 1
+    let localDownloadApproved = true
+
+    func setModelID(_ value: String) {
+        lock.withLock { modelID = value }
+    }
+
+    func migrate() {}
+    func approveLocalDownload() {}
+    func setEngine(_ engine: TextCleanupEngine) {}
+}
+
 private struct TestIdleModelLoadingGate: ModelLoadingGating {
     let isLoading = false
 
@@ -411,6 +470,67 @@ private struct TestBusyModelLoadingGate: ModelLoadingGating {
     ) async throws -> Value {
         try await Task.sleep(for: .seconds(10))
         return try await operation()
+    }
+}
+
+private final class TestSuspendingModelLoadingGate: ModelLoadingGating, @unchecked Sendable {
+    private let recorder = TestActivationGateRecorder()
+    let isLoading = false
+
+    var invocationCount: Int {
+        get async { await recorder.invocationCount }
+    }
+
+    var cancellationCount: Int {
+        get async { await recorder.cancellationCount }
+    }
+
+    func waitForInvocationCount(_ expectedCount: Int) async -> Bool {
+        await waitUntil {
+            let count = await self.invocationCount
+            return count >= expectedCount
+        }
+    }
+
+    func waitForCancellationCount(_ expectedCount: Int) async -> Bool {
+        await waitUntil {
+            let count = await self.cancellationCount
+            return count >= expectedCount
+        }
+    }
+
+    private func waitUntil(_ condition: @escaping @Sendable () async -> Bool) async -> Bool {
+        for _ in 0 ..< 100 {
+            if await condition() { return true }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        return false
+    }
+
+    func run<Value: Sendable>(
+        _ operation: @escaping @Sendable () async throws -> Value
+    ) async throws -> Value {
+        await recorder.recordInvocation()
+        do {
+            try await Task.sleep(for: .seconds(10))
+            return try await operation()
+        } catch is CancellationError {
+            await recorder.recordCancellation()
+            throw CancellationError()
+        }
+    }
+}
+
+private actor TestActivationGateRecorder {
+    private(set) var invocationCount = 0
+    private(set) var cancellationCount = 0
+
+    func recordInvocation() {
+        invocationCount += 1
+    }
+
+    func recordCancellation() {
+        cancellationCount += 1
     }
 }
 

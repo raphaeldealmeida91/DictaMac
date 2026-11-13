@@ -9,6 +9,13 @@ struct SelectionCorrectionView: View {
             if viewModel.state == .engineUnavailable {
                 Text(viewModel.engineUnavailableMessage)
                     .font(Theme.Typography.body)
+            } else if viewModel.state == .preparing {
+                HStack(spacing: Theme.Spacing.small) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Préparation…")
+                        .font(Theme.Typography.body)
+                }
             } else {
                 ScrollView {
                     Text(viewModel.highlightedText)
@@ -37,8 +44,8 @@ struct SelectionCorrectionView: View {
     private var header: some View {
         HStack {
             Label(
-                viewModel.state == .engineUnavailable ? "Correction indisponible" : "Correction proposée",
-                systemImage: viewModel.state == .engineUnavailable ? "exclamationmark.circle" : "text.badge.checkmark"
+                headerTitle,
+                systemImage: headerSymbol
             )
                 .font(Theme.Typography.rowTitle)
             Spacer()
@@ -58,7 +65,7 @@ struct SelectionCorrectionView: View {
                     .buttonStyle(SecondaryButtonStyle())
                 Button("Activer le cloud", action: viewModel.activateCloud)
                     .buttonStyle(PrimaryButtonStyle())
-            } else {
+            } else if viewModel.state != .preparing {
                 Button("Copier", action: viewModel.copy)
                     .buttonStyle(SecondaryButtonStyle())
                     .keyboardShortcut("c", modifiers: .command)
@@ -66,6 +73,22 @@ struct SelectionCorrectionView: View {
                     .buttonStyle(PrimaryButtonStyle())
                     .keyboardShortcut(.return, modifiers: [])
             }
+        }
+    }
+
+    private var headerTitle: String {
+        switch viewModel.state {
+        case .engineUnavailable: "Correction indisponible"
+        case .preparing: "Correction"
+        default: "Correction proposée"
+        }
+    }
+
+    private var headerSymbol: String {
+        switch viewModel.state {
+        case .engineUnavailable: "exclamationmark.circle"
+        case .preparing: "hourglass"
+        default: "text.badge.checkmark"
         }
     }
 }

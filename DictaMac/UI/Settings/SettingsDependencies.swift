@@ -56,6 +56,11 @@ protocol LocalCleanupModelManaging: Actor {
     func approveDownloadAndActivate()
     func cancelDownload()
     func unload(reason: String)
+    func refreshInactivityPolicy()
+}
+
+extension LocalCleanupModelManaging {
+    func refreshInactivityPolicy() {}
 }
 
 protocol APIKeyStoring: Sendable {

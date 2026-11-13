@@ -17,6 +17,7 @@ enum SettingsKey: String, Sendable {
     case textCleanupRemoveIsolatedGenre = "textCleanup.fast.removeIsolatedGenre"
     case textCleanupLocalTimeout = "textCleanup.localTimeout"
     case textCleanupCloudTimeout = "textCleanup.cloudTimeout"
+    case textCleanupLocalModelInactivityDelay = "textCleanup.localModelInactivityDelay"
 
     case historyEnabled = "history.enabled"
     case feedbackSoundsEnabled = "feedbackSounds.enabled"

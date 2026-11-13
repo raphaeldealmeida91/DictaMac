@@ -58,6 +58,21 @@ final class SelectionCorrectionPanelController: SelectionCorrectionPresenting {
         panel.orderFrontRegardless()
     }
 
+    func presentPreparing(
+        for snapshot: SelectionSnapshot,
+        onDismiss: @escaping @MainActor () -> Void
+    ) {
+        let panel = panel ?? makePanel()
+        viewModel.presentPreparing { [weak self] in
+            self?.hidePanel()
+            onDismiss()
+        }
+        size(panel)
+        position(panel, near: snapshot.screenRect)
+        installEventMonitors()
+        panel.orderFrontRegardless()
+    }
+
     private func makePanel() -> SelectionCorrectionPanel {
         let panel = SelectionCorrectionPanel(
             contentRect: NSRect(

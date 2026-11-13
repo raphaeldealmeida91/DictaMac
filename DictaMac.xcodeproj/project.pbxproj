@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B50000000000000000000001 /* Local/LocalModelInactivityPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60000000000000000000001 /* Local/LocalModelInactivityPolicy.swift */; };
+		B50000000000000000000002 /* Local/InactivityClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60000000000000000000002 /* Local/InactivityClock.swift */; };
+		B50000000000000000000003 /* LocalModelInactivityDelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60000000000000000000003 /* LocalModelInactivityDelay.swift */; };
+		B50000000000000000000004 /* SelectionCorrectionExecution.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60000000000000000000004 /* SelectionCorrectionExecution.swift */; };
+		B50000000000000000000005 /* LocalModelLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60000000000000000000005 /* LocalModelLifecycleTests.swift */; };
 		O10000000000000000000001 /* SelectionSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = O20000000000000000000001 /* SelectionSnapshot.swift */; };
 		O10000000000000000000002 /* SelectedTextReading.swift in Sources */ = {isa = PBXBuildFile; fileRef = O20000000000000000000002 /* SelectedTextReading.swift */; };
 		O10000000000000000000003 /* SelectionEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = O20000000000000000000003 /* SelectionEvent.swift */; };
@@ -266,6 +271,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B60000000000000000000001 /* Local/LocalModelInactivityPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Local/LocalModelInactivityPolicy.swift; sourceTree = "<group>"; };
+		B60000000000000000000002 /* Local/InactivityClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Local/InactivityClock.swift; sourceTree = "<group>"; };
+		B60000000000000000000003 /* LocalModelInactivityDelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelInactivityDelay.swift; sourceTree = "<group>"; };
+		B60000000000000000000004 /* SelectionCorrectionExecution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionExecution.swift; sourceTree = "<group>"; };
+		B60000000000000000000005 /* LocalModelLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelLifecycleTests.swift; sourceTree = "<group>"; };
 		O20000000000000000000001 /* SelectionSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionSnapshot.swift; sourceTree = "<group>"; };
 		O20000000000000000000002 /* SelectedTextReading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedTextReading.swift; sourceTree = "<group>"; };
 		O20000000000000000000003 /* SelectionEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionEvent.swift; sourceTree = "<group>"; };
@@ -722,6 +732,8 @@
 		A4000000000000000000000E /* TextCleanup */ = {
 			isa = PBXGroup;
 			children = (
+				B60000000000000000000001 /* Local/LocalModelInactivityPolicy.swift */,
+				B60000000000000000000002 /* Local/InactivityClock.swift */,
 				A2000000000000000000000D /* TextCleanupService.swift */,
 				U20000000000000000000002 /* CleanupPromptBuilder.swift */,
 				A2000000000000000000000E /* Local/LocalTextCleanupService.swift */,
@@ -751,6 +763,7 @@
 		A4000000000000000000000F /* DictaMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				B60000000000000000000005 /* LocalModelLifecycleTests.swift */,
 				R40000000000000000000001 /* Fixtures */,
 				R20000000000000000000001 /* DictationCaseTests.swift */,
 				S20000000000000000000004 /* PunctuationNormalizerTests.swift */,
@@ -843,6 +856,7 @@
 		D40000000000000000000001 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				B60000000000000000000003 /* LocalModelInactivityDelay.swift */,
 				Q20000000000000000000001 /* AppVersionInfo.swift */,
 				U20000000000000000000001 /* CleanupStyle.swift */,
 				D20000000000000000000001 /* SettingsKey.swift */,
@@ -885,6 +899,7 @@
 		Y40000000000000000000001 /* SelectionCorrection */ = {
 			isa = PBXGroup;
 			children = (
+				B60000000000000000000004 /* SelectionCorrectionExecution.swift */,
 				Y20000000000000000000001 /* SelectionCorrectionService.swift */,
 				Y20000000000000000000002 /* SelectionCorrection.swift */,
 				Y20000000000000000000003 /* TextChange.swift */,
@@ -1174,6 +1189,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B50000000000000000000001 /* Local/LocalModelInactivityPolicy.swift in Sources */,
+				B50000000000000000000002 /* Local/InactivityClock.swift in Sources */,
+				B50000000000000000000003 /* LocalModelInactivityDelay.swift in Sources */,
+				B50000000000000000000004 /* SelectionCorrectionExecution.swift in Sources */,
 				X10000000000000000000001 /* SelectionReplacing.swift in Sources */,
 				X10000000000000000000002 /* SelectionReplacer.swift in Sources */,
 				X10000000000000000000003 /* SelectionClipboardCopying.swift in Sources */,
@@ -1399,6 +1418,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B50000000000000000000005 /* LocalModelLifecycleTests.swift in Sources */,
 				X1000000000000000000000E /* SelectionCorrectionUITests.swift in Sources */,
 				O1000000000000000000000D /* SelectionTests.swift in Sources */,
 				Y1000000000000000000000B /* SelectionCorrectionTests.swift in Sources */,

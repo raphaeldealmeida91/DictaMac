@@ -7,6 +7,7 @@ struct StoredTextCleanupSettings: TextCleanupSettings, TextCleanupSettingsWritin
     static let qualityLocalModel = "mlx-community/Qwen2.5-7B-Instruct-4bit"
     static let defaultLocalTimeout = 8.0
     static let defaultCloudTimeout = 8.0
+    static let defaultLocalModelInactivityTimeout: TimeInterval? = 5 * 60
 
     private let store: any SettingsStoring
     private let physicalMemory: @Sendable () -> UInt64
@@ -53,6 +54,13 @@ struct StoredTextCleanupSettings: TextCleanupSettings, TextCleanupSettingsWritin
 
     var localDownloadApproved: Bool {
         store.bool(for: .textCleanupLocalDownloadApproved) ?? false
+    }
+
+    var localModelInactivityTimeout: TimeInterval? {
+        guard let stored = store.double(for: .textCleanupLocalModelInactivityDelay) else {
+            return Self.defaultLocalModelInactivityTimeout
+        }
+        return stored > 0 ? stored : nil
     }
 
     var recommendedLocalModel: String {

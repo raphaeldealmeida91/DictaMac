@@ -6,6 +6,7 @@ final class SelectionCorrectionCoordinator {
     enum State: Equatable {
         case idle
         case processing
+        case preparing
         case suggestion
         case engineUnavailable
     }
@@ -20,6 +21,7 @@ final class SelectionCorrectionCoordinator {
     private let presentationDelay: Duration
     private let activateCloud: @MainActor () -> Void
     private let loadLocalModel: @MainActor () -> Void
+    private let diagnosticLog: (any DiagnosticLogging)?
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "selection"
@@ -36,6 +38,7 @@ final class SelectionCorrectionCoordinator {
         dictionary: any PersonalDictionary,
         activateCloud: @escaping @MainActor () -> Void = {},
         loadLocalModel: @escaping @MainActor () -> Void = {},
+        diagnosticLog: (any DiagnosticLogging)? = nil,
         presentationDelay: Duration = SelectionCorrectionCoordinator.presentationDelay
     ) {
         self.watcher = watcher
@@ -44,6 +47,7 @@ final class SelectionCorrectionCoordinator {
         self.dictionary = dictionary
         self.activateCloud = activateCloud
         self.loadLocalModel = loadLocalModel
+        self.diagnosticLog = diagnosticLog
         self.presentationDelay = presentationDelay
     }
 
@@ -84,45 +88,69 @@ final class SelectionCorrectionCoordinator {
         generation += 1
         let currentGeneration = generation
         let terms = dictionary.entries().map(\.canonical)
+        let detectedAt = watcher.latestDetectionInstant ?? .now
         state = .processing
-        correctionTask = Task { [weak self, service, presentationDelay] in
-            do {
-                let engine = await service.engineStatus()
-                async let correction = service.correct(snapshot.text, dictionary: terms)
-                async let unavailableMessage = service.engineUnavailableMessage()
-                try await Task.sleep(for: presentationDelay)
-                let result = try await correction
-                let message = await unavailableMessage
-                guard !Task.isCancelled else { return }
-                self?.receive(
-                    result,
-                    snapshot: snapshot,
-                    engine: engine,
-                    unavailableMessage: message,
-                    generation: currentGeneration
-                )
-            } catch is CancellationError {
-                return
-            } catch SelectionCorrectionError.timeout {
-                self?.logger.info("result=timeout length=\(snapshot.text.count)")
-                self?.finishWithoutSuggestion(generation: currentGeneration)
-            } catch {
-                self?.finishWithoutSuggestion(generation: currentGeneration)
-            }
+        correctionTask = Task { [weak self] in
+            await self?.runCorrection(
+                snapshot,
+                terms: terms,
+                detectedAt: detectedAt,
+                generation: currentGeneration
+            )
         }
     }
 
-    private func receive(
-        _ correction: SelectionCorrection,
+    private func runCorrection(
+        _ snapshot: SelectionSnapshot,
+        terms: [String],
+        detectedAt: ContinuousClock.Instant,
+        generation: Int
+    ) async {
+        do {
+            if await service.requiresPreparation() {
+                presentPreparing(for: snapshot, generation: generation)
+            }
+            async let execution = service.correctWithMetrics(snapshot.text, dictionary: terms)
+            async let unavailableMessage = service.engineUnavailableMessage()
+            try await Task.sleep(for: presentationDelay)
+            let result = try await execution
+            guard !Task.isCancelled else { return }
+            receive(
+                result,
+                snapshot: snapshot,
+                unavailableMessage: await unavailableMessage,
+                detectedAt: detectedAt,
+                generation: generation
+            )
+        } catch {
+            handleCorrectionFailure(error, snapshot: snapshot, generation: generation)
+        }
+    }
+
+    private func handleCorrectionFailure(
+        _ error: Error,
         snapshot: SelectionSnapshot,
-        engine: SelectionCorrectionEngine,
+        generation: Int
+    ) {
+        guard !(error is CancellationError) else { return }
+        if error as? SelectionCorrectionError == .timeout {
+            logger.info("result=timeout length=\(snapshot.text.count)")
+        }
+        finishWithoutSuggestion(generation: generation)
+    }
+
+    private func receive(
+        _ execution: SelectionCorrectionExecution,
+        snapshot: SelectionSnapshot,
         unavailableMessage: String?,
+        detectedAt: ContinuousClock.Instant,
         generation currentGeneration: Int
     ) {
         guard generation == currentGeneration else { return }
         correctionTask = nil
+        let correction = execution.correction
         guard correction.corrected != correction.original, !correction.changes.isEmpty else {
-            if engine == .rulesOnly, !didPresentEngineUnavailable {
+            if execution.engine == .rulesOnly, !didPresentEngineUnavailable {
                 presentEngineUnavailable(
                     for: snapshot,
                     message: unavailableMessage,
@@ -130,6 +158,7 @@ final class SelectionCorrectionCoordinator {
                 )
                 return
             }
+            presenter.dismiss()
             state = .idle
             return
         }
@@ -137,6 +166,34 @@ final class SelectionCorrectionCoordinator {
         presenter.present(correction, for: snapshot) { [weak self] in
             self?.suggestionDidDismiss(generation: currentGeneration)
         }
+        recordLatency(execution, detectedAt: detectedAt)
+    }
+
+    private func presentPreparing(for snapshot: SelectionSnapshot, generation: Int) {
+        guard self.generation == generation else { return }
+        state = .preparing
+        presenter.presentPreparing(for: snapshot) { [weak self] in
+            self?.preparationDidDismiss(generation: generation)
+        }
+    }
+
+    private func preparationDidDismiss(generation currentGeneration: Int) {
+        guard generation == currentGeneration else { return }
+        correctionTask?.cancel()
+        correctionTask = nil
+        state = .idle
+    }
+
+    private func recordLatency(
+        _ execution: SelectionCorrectionExecution,
+        detectedAt: ContinuousClock.Instant
+    ) {
+        diagnosticLog?.selectionCorrectionLatency(
+            detectionToInference: Self.seconds(detectedAt.duration(to: execution.inferenceStartedAt)),
+            inference: Self.seconds(execution.inferenceStartedAt.duration(to: execution.inferenceFinishedAt)),
+            inferenceToPresentation: Self.seconds(execution.inferenceFinishedAt.duration(to: .now)),
+            modelAlreadyLoaded: execution.modelAlreadyLoaded
+        )
     }
 
     private func presentEngineUnavailable(
@@ -159,6 +216,7 @@ final class SelectionCorrectionCoordinator {
     private func finishWithoutSuggestion(generation currentGeneration: Int) {
         guard generation == currentGeneration else { return }
         correctionTask = nil
+        presenter.dismiss()
         state = .idle
     }
 
@@ -173,5 +231,9 @@ final class SelectionCorrectionCoordinator {
         correctionTask = nil
         presenter.dismiss()
         state = .idle
+    }
+
+    private static func seconds(_ duration: Duration) -> TimeInterval {
+        Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18
     }
 }

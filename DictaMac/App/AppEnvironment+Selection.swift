@@ -10,7 +10,8 @@ extension AppEnvironment {
     static func makeSelectionBundle(
         settings: SettingsBundle,
         permissionReader: any AccessibilityPermissionReading,
-        localGenerator: LocalCleanupModelManager
+        localGenerator: LocalCleanupModelManager,
+        diagnosticLog: any DiagnosticLogging
     ) -> SelectionBundle {
         let pasteboard = GeneralPasteboardProvider()
         let accessibilityReader = AccessibilitySelectedTextReader(permissionReader: permissionReader)
@@ -43,7 +44,8 @@ extension AppEnvironment {
                 SafeModeState.setEnabled(false)
                 Task { await localGenerator.approveDownloadAndActivate() }
                 openSettings(section: .textCleanup)
-            }
+            },
+            diagnosticLog: diagnosticLog
         )
         return SelectionBundle(watcher: watcher, correctionService: service, coordinator: coordinator)
     }

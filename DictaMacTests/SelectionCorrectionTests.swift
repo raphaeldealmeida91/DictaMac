@@ -100,9 +100,11 @@ final class ConfiguredSelectionCorrectionServiceTests: XCTestCase {
         let service = makeService(local: local, cloud: cloud, allowsCloud: false, engine: .cloud)
 
         let correction = try await service.correct(original, dictionary: [])
+        let engine = await service.engineStatus()
         let cloudCallCount = await cloud.callCount
 
-        XCTAssertEqual(correction.corrected, "Les enfants jouent dans le jardin.")
+        XCTAssertEqual(engine, .rulesOnly)
+        XCTAssertEqual(correction, .unchanged(original))
         XCTAssertEqual(cloudCallCount, 0)
     }
 

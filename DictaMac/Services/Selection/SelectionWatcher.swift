@@ -20,6 +20,7 @@ final class SelectionWatcher {
     private var debounceTask: Task<Void, Never>?
     private var continuation: AsyncStream<SelectionEvent>.Continuation?
     private var lastText: String?
+    private(set) var latestDetectionInstant: ContinuousClock.Instant?
 
     init(
         eventMonitor: any SelectionEventMonitoring,
@@ -54,7 +55,7 @@ final class SelectionWatcher {
             for await _ in monitoredEvents {
                 guard !Task.isCancelled else { return }
                 self?.logger.info("raw selection event received")
-                self?.scheduleRead()
+                self?.scheduleRead(detectedAt: .now)
             }
         }
     }
@@ -64,12 +65,14 @@ final class SelectionWatcher {
         monitoringTask?.cancel()
         debounceTask = nil
         monitoringTask = nil
+        latestDetectionInstant = nil
         eventMonitor.stop()
         clearSelectionIfNeeded()
     }
 
-    private func scheduleRead() {
+    private func scheduleRead(detectedAt: ContinuousClock.Instant) {
         debounceTask?.cancel()
+        latestDetectionInstant = detectedAt
         let delay = debounceDuration
         debounceTask = Task { [weak self] in
             try? await Task.sleep(for: delay)

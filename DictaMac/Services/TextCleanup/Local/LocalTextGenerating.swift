@@ -4,4 +4,11 @@ protocol TextGenerating: Sendable {
 
 protocol LocalTextGenerating: TextGenerating {
     var isReady: Bool { get async }
+    func prepare() async throws
+}
+
+extension LocalTextGenerating {
+    func prepare() async throws {
+        guard await isReady else { throw LocalCleanupError.modelNotReady }
+    }
 }

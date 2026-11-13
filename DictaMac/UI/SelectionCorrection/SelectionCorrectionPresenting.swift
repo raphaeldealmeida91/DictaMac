@@ -14,6 +14,10 @@ protocol SelectionCorrectionPresenting: AnyObject {
         onLoadLocal: @escaping @MainActor () -> Void,
         onDismiss: @escaping @MainActor () -> Void
     )
+    func presentPreparing(
+        for snapshot: SelectionSnapshot,
+        onDismiss: @escaping @MainActor () -> Void
+    )
     func dismiss()
 }
 
@@ -23,6 +27,11 @@ extension SelectionCorrectionPresenting {
         message: String?,
         onActivateCloud: @escaping @MainActor () -> Void,
         onLoadLocal: @escaping @MainActor () -> Void,
+        onDismiss: @escaping @MainActor () -> Void
+    ) {}
+
+    func presentPreparing(
+        for snapshot: SelectionSnapshot,
         onDismiss: @escaping @MainActor () -> Void
     ) {}
 }
