@@ -9,7 +9,7 @@ final class GlobalSelectionEventMonitor: SelectionEventMonitoring {
     private var monitor: Any?
     private var observedDrag = false
 
-    private struct MonitoredEvent: Sendable {
+    struct MonitoredEvent: Sendable {
         let type: NSEvent.EventType
         let clickCount: Int
         let keyCode: UInt16
@@ -17,8 +17,8 @@ final class GlobalSelectionEventMonitor: SelectionEventMonitoring {
 
         init(event: NSEvent) {
             type = event.type
-            clickCount = event.clickCount
-            keyCode = event.keyCode
+            clickCount = event.type == .leftMouseUp ? event.clickCount : 0
+            keyCode = event.type == .keyUp ? event.keyCode : 0
             modifierFlags = event.modifierFlags
         }
     }

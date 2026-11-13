@@ -1,4 +1,5 @@
 import ApplicationServices
+import AppKit
 import Combine
 import WhisperKit
 import XCTest
@@ -104,6 +105,47 @@ final class SettingsTests: XCTestCase {
 
         XCTAssertNil(options.language)
         XCTAssertTrue(options.detectLanguage)
+    }
+
+    @MainActor
+    func testSelectionMonitorReadsOnlyMousePropertiesForMouseEvent() throws {
+        let event = try XCTUnwrap(NSEvent.mouseEvent(
+            with: .leftMouseUp,
+            location: .zero,
+            modifierFlags: [],
+            timestamp: 0,
+            windowNumber: 0,
+            context: nil,
+            eventNumber: 1,
+            clickCount: 2,
+            pressure: 0
+        ))
+
+        let monitored = GlobalSelectionEventMonitor.MonitoredEvent(event: event)
+
+        XCTAssertEqual(monitored.clickCount, 2)
+        XCTAssertEqual(monitored.keyCode, 0)
+    }
+
+    @MainActor
+    func testSelectionMonitorReadsOnlyKeyboardPropertiesForKeyEvent() throws {
+        let event = try XCTUnwrap(NSEvent.keyEvent(
+            with: .keyUp,
+            location: .zero,
+            modifierFlags: .shift,
+            timestamp: 0,
+            windowNumber: 0,
+            context: nil,
+            characters: "",
+            charactersIgnoringModifiers: "",
+            isARepeat: false,
+            keyCode: 123
+        ))
+
+        let monitored = GlobalSelectionEventMonitor.MonitoredEvent(event: event)
+
+        XCTAssertEqual(monitored.clickCount, 0)
+        XCTAssertEqual(monitored.keyCode, 123)
     }
 
     func testAppVersionDescription() {
