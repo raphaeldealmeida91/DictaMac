@@ -10,13 +10,14 @@ struct SelectionCorrectionFastRules: Sendable {
     }
 
     private func normalizeLine(_ line: String) -> String {
-        var value = replace(#"[ \t\u{00A0}\u{202F}]*([?!;])"#, in: line, with: "\(Self.thinSpace)$1")
+        var value = line
+        value = replace(#"[ \t\u00A0\u202F]*([?!;])"#, in: value, with: "\(Self.thinSpace)$1")
         value = replace(
-            #"(?<!\d)[ \t\u{00A0}\u{202F}]*:(?!\d)"#,
+            #"(?<!\d)[ \t\u00A0\u202F]*:(?!\d)"#,
             in: value,
             with: "\(Self.thinSpace):"
         )
-        value = replace(#"[ \t\u{00A0}\u{202F}]+([,.])"#, in: value, with: "$1")
+        value = replace(#"[ \t\u00A0\u202F]+([,.])"#, in: value, with: "$1")
         return replace(#"([,?!:;])[ \t]*(?=[\p{L}\p{M}])"#, in: value, with: "$1 ")
     }
 

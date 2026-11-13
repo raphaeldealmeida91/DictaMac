@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 @MainActor
 final class SelectionWatcher {
@@ -10,6 +11,11 @@ final class SelectionWatcher {
     private let settings: any SelectionCorrectionSettings
     private let ownBundleID: String?
     private let debounceDuration: Duration
+    private let permissionReader: (any AccessibilityPermissionReading)?
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
+        category: "selection"
+    )
     private var monitoringTask: Task<Void, Never>?
     private var debounceTask: Task<Void, Never>?
     private var continuation: AsyncStream<SelectionEvent>.Continuation?
@@ -21,6 +27,7 @@ final class SelectionWatcher {
         clipboardReader: any SelectedTextReading,
         settings: any SelectionCorrectionSettings,
         ownBundleID: String?,
+        permissionReader: (any AccessibilityPermissionReading)? = nil,
         debounceDuration: Duration = SelectionWatcher.debounceDuration
     ) {
         self.eventMonitor = eventMonitor
@@ -28,6 +35,7 @@ final class SelectionWatcher {
         self.clipboardReader = clipboardReader
         self.settings = settings
         self.ownBundleID = ownBundleID
+        self.permissionReader = permissionReader
         self.debounceDuration = debounceDuration
     }
 
@@ -40,10 +48,12 @@ final class SelectionWatcher {
 
     func start() {
         guard monitoringTask == nil else { return }
+        logger.info("accessibility authorized=\(self.permissionReader?.isAccessibilityAuthorized ?? false)")
         let monitoredEvents = eventMonitor.events()
         monitoringTask = Task { [weak self] in
             for await _ in monitoredEvents {
                 guard !Task.isCancelled else { return }
+                self?.logger.info("raw selection event received")
                 self?.scheduleRead()
             }
         }
@@ -70,6 +80,11 @@ final class SelectionWatcher {
 
     private func readSelection() {
         let accessibilitySnapshot = accessibilityReader.readSelection()
+        if let accessibilitySnapshot {
+            logger.info("AX read succeeded length=\(accessibilitySnapshot.text.count)")
+        } else {
+            logger.info("AX read returned nil")
+        }
         let snapshot = accessibilitySnapshot ?? safeClipboardFallback()
         guard let snapshot, policy.accepts(snapshot) else {
             clearSelectionIfNeeded()

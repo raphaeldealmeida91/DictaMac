@@ -7,6 +7,7 @@ final class SelectionCorrectionViewModel: ObservableObject {
         case hidden
         case suggestion
         case copied
+        case engineUnavailable
     }
 
     static let dismissalDuration = Duration.seconds(8)
@@ -14,6 +15,7 @@ final class SelectionCorrectionViewModel: ObservableObject {
 
     @Published private(set) var state: State = .hidden
     @Published private(set) var correction = SelectionCorrection.unchanged("")
+    @Published private(set) var engineUnavailableMessage = "Aucun moteur de correction complet disponible"
 
     private let replacer: any SelectionReplacing
     private let clipboard: any SelectionClipboardCopying
@@ -22,6 +24,8 @@ final class SelectionCorrectionViewModel: ObservableObject {
     private var snapshot: SelectionSnapshot?
     private var dismissalTask: Task<Void, Never>?
     private var onDismiss: (@MainActor () -> Void)?
+    private var onActivateCloud: (@MainActor () -> Void)?
+    private var onLoadLocal: (@MainActor () -> Void)?
 
     init(
         replacer: any SelectionReplacing,
@@ -60,6 +64,33 @@ final class SelectionCorrectionViewModel: ObservableObject {
         }
     }
 
+    func presentEngineUnavailable(
+        message: String? = nil,
+        onActivateCloud: @escaping @MainActor () -> Void,
+        onLoadLocal: @escaping @MainActor () -> Void,
+        onDismiss: @escaping @MainActor () -> Void
+    ) {
+        dismissalTask?.cancel()
+        self.onActivateCloud = onActivateCloud
+        self.onLoadLocal = onLoadLocal
+        self.onDismiss = onDismiss
+        engineUnavailableMessage = message ?? "Aucun moteur de correction complet disponible"
+        state = .engineUnavailable
+        scheduleDismissal(after: dismissalDuration)
+    }
+
+    func activateCloud() {
+        guard state == .engineUnavailable else { return }
+        onActivateCloud?()
+        dismiss()
+    }
+
+    func loadLocalModel() {
+        guard state == .engineUnavailable else { return }
+        onLoadLocal?()
+        dismiss()
+    }
+
     func copy() {
         guard state == .suggestion else { return }
         clipboard.copy(correction.corrected)
@@ -71,6 +102,8 @@ final class SelectionCorrectionViewModel: ObservableObject {
         dismissalTask?.cancel()
         dismissalTask = nil
         snapshot = nil
+        onActivateCloud = nil
+        onLoadLocal = nil
         state = .hidden
         let callback = onDismiss
         onDismiss = nil

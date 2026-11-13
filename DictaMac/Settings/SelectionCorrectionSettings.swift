@@ -6,3 +6,7 @@ protocol SelectionCorrectionSettings: Sendable {
     var allowsCloud: Bool { get }
     var excludedBundleIDs: Set<String> { get }
 }
+
+protocol SelectionCorrectionSettingsWriting: Sendable {
+    func setAllowsCloud(_ allowed: Bool)
+}

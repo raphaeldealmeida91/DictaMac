@@ -6,13 +6,18 @@ struct SelectionCorrectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
             header
-            ScrollView {
-                Text(viewModel.highlightedText)
+            if viewModel.state == .engineUnavailable {
+                Text(viewModel.engineUnavailableMessage)
                     .font(Theme.Typography.body)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                ScrollView {
+                    Text(viewModel.highlightedText)
+                        .font(Theme.Typography.body)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxHeight: Theme.SelectionCorrection.textMaximumHeight)
             }
-            .frame(maxHeight: Theme.SelectionCorrection.textMaximumHeight)
             actions
         }
         .padding(Theme.Spacing.large)
@@ -31,7 +36,10 @@ struct SelectionCorrectionView: View {
 
     private var header: some View {
         HStack {
-            Label("Correction proposée", systemImage: "text.badge.checkmark")
+            Label(
+                viewModel.state == .engineUnavailable ? "Correction indisponible" : "Correction proposée",
+                systemImage: viewModel.state == .engineUnavailable ? "exclamationmark.circle" : "text.badge.checkmark"
+            )
                 .font(Theme.Typography.rowTitle)
             Spacer()
             if viewModel.state == .copied {
@@ -45,14 +53,20 @@ struct SelectionCorrectionView: View {
     private var actions: some View {
         HStack(spacing: Theme.Spacing.small) {
             Spacer()
-            Button("Copier", action: viewModel.copy)
-                .buttonStyle(SecondaryButtonStyle())
-                .keyboardShortcut("c", modifiers: .command)
-            Button("Remplacer", action: viewModel.replace)
-                .buttonStyle(PrimaryButtonStyle())
-                .keyboardShortcut(.return, modifiers: [])
+            if viewModel.state == .engineUnavailable {
+                Button("Charger le modèle local", action: viewModel.loadLocalModel)
+                    .buttonStyle(SecondaryButtonStyle())
+                Button("Activer le cloud", action: viewModel.activateCloud)
+                    .buttonStyle(PrimaryButtonStyle())
+            } else {
+                Button("Copier", action: viewModel.copy)
+                    .buttonStyle(SecondaryButtonStyle())
+                    .keyboardShortcut("c", modifiers: .command)
+                Button("Remplacer", action: viewModel.replace)
+                    .buttonStyle(PrimaryButtonStyle())
+                    .keyboardShortcut(.return, modifiers: [])
+            }
         }
-        .disabled(viewModel.state != .suggestion)
     }
 }
 

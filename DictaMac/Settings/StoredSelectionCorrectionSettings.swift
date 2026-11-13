@@ -1,6 +1,6 @@
 import Foundation
 
-struct StoredSelectionCorrectionSettings: SelectionCorrectionSettings {
+struct StoredSelectionCorrectionSettings: SelectionCorrectionSettings, SelectionCorrectionSettingsWriting {
     static let defaultEnabled = false
     static let defaultClipboardFallbackEnabled = false
     static let defaultAllowsCloud = false
@@ -38,5 +38,9 @@ struct StoredSelectionCorrectionSettings: SelectionCorrectionSettings {
             return Self.defaultExcludedBundleIDs
         }
         return Set(storedBundleIDs)
+    }
+
+    func setAllowsCloud(_ allowed: Bool) {
+        store.set(.bool(allowed), for: .selectionCorrectionAllowsCloud)
     }
 }

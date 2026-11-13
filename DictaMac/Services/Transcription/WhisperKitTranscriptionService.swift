@@ -4,6 +4,13 @@ import OSLog
 import WhisperKit
 
 actor WhisperKitTranscriptionService: TranscriptionService {
+    private enum AudioGuard {
+        static let sampleRate = 16_000
+        static let minimumDuration: TimeInterval = 0.25
+        static let minimumPeak: Float = 0.005
+        static let minimumRootMeanSquare: Float = 0.0005
+    }
+
     private enum LoadOutcome: String {
         case success
         case failure
@@ -83,6 +90,10 @@ actor WhisperKitTranscriptionService: TranscriptionService {
     }
 
     func transcribe(_ samples: [Float], language: String?) async throws -> String {
+        guard Self.containsAudibleSpeech(samples) else {
+            logger.info("transcription skipped reason=short_or_silent samples=\(samples.count)")
+            return ""
+        }
         try await prepare()
         guard let whisperKit else { throw WhisperKitTranscriptionError.modelNotPrepared }
         let signpostID = PerformanceSignposts.signposter.makeSignpostID()
@@ -131,6 +142,7 @@ actor WhisperKitTranscriptionService: TranscriptionService {
             skipSpecialTokens: true,
             withoutTimestamps: false,
             promptTokens: promptTokens,
+            suppressBlank: true,
             compressionRatioThreshold: 2.4,
             logProbThreshold: -1,
             firstTokenLogProbThreshold: -1.5,
@@ -149,6 +161,21 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         }
         let beginning = terms.dropLast().joined(separator: ", ")
         return "La dictée peut contenir notamment \(beginning) et \(last)."
+    }
+
+    static func containsAudibleSpeech(_ samples: [Float]) -> Bool {
+        let minimumSamples = Int(AudioGuard.minimumDuration * Double(AudioGuard.sampleRate))
+        guard samples.count >= minimumSamples else { return false }
+        var peak: Float = 0
+        var squaredSum: Double = 0
+        for sample in samples {
+            let magnitude = abs(sample)
+            peak = max(peak, magnitude)
+            squaredSum += Double(sample * sample)
+        }
+        let rootMeanSquare = Float((squaredSum / Double(samples.count)).squareRoot())
+        return peak >= AudioGuard.minimumPeak
+            && rootMeanSquare >= AudioGuard.minimumRootMeanSquare
     }
 
     private func prepare(requestedModel: String) async throws {

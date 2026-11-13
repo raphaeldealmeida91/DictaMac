@@ -36,6 +36,28 @@ final class SelectionCorrectionPanelController: SelectionCorrectionPresenting {
         }
     }
 
+    func presentEngineUnavailable(
+        for snapshot: SelectionSnapshot,
+        message: String?,
+        onActivateCloud: @escaping @MainActor () -> Void,
+        onLoadLocal: @escaping @MainActor () -> Void,
+        onDismiss: @escaping @MainActor () -> Void
+    ) {
+        let panel = panel ?? makePanel()
+        viewModel.presentEngineUnavailable(
+            message: message,
+            onActivateCloud: onActivateCloud,
+            onLoadLocal: onLoadLocal
+        ) { [weak self] in
+            self?.hidePanel()
+            onDismiss()
+        }
+        size(panel)
+        position(panel, near: snapshot.screenRect)
+        installEventMonitors()
+        panel.orderFrontRegardless()
+    }
+
     private func makePanel() -> SelectionCorrectionPanel {
         let panel = SelectionCorrectionPanel(
             contentRect: NSRect(

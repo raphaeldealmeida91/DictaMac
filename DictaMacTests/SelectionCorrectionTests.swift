@@ -106,6 +106,67 @@ final class ConfiguredSelectionCorrectionServiceTests: XCTestCase {
         XCTAssertEqual(cloudCallCount, 0)
     }
 
+    func testCloudPermissionUsesCloudEvenWhenCleanupEngineIsLocal() async throws {
+        let original = "Les enfant jouent dans le jardin."
+        let local = CorrectionFakeGenerator(output: "Les enfants jouent dans le jardin.")
+        let cloud = CorrectionFakeGenerator(output: "Les enfants jouent dans le jardin.")
+        let service = makeService(
+            local: local,
+            cloud: cloud,
+            allowsCloud: true,
+            engine: .local,
+            apiKey: "test-key"
+        )
+
+        _ = try await service.correct(original, dictionary: [])
+
+        let cloudCallCount = await cloud.callCount
+        let localCallCount = await local.callCount
+        let engine = await service.engineStatus()
+        XCTAssertEqual(cloudCallCount, 1)
+        XCTAssertEqual(localCallCount, 0)
+        XCTAssertEqual(engine, .cloud)
+    }
+
+    func testPrepareTriggersLocalModelActivationWhenApprovedButNotReady() async {
+        let activation = CorrectionActivationRecorder()
+        let service = makeService(
+            local: CorrectionFakeGenerator(output: "", isReady: false),
+            activateLocalModel: { await activation.record() }
+        )
+
+        await service.prepare()
+
+        let activationCount = await activation.count
+        XCTAssertEqual(activationCount, 1)
+    }
+
+    func testSafeModeUsesExplicitLocalModelUnavailableMessage() async {
+        let service = makeService(
+            local: CorrectionFakeGenerator(output: "", isReady: true),
+            safeMode: CorrectionSafeModeController(isEnabled: true)
+        )
+
+        let message = await service.engineUnavailableMessage()
+        let engine = await service.engineStatus()
+
+        XCTAssertEqual(message, SafeModeState.localCleanupUnavailableMessage)
+        XCTAssertEqual(engine, .rulesOnly)
+    }
+
+    func testRulesOnlyOnlyNormalizesTypography() async throws {
+        let original = "Les enfant joue dans le jardin , il va a Paris"
+        let service = makeService(
+            local: CorrectionFakeGenerator(output: "", isReady: false),
+            safeMode: CorrectionSafeModeController(isEnabled: true)
+        )
+
+        let correction = try await service.correct(original, dictionary: [])
+
+        XCTAssertEqual(correction.corrected, "Les enfant joue dans le jardin, il va a Paris")
+        XCTAssertFalse(correction.changes.isEmpty)
+    }
+
     func testCancellationPropagatesToGenerator() async throws {
         let generator = CorrectionFakeGenerator(delay: .seconds(10), output: "Texte corrigé assez long ici.")
         let service = makeService(local: generator)
@@ -139,6 +200,9 @@ final class ConfiguredSelectionCorrectionServiceTests: XCTestCase {
         cloud: CorrectionFakeGenerator = CorrectionFakeGenerator(output: "cloud"),
         allowsCloud: Bool = false,
         engine: TextCleanupEngine = .local,
+        apiKey: String? = nil,
+        activateLocalModel: @escaping @Sendable () async -> Void = {},
+        safeMode: any SafeModeControlling = CorrectionSafeModeController(isEnabled: false),
         timeout: Duration = .seconds(6)
     ) -> ConfiguredSelectionCorrectionService {
         ConfiguredSelectionCorrectionService(
@@ -146,6 +210,9 @@ final class ConfiguredSelectionCorrectionServiceTests: XCTestCase {
             cleanupSettings: CorrectionFakeCleanupSettings(configuredEngine: engine),
             localGenerator: local,
             cloudGenerator: cloud,
+            apiKeyProvider: { apiKey },
+            activateLocalModel: activateLocalModel,
+            safeMode: safeMode,
             timeout: timeout
         )
     }
@@ -164,6 +231,22 @@ final class ConfiguredSelectionCorrectionServiceTests: XCTestCase {
             ("Note ceci: oui; vraiment.", "Note ceci\u{202F}: oui\u{202F}; vraiment.")
         ]
     }
+}
+
+private final class CorrectionSafeModeController: SafeModeControlling, @unchecked Sendable {
+    private let enabled: Bool
+
+    init(isEnabled: Bool) {
+        enabled = isEnabled
+    }
+
+    var isEnabled: Bool { enabled }
+    func setEnabled(_ value: Bool) {}
+}
+
+private actor CorrectionActivationRecorder {
+    private(set) var count = 0
+    func record() { count += 1 }
 }
 
 private actor CorrectionFakeGenerator: LocalTextGenerating {

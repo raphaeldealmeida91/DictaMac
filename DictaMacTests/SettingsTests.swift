@@ -159,6 +159,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertTrue(options.usePrefillPrompt)
         XCTAssertTrue(options.skipSpecialTokens)
         XCTAssertFalse(options.withoutTimestamps)
+        XCTAssertTrue(options.suppressBlank)
         XCTAssertEqual(options.promptTokens, [41, 42])
         XCTAssertEqual(options.compressionRatioThreshold, 2.4)
         XCTAssertEqual(options.logProbThreshold, -1)
@@ -174,6 +175,39 @@ final class SettingsTests: XCTestCase {
 
         XCTAssertNil(options.language)
         XCTAssertTrue(options.detectLanguage)
+    }
+
+    func testWhisperRejectsTooShortAudioBeforeInference() {
+        let samples = Array(repeating: Float(0.5), count: 3_999)
+
+        XCTAssertFalse(WhisperKitTranscriptionService.containsAudibleSpeech(samples))
+    }
+
+    func testWhisperRejectsDigitalSilenceBeforeInference() {
+        let samples = Array(repeating: Float.zero, count: 16_000)
+
+        XCTAssertFalse(WhisperKitTranscriptionService.containsAudibleSpeech(samples))
+    }
+
+    func testWhisperAcceptsAudibleAudio() {
+        let samples = (0..<16_000).map { index in
+            Float(sin(2 * Double.pi * 440 * Double(index) / 16_000) * 0.02)
+        }
+
+        XCTAssertTrue(WhisperKitTranscriptionService.containsAudibleSpeech(samples))
+    }
+
+    func testWhisperCleanerRejectsObservedCaptionHallucination() {
+        XCTAssertEqual(
+            WhisperTranscriptionTextCleaner.clean("Sous-titrage Société Radio-Canada, merci."),
+            ""
+        )
+    }
+
+    func testWhisperCleanerKeepsCaptionWordsInsideRealDictation() {
+        let dictation = "Je dois vérifier le sous-titrage de Société Radio-Canada demain."
+
+        XCTAssertEqual(WhisperTranscriptionTextCleaner.clean(dictation), dictation)
     }
 
     @MainActor

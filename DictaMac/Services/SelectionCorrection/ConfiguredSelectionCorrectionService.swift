@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 actor ConfiguredSelectionCorrectionService: SelectionCorrectionService {
     static let maximumDuration: Duration = .seconds(6)
@@ -12,12 +13,22 @@ actor ConfiguredSelectionCorrectionService: SelectionCorrectionService {
     private let diff: SelectionCorrectionDiff
     private let fastRules: SelectionCorrectionFastRules
     private let timeout: Duration
+    private let apiKeyProvider: @Sendable () throws -> String?
+    private let activateLocalModel: @Sendable () async -> Void
+    private let safeMode: any SafeModeControlling
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
+        category: "selection"
+    )
 
     init(
         selectionSettings: any SelectionCorrectionSettings,
         cleanupSettings: any TextCleanupSettings,
         localGenerator: any LocalTextGenerating,
         cloudGenerator: any TextGenerating,
+        apiKeyProvider: @escaping @Sendable () throws -> String? = { try TextCleanupAPIKeyStore.load() },
+        activateLocalModel: @escaping @Sendable () async -> Void = {},
+        safeMode: any SafeModeControlling = SafeModeState(),
         timeout: Duration = ConfiguredSelectionCorrectionService.maximumDuration,
         promptBuilder: SelectionCorrectionPromptBuilder = SelectionCorrectionPromptBuilder(),
         validator: SelectionCorrectionValidator = SelectionCorrectionValidator(),
@@ -28,6 +39,9 @@ actor ConfiguredSelectionCorrectionService: SelectionCorrectionService {
         self.cleanupSettings = cleanupSettings
         self.localGenerator = localGenerator
         self.cloudGenerator = cloudGenerator
+        self.apiKeyProvider = apiKeyProvider
+        self.activateLocalModel = activateLocalModel
+        self.safeMode = safeMode
         self.timeout = timeout
         self.promptBuilder = promptBuilder
         self.validator = validator
@@ -37,26 +51,65 @@ actor ConfiguredSelectionCorrectionService: SelectionCorrectionService {
 
     func correct(_ text: String, dictionary: [String]) async throws -> SelectionCorrection {
         try Task.checkCancellation()
-        let candidate = try await candidate(for: text, dictionary: dictionary)
+        let engine = await engineStatus()
+        logger.info("engine selected engine=\(engine.rawValue, privacy: .public) length=\(text.count)")
+        let candidate = try await candidate(for: text, dictionary: dictionary, engine: engine)
         try Task.checkCancellation()
         guard validator.accepts(original: text, candidate: candidate, dictionary: dictionary) else {
+            logger.info("result=validator_rejected length=\(text.count)")
             return .unchanged(text)
         }
-        return SelectionCorrection(
+        let correction = SelectionCorrection(
             original: text,
             corrected: candidate,
             changes: diff.changes(from: text, to: candidate)
         )
+        let result = correction.changes.isEmpty ? "unchanged" : "suggestion"
+        logger.info("result=\(result, privacy: .public) length=\(text.count)")
+        return correction
     }
 
-    private func candidate(for text: String, dictionary: [String]) async throws -> String {
-        if selectionSettings.allowsCloud, cleanupSettings.configuredEngine == .cloud {
-            return try await generate(with: cloudGenerator, text: text, dictionary: dictionary)
+    func engineStatus() async -> SelectionCorrectionEngine {
+        if selectionSettings.allowsCloud, hasAPIKey {
+            return .cloud
         }
+        guard !safeMode.isEnabled else { return .rulesOnly }
         if await localGenerator.isReady {
-            return try await generate(with: localGenerator, text: text, dictionary: dictionary)
+            return .local
         }
-        return fastRules.correct(text)
+        return .rulesOnly
+    }
+
+    func engineUnavailableMessage() async -> String? {
+        safeMode.isEnabled ? SafeModeState.localCleanupUnavailableMessage : nil
+    }
+
+    func prepare() async {
+        let isReady = await localGenerator.isReady
+        guard cleanupSettings.configuredEngine == .local,
+              cleanupSettings.localDownloadApproved,
+              !isReady else { return }
+        await activateLocalModel()
+    }
+
+    private func candidate(
+        for text: String,
+        dictionary: [String],
+        engine: SelectionCorrectionEngine
+    ) async throws -> String {
+        switch engine {
+        case .cloud:
+            return try await generate(with: cloudGenerator, text: text, dictionary: dictionary)
+        case .local:
+            return try await generate(with: localGenerator, text: text, dictionary: dictionary)
+        case .rulesOnly:
+            return fastRules.correct(text)
+        }
+    }
+
+    private var hasAPIKey: Bool {
+        guard let key = try? apiKeyProvider() else { return false }
+        return !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func generate(

@@ -72,6 +72,10 @@ struct SettingsView: View {
             minHeight: Theme.Settings.windowHeight,
             idealHeight: Theme.Settings.windowHeight
         )
+        .onReceive(NotificationCenter.default.publisher(for: .openSettingsSection)) { notification in
+            guard let section = notification.object as? SettingsSection else { return }
+            selection = section
+        }
     }
 
     @ViewBuilder

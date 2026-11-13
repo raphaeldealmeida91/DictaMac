@@ -122,6 +122,46 @@ final class SelectionReplacerTests: XCTestCase {
 
 @MainActor
 final class SelectionCorrectionCoordinatorTests: XCTestCase {
+    func testRulesOnlyMessageIsPresentedOncePerActivation() async throws {
+        let fixture = makeFixture(service: CoordinatorRulesOnlyService(), presentationDelay: .milliseconds(1))
+        fixture.coordinator.start()
+
+        fixture.reader.snapshot = selectedSnapshot("Une phrase correcte.")
+        fixture.monitor.send()
+        try await Task.sleep(for: .milliseconds(30))
+        fixture.reader.snapshot = selectedSnapshot("Une autre phrase correcte.")
+        fixture.monitor.send()
+        try await Task.sleep(for: .milliseconds(30))
+
+        XCTAssertEqual(fixture.presenter.engineUnavailableCount, 1)
+        fixture.coordinator.stop()
+    }
+
+    func testSafeModeUnavailableMessageReachesPresenter() async throws {
+        let fixture = makeFixture(service: CoordinatorSafeModeService(), presentationDelay: .milliseconds(1))
+        fixture.coordinator.start()
+
+        fixture.reader.snapshot = selectedSnapshot("Une phrase correcte.")
+        fixture.monitor.send()
+        try await Task.sleep(for: .milliseconds(30))
+
+        XCTAssertEqual(fixture.presenter.lastUnavailableMessage, SafeModeState.localCleanupUnavailableMessage)
+        fixture.coordinator.stop()
+    }
+
+    func testRulesOnlySuggestionIsPresentedInsteadOfUnavailableMessage() async throws {
+        let fixture = makeFixture(service: CoordinatorRulesSuggestionService(), presentationDelay: .milliseconds(1))
+        fixture.coordinator.start()
+
+        fixture.reader.snapshot = selectedSnapshot("Les enfant joue")
+        fixture.monitor.send()
+        try await Task.sleep(for: .milliseconds(30))
+
+        XCTAssertEqual(fixture.presenter.presentationCount, 1)
+        XCTAssertEqual(fixture.presenter.engineUnavailableCount, 0)
+        fixture.coordinator.stop()
+    }
+
     func testDoesNotPresentBeforeAntiFlickerDelay() async throws {
         let service = CoordinatorImmediateService()
         let fixture = makeFixture(service: service, presentationDelay: .milliseconds(60))
@@ -248,6 +288,8 @@ private final class ReplacementFakePasteboard: PasteboardProviding {
 }
 
 private actor CoordinatorImmediateService: SelectionCorrectionService {
+    func engineStatus() async -> SelectionCorrectionEngine { .local }
+
     func correct(_ text: String, dictionary: [String]) async throws -> SelectionCorrection {
         suggestion(for: text)
     }
@@ -255,6 +297,8 @@ private actor CoordinatorImmediateService: SelectionCorrectionService {
 
 private actor CoordinatorCancellationService: SelectionCorrectionService {
     private(set) var cancellationCount = 0
+
+    func engineStatus() async -> SelectionCorrectionEngine { .local }
 
     func correct(_ text: String, dictionary: [String]) async throws -> SelectionCorrection {
         if text == "première sélection" {
@@ -266,6 +310,28 @@ private actor CoordinatorCancellationService: SelectionCorrectionService {
             }
         }
         return suggestion(for: text)
+    }
+}
+
+private actor CoordinatorRulesOnlyService: SelectionCorrectionService {
+    func correct(_ text: String, dictionary: [String]) async throws -> SelectionCorrection {
+        .unchanged(text)
+    }
+}
+
+private actor CoordinatorRulesSuggestionService: SelectionCorrectionService {
+    func correct(_ text: String, dictionary: [String]) async throws -> SelectionCorrection {
+        suggestion(for: text)
+    }
+}
+
+private actor CoordinatorSafeModeService: SelectionCorrectionService {
+    func correct(_ text: String, dictionary: [String]) async throws -> SelectionCorrection {
+        .unchanged(text)
+    }
+
+    func engineUnavailableMessage() async -> String? {
+        SafeModeState.localCleanupUnavailableMessage
     }
 }
 
@@ -313,6 +379,8 @@ private final class CoordinatorPresenter: SelectionCorrectionPresenting {
     private(set) var presentationCount = 0
     private(set) var dismissCount = 0
     private(set) var lastSnapshot: SelectionSnapshot?
+    private(set) var engineUnavailableCount = 0
+    private(set) var lastUnavailableMessage: String?
 
     func present(
         _ correction: SelectionCorrection,
@@ -324,6 +392,18 @@ private final class CoordinatorPresenter: SelectionCorrectionPresenting {
     }
 
     func dismiss() { dismissCount += 1 }
+
+    func presentEngineUnavailable(
+        for snapshot: SelectionSnapshot,
+        message: String?,
+        onActivateCloud: @escaping @MainActor () -> Void,
+        onLoadLocal: @escaping @MainActor () -> Void,
+        onDismiss: @escaping @MainActor () -> Void
+    ) {
+        engineUnavailableCount += 1
+        lastUnavailableMessage = message
+        lastSnapshot = snapshot
+    }
 }
 
 @MainActor

@@ -1,5 +1,9 @@
 import SwiftUI
 
+extension Notification.Name {
+    static let openSettingsSection = Notification.Name("DictaMac.openSettingsSection")
+}
+
 enum SettingsSection: String, CaseIterable, Identifiable {
     case general
     case transcription
