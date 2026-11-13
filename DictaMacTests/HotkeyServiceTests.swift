@@ -121,6 +121,19 @@ final class HotkeyServiceTests: XCTestCase {
         XCTAssertEqual(fixture.controller.startCount, 1)
         XCTAssertEqual(fixture.permissionObserver.startCount, 1)
     }
+
+    func testThirdEmergencyPressRequestsExit() async {
+        let fixture = HotkeyFixture(triggerDelay: 0)
+        fixture.start()
+
+        for _ in 0..<3 {
+            fixture.sendEmergency(down: true)
+            fixture.sendEmergency(down: false)
+        }
+        await fulfillment(of: [fixture.recovery.exitExpectation], timeout: 1)
+
+        XCTAssertEqual(fixture.recovery.exitCount, 1)
+    }
 }
 
 @MainActor
@@ -164,6 +177,10 @@ private final class HotkeyFixture {
         ))
     }
 
+    func sendEmergency(down: Bool) {
+        controller.send(.init(kind: .flagsChanged, flags: down ? emergencyFlags : 0))
+    }
+
 }
 
 private final class FakeHotkeyEventTapController: HotkeyEventTapControlling, @unchecked Sendable {
@@ -203,13 +220,18 @@ private struct FakeEmergencyHotkeySettings: EmergencyHotkeySettings {
 
 private final class FakeEmergencyRecovery: EmergencyRecovering, @unchecked Sendable {
     private(set) var beginCount = 0
+    private(set) var exitCount = 0
+    let exitExpectation = XCTestExpectation(description: "emergency exit")
     var onBegin: (@Sendable () -> Void)?
 
     func begin(reason _: String, hotkey _: Bool) {
         beginCount += 1
         onBegin?()
     }
-    func exit(reason _: String) -> Never { fatalError("Not used in tests") }
+    func exit(reason _: String) {
+        exitCount += 1
+        exitExpectation.fulfill()
+    }
 }
 
 private final class HotkeyDiagnosticLogSpy: DiagnosticLogging, @unchecked Sendable {

@@ -51,9 +51,18 @@ struct DiagnosticSettingsView: View {
             timingRow("Arrêt audio", seconds: timings.stopAudio)
             timingRow("Transcription", seconds: timings.transcription)
             timingRow("Nettoyage — \(timings.cleanupEngine.title)", seconds: timings.cleanup)
+            detailRow("Résultat du nettoyage", value: timings.cleanupOutcome.title)
             timingRow("Injection", seconds: timings.injection)
             Divider()
             timingRow("Total relâchement → collage", seconds: timings.total, emphasized: true)
+        }
+    }
+
+    private func detailRow(_ title: String, value: String) -> some View {
+        GridRow {
+            Text(title)
+            Spacer()
+            Text(value).foregroundStyle(.secondary)
         }
     }
 

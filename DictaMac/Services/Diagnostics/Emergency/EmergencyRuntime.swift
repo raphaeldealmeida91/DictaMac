@@ -4,6 +4,9 @@ import Foundation
 final class EmergencyRuntime: @unchecked Sendable {
     struct Snapshot: Sendable {
         let stateIsIdle: Bool
+        let mainThreadMonitoringActive: Bool
+        let isSleeping: Bool
+        let lastWakeAt: TimeInterval?
         let mainHeartbeat: TimeInterval
         let stage: EmergencyStage?
         let stageStartedAt: TimeInterval?
@@ -12,17 +15,27 @@ final class EmergencyRuntime: @unchecked Sendable {
     }
 
     private let lock = NSLock()
+    private let clock: MonotonicClock
     private var stateIsIdle = true
-    private var mainHeartbeat = MonotonicClock.now
+    private var mainThreadMonitoringActive = false
+    private var isSleeping = false
+    private var lastWakeAt: TimeInterval?
+    private var mainHeartbeat: TimeInterval
     private var stage: EmergencyStage?
     private var stageStartedAt: TimeInterval?
     private var hotkeyDeadline: TimeInterval?
     private var hotkeyReason: String?
 
-    init() {}
+    init(clock: MonotonicClock = .live) {
+        self.clock = clock
+        mainHeartbeat = clock.now()
+    }
 
-    func heartbeat() {
-        lock.withLock { mainHeartbeat = MonotonicClock.now }
+    func heartbeat(windowIsVisible: Bool = false) {
+        lock.withLock {
+            mainHeartbeat = clock.now()
+            mainThreadMonitoringActive = !stateIsIdle || windowIsVisible
+        }
     }
 
     func setIdle(_ idle: Bool) {
@@ -38,7 +51,7 @@ final class EmergencyRuntime: @unchecked Sendable {
     func begin(_ stage: EmergencyStage) {
         lock.withLock {
             self.stage = stage
-            stageStartedAt = MonotonicClock.now
+            stageStartedAt = clock.now()
         }
     }
 
@@ -53,9 +66,27 @@ final class EmergencyRuntime: @unchecked Sendable {
     func armHotkeyExit(reason: String, timeout: TimeInterval = 1.5) {
         lock.withLock {
             hotkeyReason = reason
-            hotkeyDeadline = MonotonicClock.now + timeout
+            hotkeyDeadline = clock.now() + timeout
         }
     }
+
+    func willSleep() {
+        lock.withLock {
+            isSleeping = true
+            mainHeartbeat = clock.now()
+        }
+    }
+
+    func didWake() {
+        lock.withLock {
+            isSleeping = false
+            let now = clock.now()
+            lastWakeAt = now
+            mainHeartbeat = now
+        }
+    }
+
+    func currentTime() -> TimeInterval { clock.now() }
 
     func clearHotkeyExit() {
         lock.withLock {
@@ -68,6 +99,9 @@ final class EmergencyRuntime: @unchecked Sendable {
         lock.withLock {
             Snapshot(
                 stateIsIdle: stateIsIdle,
+                mainThreadMonitoringActive: mainThreadMonitoringActive,
+                isSleeping: isSleeping,
+                lastWakeAt: lastWakeAt,
                 mainHeartbeat: mainHeartbeat,
                 stage: stage,
                 stageStartedAt: stageStartedAt,

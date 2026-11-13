@@ -50,7 +50,7 @@ final class TextCleanupSettingsViewModel: ObservableObject {
         self.manager = manager
         self.keyStore = keyStore
         self.isLowMemoryMac = isLowMemoryMac
-        engine = store.string(for: .textCleanupEngine).flatMap(TextCleanupEngine.init(rawValue:)) ?? .fast
+        engine = store.string(for: .textCleanupEngine).flatMap(TextCleanupEngine.init(rawValue:)) ?? .local
         cloudModel = store.string(for: .textCleanupModel) ?? StoredTextCleanupSettings.defaultModel
         localModel = store.string(for: .textCleanupLocalModel) ?? recommendedLocalModel
         cleanupStyle = store.string(for: .textCleanupStyle).flatMap(CleanupStyle.init(rawValue:)) ?? .polished

@@ -22,7 +22,7 @@ struct StoredTextCleanupSettings: TextCleanupSettings, TextCleanupSettingsWritin
     var configuredEngine: TextCleanupEngine {
         if SafeModeState.isEnabled { return .fast }
         migrate()
-        return store.string(for: .textCleanupEngine).flatMap(TextCleanupEngine.init(rawValue:)) ?? .fast
+        return store.string(for: .textCleanupEngine).flatMap(TextCleanupEngine.init(rawValue:)) ?? .local
     }
 
     var isEnabled: Bool { configuredEngine != .disabled }
@@ -67,7 +67,7 @@ struct StoredTextCleanupSettings: TextCleanupSettings, TextCleanupSettingsWritin
         if let wasEnabled = store.bool(for: .legacyTextCleanupEnabled) {
             engine = wasEnabled ? .cloud : .disabled
         } else {
-            engine = .fast
+            engine = .local
         }
         store.set(.string(engine.rawValue), for: .textCleanupEngine)
     }

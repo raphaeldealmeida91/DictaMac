@@ -23,7 +23,7 @@ final class SettingsTests: XCTestCase {
 
         XCTAssertEqual(transcription.configuredModel, StoredTranscriptionSettings.defaultModel)
         XCTAssertEqual(transcription.configuredLanguage, "fr")
-        XCTAssertEqual(cleanup.configuredEngine, .fast)
+        XCTAssertEqual(cleanup.configuredEngine, .local)
         XCTAssertEqual(cleanup.configuredModel, StoredTextCleanupSettings.defaultModel)
         XCTAssertEqual(cleanup.configuredLocalModel, StoredTextCleanupSettings.defaultLocalModel)
         XCTAssertEqual(cleanup.cleanupStyle, .polished)
@@ -145,6 +145,7 @@ final class SettingsTests: XCTestCase {
         }
         viewModel.fnConfigurationConfirmed = true
         viewModel.modelSkipped = true
+        viewModel.cleanupModelSkipped = true
         viewModel.dictationTrialSkipped = true
 
         XCTAssertTrue(viewModel.finish())
@@ -160,6 +161,8 @@ final class SettingsTests: XCTestCase {
             permissions: DeniedPermissionManager(),
             modelState: PreviewTranscriptionModelState(),
             modelLoader: PreviewTranscriptionModelLoader(),
+            cleanupModelState: PreviewCleanupModelState(),
+            cleanupModelManager: PreviewCleanupModelManager(),
             activity: TestDictationActivity(),
             openKeyboardSettings: {}
         )

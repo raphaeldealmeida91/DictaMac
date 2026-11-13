@@ -24,6 +24,9 @@ struct EmergencyWatchdogPolicy: Sendable {
     struct Snapshot: Sendable {
         var now: TimeInterval
         var mainHeartbeat: TimeInterval
+        var mainThreadMonitoringActive: Bool
+        var isSleeping: Bool
+        var lastWakeAt: TimeInterval?
         var stage: EmergencyStage?
         var stageStartedAt: TimeInterval?
         var modelIsLoading: Bool
@@ -62,7 +65,8 @@ struct EmergencyWatchdogPolicy: Sendable {
     }
 
     private mutating func breachReason(_ snapshot: Snapshot) -> String? {
-        if snapshot.now - snapshot.mainHeartbeat > configuration.mainThreadTimeout {
+        if shouldMonitorMainThread(snapshot),
+           snapshot.now - snapshot.mainHeartbeat > configuration.mainThreadTimeout {
             return "main_thread_stall"
         }
         let stageElapsed = stageElapsedTime(snapshot)
@@ -76,6 +80,12 @@ struct EmergencyWatchdogPolicy: Sendable {
             return "memory_limit"
         }
         return nil
+    }
+
+    private func shouldMonitorMainThread(_ snapshot: Snapshot) -> Bool {
+        guard snapshot.mainThreadMonitoringActive, !snapshot.isSleeping else { return false }
+        guard let lastWakeAt = snapshot.lastWakeAt else { return true }
+        return snapshot.now - lastWakeAt >= 10
     }
 
     private mutating func stageElapsedTime(_ snapshot: Snapshot) -> TimeInterval? {

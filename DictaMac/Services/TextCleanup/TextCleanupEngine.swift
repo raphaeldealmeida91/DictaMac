@@ -11,4 +11,13 @@ enum TextCleanupEngine: String, CaseIterable, Identifiable, Sendable {
         case .cloud: "Cloud"
         }
     }
+
+    var diagnosticName: String {
+        switch self {
+        case .disabled: "off"
+        case .fast: "rules"
+        case .local: "local"
+        case .cloud: "cloud"
+        }
+    }
 }

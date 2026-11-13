@@ -8,7 +8,7 @@ enum PipelineFailure: Equatable, Sendable {
 
 enum DictationOutcome: Equatable, Sendable {
     case inserted
-    case cleanupUnavailable
+    case cleanupUnavailable(CleanupOutcome)
     case copiedToClipboard
     case partial
     case empty
@@ -71,7 +71,7 @@ final class DictationPipeline: DictationPipelineRunning {
         let transcriptionDuration: TimeInterval
         let cleanupDuration: TimeInterval
         let cleanupEngine: TextCleanupEngine
-        let cleanupUnavailable: Bool
+        let cleanupOutcome: CleanupOutcome
     }
 
     private let textCleanupService: any TextCleanupService
@@ -169,7 +169,7 @@ final class DictationPipeline: DictationPipelineRunning {
             transcriptionDuration: transcriptionDuration,
             cleanupDuration: Self.seconds(cleanupStartedAt.duration(to: .now)),
             cleanupEngine: textCleanupSettings.configuredEngine,
-            cleanupUnavailable: cleanupResult.isUnavailable
+            cleanupOutcome: cleanupResult.outcome
         )
     }
 
@@ -228,8 +228,13 @@ final class DictationPipeline: DictationPipelineRunning {
         dictionary: [String],
         result: SegmentedTranscriber.FinishResult,
         session: DictationPipelineSession
-    ) async throws -> (text: String, isUnavailable: Bool) {
-        guard textCleanupSettings.isEnabled, !rawText.isEmpty else { return (rawText, false) }
+    ) async throws -> (text: String, outcome: CleanupOutcome) {
+        let engine = textCleanupSettings.configuredEngine
+        guard !rawText.isEmpty else { return (rawText, .cleaned) }
+        guard textCleanupSettings.isEnabled else { return (rawText, .fallbackNotEnabled) }
+        if engine == .local, !textCleanupSettings.localDownloadApproved {
+            return (rawText, .fallbackDownloadNotApproved)
+        }
         let context = StageContext(
             audioDuration: session.audioDuration,
             segmentCount: result.segmentCount,
@@ -245,13 +250,13 @@ final class DictationPipeline: DictationPipelineRunning {
         _ text: String,
         dictionary: [String],
         service: any TextCleanupService
-    ) async throws -> (text: String, isUnavailable: Bool) {
+    ) async throws -> (text: String, outcome: CleanupOutcome) {
         do {
             let cleaned = try await PipelineWatchdog.run(stage: "nettoyage") {
                 try await service.cleanup(text, dictionary: dictionary)
             }
             logger.info("Nettoyage du texte terminé")
-            return (cleaned, false)
+            return (cleaned, .cleaned)
         } catch is CancellationError {
             throw CancellationError()
         } catch {
@@ -260,8 +265,17 @@ final class DictationPipeline: DictationPipelineRunning {
                 text,
                 removeIsolatedGenre: textCleanupSettings.removeIsolatedGenre
             )
-            return (fallback, textCleanupSettings.configuredEngine.isAI)
+            return (fallback, cleanupOutcome(for: error))
         }
+    }
+
+    private func cleanupOutcome(for error: Error) -> CleanupOutcome {
+        if error is PipelineWatchdogError || error as? LocalCleanupError == .timeout {
+            return .fallbackTimeout
+        }
+        if (error as? URLError)?.code == .timedOut { return .fallbackTimeout }
+        if error as? LocalCleanupError == .modelNotReady { return .fallbackModelNotReady }
+        return .fallbackRejected
     }
 
     private func inject(
@@ -309,7 +323,8 @@ final class DictationPipeline: DictationPipelineRunning {
             cleanup: processed.cleanupDuration,
             injection: injectionDuration,
             total: Self.seconds(session.releaseInstant.duration(to: .now)),
-            cleanupEngine: processed.cleanupEngine
+            cleanupEngine: processed.cleanupEngine,
+            cleanupOutcome: processed.cleanupOutcome
         ))
     }
 
@@ -318,7 +333,9 @@ final class DictationPipeline: DictationPipelineRunning {
         injectionOutcome: TextInjectionOutcome
     ) -> DictationOutcome {
         if processed.value.isEmpty { return .empty }
-        if processed.cleanupUnavailable { return .cleanupUnavailable }
+        if processed.cleanupEngine.isAI, processed.cleanupOutcome != .cleaned {
+            return .cleanupUnavailable(processed.cleanupOutcome)
+        }
         if processed.finishResult.isPartial { return .partial }
         if injectionOutcome == .copiedToClipboard { return .copiedToClipboard }
         return .inserted

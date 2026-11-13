@@ -51,7 +51,7 @@ final class EmergencyWatchdog: @unchecked Sendable {
     }
 
     private func tick() {
-        let now = MonotonicClock.now
+        let now = runtime.currentTime()
         let runtime = runtime.snapshot()
         if let deadline = runtime.hotkeyDeadline, now >= deadline {
             if runtime.stateIsIdle {
@@ -67,6 +67,9 @@ final class EmergencyWatchdog: @unchecked Sendable {
         let snapshot = EmergencyWatchdogPolicy.Snapshot(
             now: now,
             mainHeartbeat: runtime.mainHeartbeat,
+            mainThreadMonitoringActive: runtime.mainThreadMonitoringActive,
+            isSleeping: runtime.isSleeping,
+            lastWakeAt: runtime.lastWakeAt,
             stage: runtime.stage,
             stageStartedAt: runtime.stageStartedAt,
             modelIsLoading: modelLoadingGate.isLoading,

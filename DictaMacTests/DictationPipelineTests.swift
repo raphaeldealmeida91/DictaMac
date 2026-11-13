@@ -17,10 +17,45 @@ final class DictationPipelineTests: XCTestCase {
             session: makeSession(transcriber: PipelineFakeTranscriber())
         )
 
-        XCTAssertEqual(outcome, .cleanupUnavailable)
+        XCTAssertEqual(outcome, .cleanupUnavailable(.fallbackRejected))
         XCTAssertEqual(injector.insertedText, "Texte brut.")
         XCTAssertEqual(stageReporter.beginStages, [.transcription, .cleanup, .injection])
         XCTAssertEqual(stageReporter.endStages, [.transcription, .cleanup, .injection])
+    }
+
+    func testUnapprovedLocalModelIsReportedWithoutCallingLLM() async {
+        let cleanup = PipelineCleanupSpy()
+        let pipeline = makePipeline(
+            cleanupService: cleanup,
+            injector: PipelineFakeInjector(),
+            stageReporter: PipelineFakeStageReporter(),
+            settings: PipelineCleanupSettings(engine: .local, localDownloadApproved: false)
+        )
+
+        let outcome = await pipeline.run(
+            samples: [0.1],
+            session: makeSession(transcriber: PipelineFakeTranscriber())
+        )
+
+        XCTAssertEqual(outcome, .cleanupUnavailable(.fallbackDownloadNotApproved))
+        let received = await cleanup.received()
+        XCTAssertTrue(received.text.isEmpty)
+    }
+
+    func testLocalModelNotReadyIsReported() async {
+        let pipeline = makePipeline(
+            cleanupService: ModelNotReadyCleanupService(),
+            injector: PipelineFakeInjector(),
+            stageReporter: PipelineFakeStageReporter(),
+            settings: PipelineCleanupSettings(engine: .local, localDownloadApproved: true)
+        )
+
+        let outcome = await pipeline.run(
+            samples: [0.1],
+            session: makeSession(transcriber: PipelineFakeTranscriber())
+        )
+
+        XCTAssertEqual(outcome, .cleanupUnavailable(.fallbackModelNotReady))
     }
 
     func testStageIsClosedWhenTranscriptionFails() async {
@@ -129,11 +164,12 @@ final class DictationPipelineTests: XCTestCase {
         stageReporter: PipelineFakeStageReporter,
         historyRecorder: PipelineFakeHistoryRecorder = PipelineFakeHistoryRecorder(),
         personalDictionary: any PersonalDictionary = PipelinePersonalDictionary(entries: []),
-        wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil
+        wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil,
+        settings: any TextCleanupSettings = PipelineCleanupSettings()
     ) -> DictationPipeline {
         DictationPipeline(
             textCleanupService: cleanupService,
-            textCleanupSettings: PipelineCleanupSettings(),
+            textCleanupSettings: settings,
             personalDictionary: personalDictionary,
             textInjector: injector,
             historyRecorder: historyRecorder,
@@ -232,6 +268,12 @@ private actor SuccessfulCleanupService: TextCleanupService {
     func cleanup(_ text: String, dictionary: [String]) async throws -> String { output }
 }
 
+private actor ModelNotReadyCleanupService: TextCleanupService {
+    func cleanup(_ text: String, dictionary: [String]) async throws -> String {
+        throw LocalCleanupError.modelNotReady
+    }
+}
+
 private actor PipelineCleanupSpy: TextCleanupService {
     private var text = ""
     private var dictionary: [String] = []
@@ -260,15 +302,23 @@ private struct PipelinePersonalDictionary: PersonalDictionary {
 }
 
 private struct PipelineCleanupSettings: TextCleanupSettings {
-    let configuredEngine = TextCleanupEngine.cloud
-    let isEnabled = true
+    let configuredEngine: TextCleanupEngine
+    var isEnabled: Bool { configuredEngine != .disabled }
     let configuredModel = ""
     let configuredLocalModel = ""
     let cleanupStyle = CleanupStyle.polished
     let removeIsolatedGenre = false
     let localTimeout: TimeInterval = 1
     let cloudTimeout: TimeInterval = 1
-    let localDownloadApproved = false
+    let localDownloadApproved: Bool
+
+    init(
+        engine: TextCleanupEngine = .cloud,
+        localDownloadApproved: Bool = false
+    ) {
+        configuredEngine = engine
+        self.localDownloadApproved = localDownloadApproved
+    }
 }
 
 @MainActor

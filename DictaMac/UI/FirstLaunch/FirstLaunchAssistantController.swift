@@ -4,7 +4,7 @@ import SwiftUI
 @MainActor
 final class FirstLaunchAssistantController: NSObject, NSWindowDelegate {
     private enum WindowMetrics {
-        static let initialContentSize = NSSize(width: 620, height: 500)
+        static let initialContentSize = NSSize(width: 620, height: 620)
         static let minimumContentSize = NSSize(width: 540, height: 420)
     }
 
@@ -13,11 +13,14 @@ final class FirstLaunchAssistantController: NSObject, NSWindowDelegate {
     private var window: NSWindow?
 
     init<Permissions: PermissionManaging, Model: TranscriptionModelStateProviding,
-         Loader: TranscriptionModelReloading, Activity: DictationActivityProviding>(
+         Loader: TranscriptionModelReloading, CleanupState: LocalCleanupModelStateProviding,
+         CleanupManager: LocalCleanupModelManaging, Activity: DictationActivityProviding>(
         store: any SettingsStoring,
         permissions: Permissions,
         modelState: Model,
         modelLoader: Loader,
+        cleanupModelState: CleanupState,
+        cleanupModelManager: CleanupManager,
         activity: Activity
     ) {
         self.store = store
@@ -27,6 +30,8 @@ final class FirstLaunchAssistantController: NSObject, NSWindowDelegate {
                 permissions: permissions,
                 modelState: modelState,
                 modelLoader: modelLoader,
+                cleanupModelState: cleanupModelState,
+                cleanupModelManager: cleanupModelManager,
                 activity: activity,
                 openKeyboardSettings: Self.openKeyboardSettings
             )

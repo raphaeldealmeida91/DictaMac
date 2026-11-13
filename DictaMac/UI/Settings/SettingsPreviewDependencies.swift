@@ -119,7 +119,8 @@ extension DictationTimings {
         cleanup: 0.12,
         injection: 0.05,
         total: 0.99,
-        cleanupEngine: .fast
+        cleanupEngine: .fast,
+        cleanupOutcome: .cleaned
     )
 }
 

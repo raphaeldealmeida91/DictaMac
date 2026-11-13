@@ -105,14 +105,14 @@ final class TextCleanupSettingsMigrationTests: XCTestCase {
         XCTAssertEqual(store.string(for: .textCleanupEngine), TextCleanupEngine.cloud.rawValue)
     }
 
-    func testLegacyDisabledMigratesToDisabledAndNewInstallToFastRules() {
+    func testLegacyDisabledMigratesToDisabledAndNewInstallToLocal() {
         let disabledStore = InMemorySettingsStore(values: [.legacyTextCleanupEnabled: .bool(false)])
         StoredTextCleanupSettings(store: disabledStore).migrate()
         XCTAssertEqual(disabledStore.string(for: .textCleanupEngine), TextCleanupEngine.disabled.rawValue)
 
         let freshStore = InMemorySettingsStore()
         StoredTextCleanupSettings(store: freshStore).migrate()
-        XCTAssertEqual(freshStore.string(for: .textCleanupEngine), TextCleanupEngine.fast.rawValue)
+        XCTAssertEqual(freshStore.string(for: .textCleanupEngine), TextCleanupEngine.local.rawValue)
     }
 
     func testPolishedAndEightSecondTimeoutsAreDefaults() {

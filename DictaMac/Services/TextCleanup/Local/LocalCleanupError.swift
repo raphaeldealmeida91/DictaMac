@@ -1,4 +1,4 @@
-enum LocalCleanupError: Error {
+enum LocalCleanupError: Error, Equatable {
     case modelNotReady
     case timeout
 }

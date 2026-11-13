@@ -101,13 +101,27 @@ final class DictationCoordinatorTests: XCTestCase {
 
     func testCleanupFailureShowsNonBlockingMessageAfterInsertion() async {
         let fixture = Fixture()
-        fixture.pipeline.outcome = .cleanupUnavailable
+        fixture.pipeline.outcome = .cleanupUnavailable(.fallbackRejected)
 
         fixture.hotkey.press()
         fixture.hotkey.release()
         await fixture.waitUntilIdle()
 
         XCTAssertEqual(fixture.overlay.events.last, .message("Nettoyage IA indisponible"))
+    }
+
+    func testMissingLocalCleanupModelShowsExplicitMessage() async {
+        let fixture = Fixture()
+        fixture.pipeline.outcome = .cleanupUnavailable(.fallbackDownloadNotApproved)
+
+        fixture.hotkey.press()
+        fixture.hotkey.release()
+        await fixture.waitUntilIdle()
+
+        XCTAssertEqual(
+            fixture.overlay.events.last,
+            .message("Modèle de nettoyage non téléchargé")
+        )
     }
 
     func testRecordingSessionCapturesPostRollBeforeStoppingAudio() throws {

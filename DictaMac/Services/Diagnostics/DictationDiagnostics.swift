@@ -33,8 +33,9 @@ final class DictationDiagnostics: ObservableObject, DictationMetricsRecording {
 
     func record(_ timings: DictationTimings) {
         lastTimings = timings
+        diagnosticLog.cleanupResult(engine: timings.cleanupEngine, outcome: timings.cleanupOutcome)
         logger.info(
-            "dictation latency stop_audio=\(timings.stopAudio, format: .fixed(precision: 3))s transcription=\(timings.transcription, format: .fixed(precision: 3))s cleanup=\(timings.cleanup, format: .fixed(precision: 3))s injection=\(timings.injection, format: .fixed(precision: 3))s total_release_to_paste=\(timings.total, format: .fixed(precision: 3))s cleanup_engine=\(timings.cleanupEngine.rawValue, privacy: .public)"
+            "dictation latency stop_audio=\(timings.stopAudio, format: .fixed(precision: 3))s transcription=\(timings.transcription, format: .fixed(precision: 3))s cleanup=\(timings.cleanup, format: .fixed(precision: 3))s injection=\(timings.injection, format: .fixed(precision: 3))s total_release_to_paste=\(timings.total, format: .fixed(precision: 3))s cleanup_engine=\(timings.cleanupEngine.diagnosticName, privacy: .public) cleanup_outcome=\(timings.cleanupOutcome.rawValue, privacy: .public)"
         )
     }
 }

@@ -8,15 +8,22 @@ final class FirstLaunchAssistantViewModel: ObservableObject {
     @Published private(set) var modelStatus: String
     @Published private(set) var modelProgress: Double?
     @Published private(set) var modelIsReady: Bool
+    @Published private(set) var cleanupModelStatus: String
+    @Published private(set) var cleanupModelProgress: Double?
+    @Published private(set) var cleanupModelIsReady: Bool
+    @Published private(set) var cleanupModelIsBusy: Bool
     @Published private(set) var dictationState: DictationState
     @Published var fnConfigurationConfirmed = false
     @Published var modelSkipped = false
+    @Published var cleanupModelSkipped = false
     @Published var dictationTrialSkipped = false
 
     private let store: any SettingsStoring
     private let permissionManager: any PermissionManaging
     private let loadModel: () async throws -> Void
     private let readModelState: () -> (String, Double?, Bool, Bool)
+    private let loadCleanupModel: () async -> Void
+    private let readCleanupModelState: () -> (String, Double?, Bool, Bool)
     private let readActivityState: () -> DictationState
     private let openKeyboardSettingsAction: () -> Void
     private var skippedPermissions = Set<AppPermission>()
@@ -24,11 +31,14 @@ final class FirstLaunchAssistantViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init<Permissions: PermissionManaging, Model: TranscriptionModelStateProviding,
-         Loader: TranscriptionModelReloading, Activity: DictationActivityProviding>(
+         Loader: TranscriptionModelReloading, CleanupState: LocalCleanupModelStateProviding,
+         CleanupManager: LocalCleanupModelManaging, Activity: DictationActivityProviding>(
         store: any SettingsStoring,
         permissions: Permissions,
         modelState: Model,
         modelLoader: Loader,
+        cleanupModelState: CleanupState,
+        cleanupModelManager: CleanupManager,
         activity: Activity,
         openKeyboardSettings: @escaping () -> Void
     ) {
@@ -37,15 +47,29 @@ final class FirstLaunchAssistantViewModel: ObservableObject {
         modelStatus = modelState.status
         modelProgress = modelState.downloadProgress
         modelIsReady = modelState.isReady
+        cleanupModelStatus = cleanupModelState.status
+        cleanupModelProgress = cleanupModelState.downloadProgress
+        cleanupModelIsReady = cleanupModelState.isReady
+        cleanupModelIsBusy = cleanupModelState.isBusy
         dictationState = activity.state
         loadModel = { try await modelLoader.reloadConfiguredModel() }
         readModelState = {
             (modelState.status, modelState.downloadProgress, modelState.isReady, modelState.isBusy)
         }
+        loadCleanupModel = { await cleanupModelManager.approveDownloadAndActivate() }
+        readCleanupModelState = {
+            (
+                cleanupModelState.status,
+                cleanupModelState.downloadProgress,
+                cleanupModelState.isReady,
+                cleanupModelState.isBusy
+            )
+        }
         readActivityState = { activity.state }
         openKeyboardSettingsAction = openKeyboardSettings
         observe(permissions.objectWillChange) { [weak self] in self?.refreshPermissions() }
         observe(modelState.objectWillChange) { [weak self] in self?.refreshModelState() }
+        observe(cleanupModelState.objectWillChange) { [weak self] in self?.refreshCleanupModelState() }
         observe(activity.objectWillChange) { [weak self] in self?.refreshActivityState() }
         refreshPermissions()
     }
@@ -62,6 +86,7 @@ final class FirstLaunchAssistantViewModel: ObservableObject {
     var canFinish: Bool {
         fnConfigurationConfirmed
             && (modelIsReady || modelSkipped)
+            && (cleanupModelIsReady || cleanupModelSkipped)
             && (observedDictation || dictationTrialSkipped)
     }
 
@@ -116,6 +141,10 @@ final class FirstLaunchAssistantViewModel: ObservableObject {
         openKeyboardSettingsAction()
     }
 
+    func downloadCleanupModel() {
+        Task { await loadCleanupModel() }
+    }
+
     func finish() -> Bool {
         guard canFinish else { return false }
         store.set(.bool(true), for: .firstLaunchAssistantCompleted)
@@ -139,6 +168,14 @@ final class FirstLaunchAssistantViewModel: ObservableObject {
         modelStatus = state.0
         modelProgress = state.1
         modelIsReady = state.2
+    }
+
+    private func refreshCleanupModelState() {
+        let state = readCleanupModelState()
+        cleanupModelStatus = state.0
+        cleanupModelProgress = state.1
+        cleanupModelIsReady = state.2
+        cleanupModelIsBusy = state.3
     }
 
     private func refreshActivityState() {

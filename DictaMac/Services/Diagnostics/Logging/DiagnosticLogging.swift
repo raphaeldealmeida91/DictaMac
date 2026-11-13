@@ -22,9 +22,11 @@ protocol DiagnosticLogging: Sendable {
     func mainThreadStall(duration: TimeInterval)
     func eventTapDisabled(reason: String)
     func wordCount(stage: TextWordDiagnosticStage, segmentIndex: Int?, count: Int)
+    func cleanupResult(engine: TextCleanupEngine, outcome: CleanupOutcome)
 }
 
 extension DiagnosticLogging {
+    func cleanupResult(engine: TextCleanupEngine, outcome: CleanupOutcome) {}
     func wordCount(stage: TextWordDiagnosticStage, segmentIndex: Int?, count: Int) {}
 
     func modelLoadEnded(

@@ -93,6 +93,7 @@
 		E10000000000000000000025 /* Emergency/SafeModeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000025 /* Emergency/SafeModeManager.swift */; };
 		E10000000000000000000026 /* Emergency/SafeModeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000026 /* Emergency/SafeModeState.swift */; };
 		E10000000000000000000027 /* CleanupDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000027 /* CleanupDecision.swift */; };
+		Z10000000000000000000001 /* CleanupOutcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = Z20000000000000000000001 /* CleanupOutcome.swift */; };
 		E10000000000000000000028 /* WhisperBenchmarkResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000028 /* WhisperBenchmarkResult.swift */; };
 		E10000000000000000000029 /* WhisperBenchmarkState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000029 /* WhisperBenchmarkState.swift */; };
 		F10000000000000000000001 /* HotkeyProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000001 /* HotkeyProviding.swift */; };
@@ -307,6 +308,7 @@
 		E20000000000000000000025 /* Emergency/SafeModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emergency/SafeModeManager.swift; sourceTree = "<group>"; };
 		E20000000000000000000026 /* Emergency/SafeModeState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emergency/SafeModeState.swift; sourceTree = "<group>"; };
 		E20000000000000000000027 /* CleanupDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupDecision.swift; sourceTree = "<group>"; };
+		Z20000000000000000000001 /* CleanupOutcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupOutcome.swift; sourceTree = "<group>"; };
 		E20000000000000000000028 /* WhisperBenchmarkResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperBenchmarkResult.swift; sourceTree = "<group>"; };
 		E20000000000000000000029 /* WhisperBenchmarkState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperBenchmarkState.swift; sourceTree = "<group>"; };
 		F20000000000000000000001 /* HotkeyProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyProviding.swift; sourceTree = "<group>"; };
@@ -649,6 +651,7 @@
 				E2000000000000000000000D /* Local/LocalCleanupModelManager.swift */,
 				E2000000000000000000000E /* Local/LocalCleanupError.swift */,
 				E20000000000000000000027 /* CleanupDecision.swift */,
+				Z20000000000000000000001 /* CleanupOutcome.swift */,
 			);
 			path = TextCleanup;
 			sourceTree = "<group>";
@@ -1095,6 +1098,7 @@
 				E10000000000000000000025 /* Emergency/SafeModeManager.swift in Sources */,
 				E10000000000000000000026 /* Emergency/SafeModeState.swift in Sources */,
 				E10000000000000000000027 /* CleanupDecision.swift in Sources */,
+				Z10000000000000000000001 /* CleanupOutcome.swift in Sources */,
 				E10000000000000000000028 /* WhisperBenchmarkResult.swift in Sources */,
 				E10000000000000000000029 /* WhisperBenchmarkState.swift in Sources */,
 				F10000000000000000000001 /* HotkeyProviding.swift in Sources */,

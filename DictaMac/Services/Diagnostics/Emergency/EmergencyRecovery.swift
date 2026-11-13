@@ -9,7 +9,7 @@ protocol EmergencyModelUnloading: Sendable {
 
 protocol EmergencyRecovering: Sendable {
     func begin(reason: String, hotkey: Bool)
-    func exit(reason: String) -> Never
+    func exit(reason: String)
 }
 
 // The instance is immutable after initialization; injected collaborators own their synchronization.
@@ -21,6 +21,9 @@ final class EmergencyRecovery: EmergencyRecovering, @unchecked Sendable {
     private let transcriptionModel: any EmergencyModelUnloading
     private let localModel: any EmergencyModelUnloading
     private let alertPresenter: any UserAlertPresenting
+    private let alertLock = NSLock()
+    private var lastAlertAt: TimeInterval?
+    private var alertIsPending = false
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "Emergency"
@@ -53,25 +56,46 @@ final class EmergencyRecovery: EmergencyRecovering, @unchecked Sendable {
         transcriptionModel.requestEmergencyUnload()
         localModel.requestEmergencyUnload()
         if audioStopped { runtime.setIdle(true) }
-        DispatchQueue.main.async { [alertPresenter] in
+        guard reserveAlert(at: runtime.currentTime()) else { return }
+        DispatchQueue.main.async { [weak self, alertPresenter] in
+            guard let self else { return }
             NotificationCenter.default.post(name: .emergencyStopRequested, object: nil)
-            let response = alertPresenter.present(UserAlert(
+            let didPresent = alertPresenter.presentNonBlocking(UserAlert(
                 style: .critical,
                 title: "Arrêt d’urgence DictaMac",
-                message: "La dictée a été annulée et les modèles ont été déchargés (\(reason)).",
-                primaryButton: "OK",
+                message: "La dictée a été annulée et les modèles ont été déchargés (\(reason)). Vous pouvez toujours quitter DictaMac.",
+                primaryButton: "Quitter DictaMac",
                 secondaryButton: "Ouvrir le journal"
-            ))
-            if response == .secondary,
-               let directory = try? PersistentDiagnosticLog.logsDirectoryURL() {
-                NSWorkspace.shared.open(directory)
+            )) { [weak self] response in
+                self?.releaseAlert()
+                if response == .primary {
+                    self?.exit(reason: "user_requested_exit")
+                } else if let directory = try? PersistentDiagnosticLog.logsDirectoryURL() {
+                    NSWorkspace.shared.open(directory)
+                }
             }
+            if !didPresent { self.releaseAlert() }
         }
     }
 
-    func exit(reason: String) -> Never {
+    func exit(reason: String) {
         diagnosticLog.emergencyExitAndFlush(reason: reason)
-        _exit(0)
+        DispatchQueue.main.async { NSApp.terminate(nil) }
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 2) { _exit(0) }
+    }
+
+    private func reserveAlert(at now: TimeInterval) -> Bool {
+        alertLock.withLock {
+            guard !alertIsPending else { return false }
+            if let lastAlertAt, now - lastAlertAt < 60 { return false }
+            lastAlertAt = now
+            alertIsPending = true
+            return true
+        }
+    }
+
+    private func releaseAlert() {
+        alertLock.withLock { alertIsPending = false }
     }
 }
 

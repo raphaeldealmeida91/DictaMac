@@ -52,6 +52,8 @@ final class AppEnvironment {
             permissions: composition.permissions,
             modelState: composition.models.transcriptionState,
             modelLoader: composition.models.transcriptionService,
+            cleanupModelState: composition.models.cleanupState,
+            cleanupModelManager: composition.models.localManager,
             activity: composition.activity
         )
         coordinator = composition.coordinator

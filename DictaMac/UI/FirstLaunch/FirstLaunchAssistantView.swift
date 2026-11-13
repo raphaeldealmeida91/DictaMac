@@ -79,6 +79,7 @@ struct FirstLaunchAssistantView: View {
         VStack(alignment: .leading, spacing: 16) {
             configurationRow
             modelRow
+            cleanupModelRow
             dictationTrialRow
         }
     }
@@ -132,6 +133,29 @@ struct FirstLaunchAssistantView: View {
         }
     }
 
+    private var cleanupModelRow: some View {
+        GroupBox("Nettoyage IA local") {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Pour corriger et reformuler vos dictées sans envoyer de texte dans le cloud, téléchargez le modèle local recommandé.")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(viewModel.cleanupModelStatus)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let progress = viewModel.cleanupModelProgress {
+                    ProgressView(value: progress)
+                }
+                if !viewModel.cleanupModelIsReady && !viewModel.cleanupModelIsBusy {
+                    Button("Télécharger le modèle de nettoyage", action: viewModel.downloadCleanupModel)
+                        .buttonStyle(.borderedProminent)
+                }
+                Toggle("Continuer sans nettoyage IA", isOn: $viewModel.cleanupModelSkipped)
+                    .disabled(viewModel.cleanupModelIsReady)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(6)
+        }
+    }
+
     private var trialStatus: String {
         switch viewModel.dictationState {
         case .idle: viewModel.didObserveDictation ? "Essai détecté" : "En attente d’un appui sur fn"
@@ -163,7 +187,7 @@ struct FirstLaunchAssistantView: View {
     @ViewBuilder
     private var completionHint: some View {
         if viewModel.step == .readyToDictate && !viewModel.canFinish {
-            Text("Pour terminer, confirmez le réglage fn puis effectuez l’essai de dictée ou cochez « Terminer sans essai ».")
+            Text("Pour terminer, confirmez le réglage fn, choisissez si vous téléchargez le modèle de nettoyage, puis effectuez l’essai de dictée ou ignorez-le.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

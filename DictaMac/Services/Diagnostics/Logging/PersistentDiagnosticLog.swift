@@ -63,6 +63,12 @@ final class PersistentDiagnosticLog: DiagnosticLogging, @unchecked Sendable {
 
     func inputLost() { enqueue("event=input_lost") }
 
+    func cleanupResult(engine: TextCleanupEngine, outcome: CleanupOutcome) {
+        enqueue(
+            "event=cleanup_result stage=cleanup engine=\(engine.diagnosticName) outcome=\(outcome.rawValue)"
+        )
+    }
+
     func emergencyRecovery(reason: String) {
         enqueue("event=emergency_recovery reason=\(safeToken(reason))")
     }

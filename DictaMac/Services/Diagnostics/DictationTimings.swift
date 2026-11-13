@@ -8,4 +8,5 @@ struct DictationTimings: Equatable, Sendable {
     let injection: TimeInterval
     let total: TimeInterval
     let cleanupEngine: TextCleanupEngine
+    let cleanupOutcome: CleanupOutcome
 }
