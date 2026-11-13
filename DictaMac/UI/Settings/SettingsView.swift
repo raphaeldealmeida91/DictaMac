@@ -5,6 +5,7 @@ struct SettingsView: View {
     private let generalViewModel: GeneralSettingsViewModel
     private let transcriptionViewModel: TranscriptionSettingsViewModel
     private let textCleanupViewModel: TextCleanupSettingsViewModel
+    private let selectionCorrectionViewModel: SelectionCorrectionSettingsViewModel
     private let dictionaryViewModel: DictionarySettingsViewModel
     private let permissionsViewModel: PermissionsSettingsViewModel
     private let diagnosticViewModel: DiagnosticSettingsViewModel
@@ -31,6 +32,13 @@ struct SettingsView: View {
             keyStore: environment.apiKeyStore,
             recommendedLocalModel: environment.textCleanupSettings.recommendedLocalModel,
             isLowMemoryMac: environment.transcriptionSettings.isLowMemoryMac
+        )
+        selectionCorrectionViewModel = SelectionCorrectionSettingsViewModel(
+            store: environment.settingsStore,
+            permissions: environment.permissions,
+            applications: WorkspaceRunningApplicationProvider(),
+            ownBundleID: Bundle.main.bundleIdentifier,
+            setFeatureEnabled: environment.setSelectionCorrectionEnabled
         )
         dictionaryViewModel = DictionarySettingsViewModel(dictionary: environment.personalDictionary)
         permissionsViewModel = PermissionsSettingsViewModel(manager: environment.permissions)
@@ -78,6 +86,8 @@ struct SettingsView: View {
             TranscriptionSettingsView(viewModel: transcriptionViewModel)
         case .textCleanup:
             TextCleanupSettingsView(viewModel: textCleanupViewModel)
+        case .selectionCorrection:
+            SelectionCorrectionSettingsView(viewModel: selectionCorrectionViewModel)
         case .dictionary:
             DictionarySettingsView(viewModel: dictionaryViewModel)
         case .permissions:

@@ -4,6 +4,7 @@ enum SettingsValue: Equatable, Sendable {
     case bool(Bool)
     case double(Double)
     case string(String)
+    case stringArray([String])
     case stringDictionary([String: String])
 }
 
@@ -33,6 +34,11 @@ extension SettingsStoring {
         guard case .stringDictionary(let value) = value(for: key) else { return nil }
         return value
     }
+
+    func stringArray(for key: SettingsKey) -> [String]? {
+        guard case .stringArray(let value) = value(for: key) else { return nil }
+        return value
+    }
 }
 
 // UserDefaults provides thread-safe access; the wrapped reference is immutable after initialization.
@@ -48,6 +54,7 @@ final class UserDefaultsSettingsStore: SettingsStoring, @unchecked Sendable {
         if let value = object as? Bool { return .bool(value) }
         if let value = object as? Double { return .double(value) }
         if let value = object as? String { return .string(value) }
+        if let value = object as? [String] { return .stringArray(value) }
         if let value = object as? [String: String] { return .stringDictionary(value) }
         return nil
     }
@@ -57,6 +64,7 @@ final class UserDefaultsSettingsStore: SettingsStoring, @unchecked Sendable {
         case .bool(let value): defaults.set(value, forKey: key.rawValue)
         case .double(let value): defaults.set(value, forKey: key.rawValue)
         case .string(let value): defaults.set(value, forKey: key.rawValue)
+        case .stringArray(let value): defaults.set(value, forKey: key.rawValue)
         case .stringDictionary(let value): defaults.set(value, forKey: key.rawValue)
         }
     }

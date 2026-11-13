@@ -2,14 +2,7 @@ import Foundation
 import OSLog
 
 actor CloudTextCleanupService: TextCleanupService {
-    private enum Constants {
-        static let resourceTimeout: TimeInterval = 60
-    }
-
-    private let session: URLSession
-    private let endpoint: URL
-    private let apiKeyProvider: @Sendable () throws -> String?
-    private let modelProvider: @Sendable () -> String
+    private let generator: any TextGenerating
     private let settings: any TextCleanupSettings
     private let promptBuilder: CleanupPromptBuilder
     private let wordDiagnostics: (any TextWordDiagnosticsRecording)?
@@ -24,17 +17,25 @@ actor CloudTextCleanupService: TextCleanupService {
         promptBuilder: CleanupPromptBuilder = CleanupPromptBuilder(),
         wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil
     ) {
-        if let session {
-            self.session = session
-        } else {
-            let config = URLSessionConfiguration.ephemeral
-            config.timeoutIntervalForRequest = settings.cloudTimeout
-            config.timeoutIntervalForResource = Constants.resourceTimeout
-            self.session = URLSession(configuration: config)
-        }
-        self.endpoint = endpoint
-        self.apiKeyProvider = apiKeyProvider
-        self.modelProvider = modelProvider ?? { settings.configuredModel }
+        self.settings = settings
+        self.promptBuilder = promptBuilder
+        self.wordDiagnostics = wordDiagnostics
+        generator = OpenAIResponsesTextGenerator(
+            session: session,
+            endpoint: endpoint,
+            apiKeyProvider: apiKeyProvider,
+            modelProvider: modelProvider ?? { settings.configuredModel },
+            requestTimeout: { settings.cloudTimeout }
+        )
+    }
+
+    init(
+        generator: any TextGenerating,
+        settings: any TextCleanupSettings = StoredTextCleanupSettings(),
+        promptBuilder: CleanupPromptBuilder = CleanupPromptBuilder(),
+        wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil
+    ) {
+        self.generator = generator
         self.settings = settings
         self.promptBuilder = promptBuilder
         self.wordDiagnostics = wordDiagnostics
@@ -64,41 +65,23 @@ actor CloudTextCleanupService: TextCleanupService {
     }
 
     private func requestCleanup(_ text: String, dictionary: [String]) async throws -> String {
-        guard let key = try apiKeyProvider(), !key.isEmpty else { throw TextCleanupError.missingAPIKey }
-        let request = try makeRequest(text: text, dictionary: dictionary, key: key)
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw TextCleanupError.invalidResponse }
-        logger.info("cleanup cloud HTTP status=\(http.statusCode)")
-        guard (200..<300).contains(http.statusCode) else {
-            throw TextCleanupError.requestFailed(statusCode: http.statusCode)
-        }
-        return try await candidate(from: data)
-    }
-
-    private func makeRequest(text: String, dictionary: [String], key: String) throws -> URLRequest {
-        var request = URLRequest(url: endpoint)
-        request.httpMethod = "POST"
-        request.timeoutInterval = settings.cloudTimeout
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        request.httpBody = try JSONEncoder().encode(CleanupRequest(
-            model: modelProvider(),
-            instructions: promptBuilder.systemPrompt(style: settings.cleanupStyle, dictionary: dictionary),
-            input: "<dictation>\(text)</dictation>",
-            store: false
-        ))
-        return request
-    }
-
-    private func candidate(from data: Data) async throws -> String {
-        let body = try JSONDecoder().decode(CleanupResponse.self, from: data)
-        guard let candidate = body.output
-            .flatMap({ $0.content ?? [] })
-            .first(where: { $0.type == "output_text" })?.text else {
-            throw TextCleanupError.invalidResponse
-        }
+        let candidate = try await generator.generate(
+            text: text,
+            messages: messages(for: text, dictionary: dictionary),
+            maxTokens: .max
+        )
         await wordDiagnostics?.recordWordCount(candidate, stage: .llmRaw)
         return candidate
+    }
+
+    private func messages(for text: String, dictionary: [String]) -> [[String: String]] {
+        [
+            ["role": "system", "content": promptBuilder.systemPrompt(
+                style: settings.cleanupStyle,
+                dictionary: dictionary
+            )],
+            ["role": "user", "content": "<dictation>\(text)</dictation>"]
+        ]
     }
 
     private func processed(
@@ -130,17 +113,4 @@ actor CloudTextCleanupService: TextCleanupService {
             "cleanup engine=cloud duration=\(seconds, format: .fixed(precision: 3))s decision=\(decision, privacy: .private)"
         )
     }
-}
-
-private struct CleanupRequest: Encodable {
-    let model: String
-    let instructions: String
-    let input: String
-    let store: Bool
-}
-
-private struct CleanupResponse: Decodable {
-    struct Output: Decodable { let content: [Content]? }
-    struct Content: Decodable { let type: String; let text: String? }
-    let output: [Output]
 }

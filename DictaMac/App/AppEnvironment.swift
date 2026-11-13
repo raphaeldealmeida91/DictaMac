@@ -15,6 +15,9 @@ final class AppEnvironment {
     let launchAtLogin: LaunchAtLoginService
     let transcriptionSettings: StoredTranscriptionSettings
     let textCleanupSettings: StoredTextCleanupSettings
+    let selectionCorrectionSettings: StoredSelectionCorrectionSettings
+    let selectionWatcher: SelectionWatcher
+    let selectionCorrectionService: any SelectionCorrectionService
     let personalDictionary: StoredPersonalDictionary
     let localModelManager: LocalCleanupModelManager
     let transcriptionService: WhisperKitTranscriptionService
@@ -24,6 +27,7 @@ final class AppEnvironment {
     #endif
 
     private let coordinator: DictationCoordinator
+    private let selectionCorrectionCoordinator: SelectionCorrectionCoordinator
     private let memoryPressureMonitor: MemoryPressureMonitor
     private let safeModeLauncher: SafeModeLauncher
     private let heartbeat: MainThreadHeartbeat
@@ -44,6 +48,10 @@ final class AppEnvironment {
         launchAtLogin = composition.launchAtLogin
         transcriptionSettings = composition.settings.transcription
         textCleanupSettings = composition.settings.cleanup
+        selectionCorrectionSettings = composition.settings.selectionCorrection
+        selectionWatcher = composition.selectionWatcher
+        selectionCorrectionService = composition.selectionCorrectionService
+        selectionCorrectionCoordinator = composition.selectionCorrectionCoordinator
         personalDictionary = composition.settings.dictionary
         localModelManager = composition.models.localManager
         transcriptionService = composition.models.transcriptionService
@@ -76,6 +84,9 @@ final class AppEnvironment {
         emergencyWatchdog.start()
         memoryPressureMonitor.start()
         coordinator.start()
+        if selectionCorrectionSettings.isEnabled {
+            selectionCorrectionCoordinator.start()
+        }
     }
 
     func stop() {
@@ -83,10 +94,19 @@ final class AppEnvironment {
         heartbeat.stop()
         emergencyWatchdog.stop()
         coordinator.stop()
+        selectionCorrectionCoordinator.stop()
         safeModeLauncher.terminate()
     }
 
     func presentFirstLaunchAssistantIfNeeded() {
         firstLaunchAssistant.presentIfNeeded()
+    }
+
+    func setSelectionCorrectionEnabled(_ enabled: Bool) {
+        if enabled {
+            selectionCorrectionCoordinator.start()
+        } else {
+            selectionCorrectionCoordinator.stop()
+        }
     }
 }

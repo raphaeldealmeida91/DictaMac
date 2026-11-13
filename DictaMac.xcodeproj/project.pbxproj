@@ -7,6 +7,49 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		O10000000000000000000001 /* SelectionSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = O20000000000000000000001 /* SelectionSnapshot.swift */; };
+		O10000000000000000000002 /* SelectedTextReading.swift in Sources */ = {isa = PBXBuildFile; fileRef = O20000000000000000000002 /* SelectedTextReading.swift */; };
+		O10000000000000000000003 /* SelectionEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = O20000000000000000000003 /* SelectionEvent.swift */; };
+		O10000000000000000000004 /* SelectionEventMonitoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = O20000000000000000000004 /* SelectionEventMonitoring.swift */; };
+		O10000000000000000000005 /* SelectionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = O20000000000000000000005 /* SelectionPolicy.swift */; };
+		O10000000000000000000006 /* AccessibilitySelectedTextReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = O20000000000000000000006 /* AccessibilitySelectedTextReader.swift */; };
+		O10000000000000000000007 /* ClipboardSelectedTextReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = O20000000000000000000007 /* ClipboardSelectedTextReader.swift */; };
+		O10000000000000000000008 /* GlobalSelectionEventMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = O20000000000000000000008 /* GlobalSelectionEventMonitor.swift */; };
+		O10000000000000000000009 /* SelectionWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = O20000000000000000000009 /* SelectionWatcher.swift */; };
+		O1000000000000000000000A /* SelectionCorrectionSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = O2000000000000000000000A /* SelectionCorrectionSettings.swift */; };
+		O1000000000000000000000B /* StoredSelectionCorrectionSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = O2000000000000000000000B /* StoredSelectionCorrectionSettings.swift */; };
+		O1000000000000000000000C /* AppEnvironment+Selection.swift in Sources */ = {isa = PBXBuildFile; fileRef = O2000000000000000000000C /* AppEnvironment+Selection.swift */; };
+		O1000000000000000000000D /* SelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = O2000000000000000000000D /* SelectionTests.swift */; };
+		O1000000000000000000000E /* SecureSelectionDetecting.swift in Sources */ = {isa = PBXBuildFile; fileRef = O2000000000000000000000E /* SecureSelectionDetecting.swift */; };
+		Y10000000000000000000001 /* SelectionCorrectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = Y20000000000000000000001 /* SelectionCorrectionService.swift */; };
+		Y10000000000000000000002 /* SelectionCorrection.swift in Sources */ = {isa = PBXBuildFile; fileRef = Y20000000000000000000002 /* SelectionCorrection.swift */; };
+		Y10000000000000000000003 /* TextChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = Y20000000000000000000003 /* TextChange.swift */; };
+		Y10000000000000000000004 /* SelectionCorrectionError.swift in Sources */ = {isa = PBXBuildFile; fileRef = Y20000000000000000000004 /* SelectionCorrectionError.swift */; };
+		Y10000000000000000000005 /* SelectionCorrectionPromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = Y20000000000000000000005 /* SelectionCorrectionPromptBuilder.swift */; };
+		Y10000000000000000000006 /* SelectionCorrectionValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = Y20000000000000000000006 /* SelectionCorrectionValidator.swift */; };
+		Y10000000000000000000007 /* SelectionCorrectionDiff.swift in Sources */ = {isa = PBXBuildFile; fileRef = Y20000000000000000000007 /* SelectionCorrectionDiff.swift */; };
+		Y10000000000000000000008 /* SelectionCorrectionFastRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = Y20000000000000000000008 /* SelectionCorrectionFastRules.swift */; };
+		Y10000000000000000000009 /* ConfiguredSelectionCorrectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = Y20000000000000000000009 /* ConfiguredSelectionCorrectionService.swift */; };
+		Y1000000000000000000000A /* OpenAIResponsesTextGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = Y2000000000000000000000A /* OpenAIResponsesTextGenerator.swift */; };
+		Y1000000000000000000000B /* SelectionCorrectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = Y2000000000000000000000B /* SelectionCorrectionTests.swift */; };
+		X10000000000000000000001 /* SelectionReplacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = X20000000000000000000001 /* SelectionReplacing.swift */; };
+		X10000000000000000000002 /* SelectionReplacer.swift in Sources */ = {isa = PBXBuildFile; fileRef = X20000000000000000000002 /* SelectionReplacer.swift */; };
+		X10000000000000000000003 /* SelectionClipboardCopying.swift in Sources */ = {isa = PBXBuildFile; fileRef = X20000000000000000000003 /* SelectionClipboardCopying.swift */; };
+		X10000000000000000000004 /* SelectionCorrectionPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = X20000000000000000000004 /* SelectionCorrectionPresenting.swift */; };
+		X10000000000000000000005 /* SelectionCorrectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = X20000000000000000000005 /* SelectionCorrectionViewModel.swift */; };
+		X10000000000000000000006 /* SelectionCorrectionHighlighting.swift in Sources */ = {isa = PBXBuildFile; fileRef = X20000000000000000000006 /* SelectionCorrectionHighlighting.swift */; };
+		X10000000000000000000007 /* SelectionCorrectionPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = X20000000000000000000007 /* SelectionCorrectionPanel.swift */; };
+		X10000000000000000000008 /* SelectionCorrectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = X20000000000000000000008 /* SelectionCorrectionView.swift */; };
+		X10000000000000000000009 /* SelectionCorrectionPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = X20000000000000000000009 /* SelectionCorrectionPanelController.swift */; };
+		X1000000000000000000000A /* SelectionCorrectionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = X2000000000000000000000A /* SelectionCorrectionCoordinator.swift */; };
+		X1000000000000000000000B /* RunningApplicationProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = X2000000000000000000000B /* RunningApplicationProviding.swift */; };
+		X1000000000000000000000C /* SelectionCorrectionSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = X2000000000000000000000C /* SelectionCorrectionSettingsViewModel.swift */; };
+		X1000000000000000000000D /* SelectionCorrectionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = X2000000000000000000000D /* SelectionCorrectionSettingsView.swift */; };
+		X1000000000000000000000E /* SelectionCorrectionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = X2000000000000000000000E /* SelectionCorrectionUITests.swift */; };
+		X1000000000000000000000F /* SelectionReplacementOutcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = X2000000000000000000000F /* SelectionReplacementOutcome.swift */; };
+		X10000000000000000000010 /* SelectionClipboardCopier.swift in Sources */ = {isa = PBXBuildFile; fileRef = X20000000000000000000010 /* SelectionClipboardCopier.swift */; };
+		X10000000000000000000011 /* RunningApplicationInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = X20000000000000000000011 /* RunningApplicationInfo.swift */; };
+		X10000000000000000000012 /* WorkspaceRunningApplicationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = X20000000000000000000012 /* WorkspaceRunningApplicationProvider.swift */; };
 		A10000000000000000000001 /* DictaMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* DictaMacApp.swift */; };
 		A10000000000000000000002 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* SettingsView.swift */; };
 		A10000000000000000000003 /* HotkeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* HotkeyService.swift */; };
@@ -223,6 +266,49 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		O20000000000000000000001 /* SelectionSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionSnapshot.swift; sourceTree = "<group>"; };
+		O20000000000000000000002 /* SelectedTextReading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedTextReading.swift; sourceTree = "<group>"; };
+		O20000000000000000000003 /* SelectionEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionEvent.swift; sourceTree = "<group>"; };
+		O20000000000000000000004 /* SelectionEventMonitoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionEventMonitoring.swift; sourceTree = "<group>"; };
+		O20000000000000000000005 /* SelectionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionPolicy.swift; sourceTree = "<group>"; };
+		O20000000000000000000006 /* AccessibilitySelectedTextReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySelectedTextReader.swift; sourceTree = "<group>"; };
+		O20000000000000000000007 /* ClipboardSelectedTextReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSelectedTextReader.swift; sourceTree = "<group>"; };
+		O20000000000000000000008 /* GlobalSelectionEventMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalSelectionEventMonitor.swift; sourceTree = "<group>"; };
+		O20000000000000000000009 /* SelectionWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionWatcher.swift; sourceTree = "<group>"; };
+		O2000000000000000000000A /* SelectionCorrectionSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionSettings.swift; sourceTree = "<group>"; };
+		O2000000000000000000000B /* StoredSelectionCorrectionSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredSelectionCorrectionSettings.swift; sourceTree = "<group>"; };
+		O2000000000000000000000C /* AppEnvironment+Selection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppEnvironment+Selection.swift"; sourceTree = "<group>"; };
+		O2000000000000000000000D /* SelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionTests.swift; sourceTree = "<group>"; };
+		O2000000000000000000000E /* SecureSelectionDetecting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureSelectionDetecting.swift; sourceTree = "<group>"; };
+		Y20000000000000000000001 /* SelectionCorrectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionService.swift; sourceTree = "<group>"; };
+		Y20000000000000000000002 /* SelectionCorrection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrection.swift; sourceTree = "<group>"; };
+		Y20000000000000000000003 /* TextChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextChange.swift; sourceTree = "<group>"; };
+		Y20000000000000000000004 /* SelectionCorrectionError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionError.swift; sourceTree = "<group>"; };
+		Y20000000000000000000005 /* SelectionCorrectionPromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionPromptBuilder.swift; sourceTree = "<group>"; };
+		Y20000000000000000000006 /* SelectionCorrectionValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionValidator.swift; sourceTree = "<group>"; };
+		Y20000000000000000000007 /* SelectionCorrectionDiff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionDiff.swift; sourceTree = "<group>"; };
+		Y20000000000000000000008 /* SelectionCorrectionFastRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionFastRules.swift; sourceTree = "<group>"; };
+		Y20000000000000000000009 /* ConfiguredSelectionCorrectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfiguredSelectionCorrectionService.swift; sourceTree = "<group>"; };
+		Y2000000000000000000000A /* OpenAIResponsesTextGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cloud/OpenAIResponsesTextGenerator.swift; sourceTree = "<group>"; };
+		Y2000000000000000000000B /* SelectionCorrectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionTests.swift; sourceTree = "<group>"; };
+		X20000000000000000000001 /* SelectionReplacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionReplacing.swift; sourceTree = "<group>"; };
+		X20000000000000000000002 /* SelectionReplacer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionReplacer.swift; sourceTree = "<group>"; };
+		X20000000000000000000003 /* SelectionClipboardCopying.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionClipboardCopying.swift; sourceTree = "<group>"; };
+		X20000000000000000000004 /* SelectionCorrectionPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionPresenting.swift; sourceTree = "<group>"; };
+		X20000000000000000000005 /* SelectionCorrectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionViewModel.swift; sourceTree = "<group>"; };
+		X20000000000000000000006 /* SelectionCorrectionHighlighting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionHighlighting.swift; sourceTree = "<group>"; };
+		X20000000000000000000007 /* SelectionCorrectionPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionPanel.swift; sourceTree = "<group>"; };
+		X20000000000000000000008 /* SelectionCorrectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionView.swift; sourceTree = "<group>"; };
+		X20000000000000000000009 /* SelectionCorrectionPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionPanelController.swift; sourceTree = "<group>"; };
+		X2000000000000000000000A /* SelectionCorrectionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionCoordinator.swift; sourceTree = "<group>"; };
+		X2000000000000000000000B /* RunningApplicationProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunningApplicationProviding.swift; sourceTree = "<group>"; };
+		X2000000000000000000000C /* SelectionCorrectionSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionSettingsViewModel.swift; sourceTree = "<group>"; };
+		X2000000000000000000000D /* SelectionCorrectionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionSettingsView.swift; sourceTree = "<group>"; };
+		X2000000000000000000000E /* SelectionCorrectionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCorrectionUITests.swift; sourceTree = "<group>"; };
+		X2000000000000000000000F /* SelectionReplacementOutcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionReplacementOutcome.swift; sourceTree = "<group>"; };
+		X20000000000000000000010 /* SelectionClipboardCopier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionClipboardCopier.swift; sourceTree = "<group>"; };
+		X20000000000000000000011 /* RunningApplicationInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunningApplicationInfo.swift; sourceTree = "<group>"; };
+		X20000000000000000000012 /* WorkspaceRunningApplicationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceRunningApplicationProvider.swift; sourceTree = "<group>"; };
 		A20000000000000000000001 /* DictaMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictaMacApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* HotkeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyService.swift; sourceTree = "<group>"; };
@@ -484,6 +570,7 @@
 				G2000000000000000000000C /* AppEnvironment+Lifecycle.swift */,
 				G2000000000000000000000D /* AppEnvironment+Cleanup.swift */,
 				G2000000000000000000000E /* AppEnvironment+Dictation.swift */,
+				O2000000000000000000000C /* AppEnvironment+Selection.swift */,
 				G20000000000000000000002 /* AppDelegate.swift */,
 				G20000000000000000000003 /* UserAlertPresenting.swift */,
 				G20000000000000000000004 /* MemoryPressureMonitor.swift */,
@@ -497,6 +584,7 @@
 		A40000000000000000000004 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				X40000000000000000000001 /* SelectionCorrection */,
 				N40000000000000000000001 /* FirstLaunch */,
 				J40000000000000000000001 /* MenuBar */,
 				H40000000000000000000001 /* DesignSystem */,
@@ -519,6 +607,8 @@
 				A40000000000000000000010 /* Diagnostics */,
 				A40000000000000000000011 /* History */,
 				T40000000000000000000001 /* Dictionary */,
+				O40000000000000000000001 /* Selection */,
+				Y40000000000000000000001 /* SelectionCorrection */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -595,6 +685,7 @@
 		A4000000000000000000000B /* Coordination */ = {
 			isa = PBXGroup;
 			children = (
+				X2000000000000000000000A /* SelectionCorrectionCoordinator.swift */,
 				A20000000000000000000008 /* DictationCoordinator.swift */,
 				A20000000000000000000017 /* DictationSessionPolicy.swift */,
 				F20000000000000000000008 /* SystemFeedbackSoundPlayer.swift */,
@@ -643,6 +734,7 @@
 				E20000000000000000000005 /* Cloud/TextCleanupError.swift */,
 				E20000000000000000000006 /* Cloud/TextCleanupAPIKeyStore.swift */,
 				E20000000000000000000007 /* Cloud/CloudTextCleanupService.swift */,
+				Y2000000000000000000000A /* OpenAIResponsesTextGenerator.swift */,
 				E20000000000000000000008 /* TextCleanupEngineRegistry.swift */,
 				E20000000000000000000009 /* ConfiguredTextCleanupService.swift */,
 				E2000000000000000000000A /* Local/LocalTextGenerating.swift */,
@@ -677,6 +769,9 @@
 				K20000000000000000000005 /* SharedServicesInjectionTests.swift */,
 				L2000000000000000000000B /* AudioRecorderTests.swift */,
 				M2000000000000000000000B /* HotkeyServiceTests.swift */,
+				O2000000000000000000000D /* SelectionTests.swift */,
+				Y2000000000000000000000B /* SelectionCorrectionTests.swift */,
+				X2000000000000000000000E /* SelectionCorrectionUITests.swift */,
 			);
 			path = DictaMacTests;
 			sourceTree = "<group>";
@@ -764,8 +859,48 @@
 				D2000000000000000000000C /* StoredFeedbackSoundSettings.swift */,
 				D2000000000000000000000D /* EmergencyHotkeySettings.swift */,
 				D2000000000000000000000E /* StoredEmergencyHotkeySettings.swift */,
+				O2000000000000000000000A /* SelectionCorrectionSettings.swift */,
+				O2000000000000000000000B /* StoredSelectionCorrectionSettings.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		O40000000000000000000001 /* Selection */ = {
+			isa = PBXGroup;
+			children = (
+				O20000000000000000000001 /* SelectionSnapshot.swift */,
+				O20000000000000000000002 /* SelectedTextReading.swift */,
+				O20000000000000000000003 /* SelectionEvent.swift */,
+				O20000000000000000000004 /* SelectionEventMonitoring.swift */,
+				O20000000000000000000005 /* SelectionPolicy.swift */,
+				O20000000000000000000006 /* AccessibilitySelectedTextReader.swift */,
+				O20000000000000000000007 /* ClipboardSelectedTextReader.swift */,
+				O20000000000000000000008 /* GlobalSelectionEventMonitor.swift */,
+				O20000000000000000000009 /* SelectionWatcher.swift */,
+				O2000000000000000000000E /* SecureSelectionDetecting.swift */,
+			);
+			path = Selection;
+			sourceTree = "<group>";
+		};
+		Y40000000000000000000001 /* SelectionCorrection */ = {
+			isa = PBXGroup;
+			children = (
+				Y20000000000000000000001 /* SelectionCorrectionService.swift */,
+				Y20000000000000000000002 /* SelectionCorrection.swift */,
+				Y20000000000000000000003 /* TextChange.swift */,
+				Y20000000000000000000004 /* SelectionCorrectionError.swift */,
+				Y20000000000000000000005 /* SelectionCorrectionPromptBuilder.swift */,
+				Y20000000000000000000006 /* SelectionCorrectionValidator.swift */,
+				Y20000000000000000000007 /* SelectionCorrectionDiff.swift */,
+				Y20000000000000000000008 /* SelectionCorrectionFastRules.swift */,
+				Y20000000000000000000009 /* ConfiguredSelectionCorrectionService.swift */,
+				X20000000000000000000001 /* SelectionReplacing.swift */,
+				X2000000000000000000000F /* SelectionReplacementOutcome.swift */,
+				X20000000000000000000002 /* SelectionReplacer.swift */,
+				X20000000000000000000003 /* SelectionClipboardCopying.swift */,
+				X20000000000000000000010 /* SelectionClipboardCopier.swift */,
+			);
+			path = SelectionCorrection;
 			sourceTree = "<group>";
 		};
 		F40000000000000000000001 /* Protocols */ = {
@@ -821,6 +956,7 @@
 				I40000000000000000000002 /* General */,
 				I40000000000000000000003 /* Transcription */,
 				I40000000000000000000004 /* TextCleanup */,
+				X40000000000000000000002 /* SelectionCorrection */,
 				V40000000000000000000001 /* Dictionary */,
 				I40000000000000000000005 /* Permissions */,
 				I40000000000000000000006 /* Diagnostic */,
@@ -853,6 +989,18 @@
 				I2000000000000000000000A /* TextCleanupSettingsViewModel.swift */,
 			);
 			path = TextCleanup;
+			sourceTree = "<group>";
+		};
+		X40000000000000000000002 /* SelectionCorrection */ = {
+			isa = PBXGroup;
+			children = (
+				X2000000000000000000000B /* RunningApplicationProviding.swift */,
+				X20000000000000000000011 /* RunningApplicationInfo.swift */,
+				X20000000000000000000012 /* WorkspaceRunningApplicationProvider.swift */,
+				X2000000000000000000000C /* SelectionCorrectionSettingsViewModel.swift */,
+				X2000000000000000000000D /* SelectionCorrectionSettingsView.swift */,
+			);
+			path = SelectionCorrection;
 			sourceTree = "<group>";
 		};
 		V40000000000000000000001 /* Dictionary */ = {
@@ -904,6 +1052,19 @@
 				N20000000000000000000004 /* FirstLaunchAssistantController.swift */,
 			);
 			path = FirstLaunch;
+			sourceTree = "<group>";
+		};
+		X40000000000000000000001 /* SelectionCorrection */ = {
+			isa = PBXGroup;
+			children = (
+				X20000000000000000000004 /* SelectionCorrectionPresenting.swift */,
+				X20000000000000000000005 /* SelectionCorrectionViewModel.swift */,
+				X20000000000000000000006 /* SelectionCorrectionHighlighting.swift */,
+				X20000000000000000000007 /* SelectionCorrectionPanel.swift */,
+				X20000000000000000000008 /* SelectionCorrectionView.swift */,
+				X20000000000000000000009 /* SelectionCorrectionPanelController.swift */,
+			);
+			path = SelectionCorrection;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1013,6 +1174,46 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				X10000000000000000000001 /* SelectionReplacing.swift in Sources */,
+				X10000000000000000000002 /* SelectionReplacer.swift in Sources */,
+				X10000000000000000000003 /* SelectionClipboardCopying.swift in Sources */,
+				X10000000000000000000004 /* SelectionCorrectionPresenting.swift in Sources */,
+				X10000000000000000000005 /* SelectionCorrectionViewModel.swift in Sources */,
+				X10000000000000000000006 /* SelectionCorrectionHighlighting.swift in Sources */,
+				X10000000000000000000007 /* SelectionCorrectionPanel.swift in Sources */,
+				X10000000000000000000008 /* SelectionCorrectionView.swift in Sources */,
+				X10000000000000000000009 /* SelectionCorrectionPanelController.swift in Sources */,
+				X1000000000000000000000A /* SelectionCorrectionCoordinator.swift in Sources */,
+				X1000000000000000000000B /* RunningApplicationProviding.swift in Sources */,
+				X1000000000000000000000C /* SelectionCorrectionSettingsViewModel.swift in Sources */,
+				X1000000000000000000000D /* SelectionCorrectionSettingsView.swift in Sources */,
+				X1000000000000000000000F /* SelectionReplacementOutcome.swift in Sources */,
+				X10000000000000000000010 /* SelectionClipboardCopier.swift in Sources */,
+				X10000000000000000000011 /* RunningApplicationInfo.swift in Sources */,
+				X10000000000000000000012 /* WorkspaceRunningApplicationProvider.swift in Sources */,
+				O10000000000000000000001 /* SelectionSnapshot.swift in Sources */,
+				O10000000000000000000002 /* SelectedTextReading.swift in Sources */,
+				O10000000000000000000003 /* SelectionEvent.swift in Sources */,
+				O10000000000000000000004 /* SelectionEventMonitoring.swift in Sources */,
+				O10000000000000000000005 /* SelectionPolicy.swift in Sources */,
+				O10000000000000000000006 /* AccessibilitySelectedTextReader.swift in Sources */,
+				O10000000000000000000007 /* ClipboardSelectedTextReader.swift in Sources */,
+				O10000000000000000000008 /* GlobalSelectionEventMonitor.swift in Sources */,
+				O10000000000000000000009 /* SelectionWatcher.swift in Sources */,
+				O1000000000000000000000A /* SelectionCorrectionSettings.swift in Sources */,
+				O1000000000000000000000B /* StoredSelectionCorrectionSettings.swift in Sources */,
+				O1000000000000000000000C /* AppEnvironment+Selection.swift in Sources */,
+				O1000000000000000000000E /* SecureSelectionDetecting.swift in Sources */,
+				Y10000000000000000000001 /* SelectionCorrectionService.swift in Sources */,
+				Y10000000000000000000002 /* SelectionCorrection.swift in Sources */,
+				Y10000000000000000000003 /* TextChange.swift in Sources */,
+				Y10000000000000000000004 /* SelectionCorrectionError.swift in Sources */,
+				Y10000000000000000000005 /* SelectionCorrectionPromptBuilder.swift in Sources */,
+				Y10000000000000000000006 /* SelectionCorrectionValidator.swift in Sources */,
+				Y10000000000000000000007 /* SelectionCorrectionDiff.swift in Sources */,
+				Y10000000000000000000008 /* SelectionCorrectionFastRules.swift in Sources */,
+				Y10000000000000000000009 /* ConfiguredSelectionCorrectionService.swift in Sources */,
+				Y1000000000000000000000A /* OpenAIResponsesTextGenerator.swift in Sources */,
 				A10000000000000000000001 /* DictaMacApp.swift in Sources */,
 				A10000000000000000000002 /* SettingsView.swift in Sources */,
 				A10000000000000000000003 /* HotkeyService.swift in Sources */,
@@ -1198,6 +1399,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				X1000000000000000000000E /* SelectionCorrectionUITests.swift in Sources */,
+				O1000000000000000000000D /* SelectionTests.swift in Sources */,
+				Y1000000000000000000000B /* SelectionCorrectionTests.swift in Sources */,
 				R10000000000000000000001 /* DictationCaseTests.swift in Sources */,
 				S10000000000000000000004 /* PunctuationNormalizerTests.swift in Sources */,
 				T10000000000000000000007 /* DictionaryTests.swift in Sources */,

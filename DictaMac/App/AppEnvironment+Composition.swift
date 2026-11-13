@@ -14,6 +14,7 @@ extension AppEnvironment {
         let feedback: StoredFeedbackSoundSettings
         let emergency: StoredEmergencyHotkeySettings
         let history: StoredHistorySettings
+        let selectionCorrection: StoredSelectionCorrectionSettings
         let dictionary: StoredPersonalDictionary
 
         init(store: any SettingsStoring) {
@@ -23,6 +24,7 @@ extension AppEnvironment {
             feedback = StoredFeedbackSoundSettings(store: store)
             emergency = StoredEmergencyHotkeySettings(store: store)
             history = StoredHistorySettings(store: store)
+            selectionCorrection = StoredSelectionCorrectionSettings(store: store)
             dictionary = StoredPersonalDictionary(
                 storage: JSONDictionaryStore(settingsStore: store)
             )
@@ -42,6 +44,9 @@ extension AppEnvironment {
         let activity: AppActivityModel
         let permissions: PermissionsManager
         let launchAtLogin: LaunchAtLoginService
+        let selectionWatcher: SelectionWatcher
+        let selectionCorrectionService: any SelectionCorrectionService
+        let selectionCorrectionCoordinator: SelectionCorrectionCoordinator
         #if DEBUG
         let benchmarkState: WhisperBenchmarkState
         #endif
@@ -71,6 +76,14 @@ extension AppEnvironment {
             self.activity = activity
             permissions = PermissionsManager(permissionCache: shared.permissionCache)
             launchAtLogin = LaunchAtLoginService()
+            let selection = AppEnvironment.makeSelectionBundle(
+                settings: settings,
+                permissionReader: shared.permissionCache,
+                localGenerator: models.localManager
+            )
+            selectionWatcher = selection.watcher
+            selectionCorrectionService = selection.correctionService
+            selectionCorrectionCoordinator = selection.coordinator
             #if DEBUG
             benchmarkState = WhisperBenchmarkState(runner: WhisperBenchmarkRunner(
                 settings: settings.transcription,

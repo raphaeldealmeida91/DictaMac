@@ -32,6 +32,11 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(cleanup.cloudTimeout, StoredTextCleanupSettings.defaultCloudTimeout)
         XCTAssertTrue(StoredHistorySettings(store: store).isEnabled)
         XCTAssertTrue(StoredFeedbackSoundSettings(store: store).isEnabled)
+        let selection = StoredSelectionCorrectionSettings(store: store)
+        XCTAssertFalse(selection.isEnabled)
+        XCTAssertFalse(selection.isClipboardFallbackEnabled)
+        XCTAssertFalse(selection.allowsCloud)
+        XCTAssertEqual(selection.excludedBundleIDs, StoredSelectionCorrectionSettings.defaultExcludedBundleIDs)
         XCTAssertEqual(StoredRecordingSettings(store: store).maximumDuration, 120)
         XCTAssertEqual(
             StoredEmergencyHotkeySettings(store: store).configuredModifiers,

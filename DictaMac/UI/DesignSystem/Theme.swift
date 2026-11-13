@@ -80,6 +80,18 @@ enum Theme {
         ]
     }
 
+    enum SelectionCorrection {
+        static let panelWidth: CGFloat = 420
+        static let defaultPanelHeight: CGFloat = 180
+        static let panelMaximumHeight: CGFloat = 320
+        static let textMaximumHeight: CGFloat = 210
+        static let anchorSpacing: CGFloat = 8
+        static let shadowRadius: CGFloat = 12
+        static let shadowY: CGFloat = 4
+        static let escapeKeyCode: UInt16 = 53
+        static let returnKeyCode: UInt16 = 36
+    }
+
     enum Settings {
         static let windowWidth: CGFloat = 720
         static let windowHeight: CGFloat = 520

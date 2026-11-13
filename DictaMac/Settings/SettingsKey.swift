@@ -24,5 +24,9 @@ enum SettingsKey: String, Sendable {
     case emergencyHotkeyControl = "emergencyHotkey.control"
     case emergencyHotkeyOption = "emergencyHotkey.option"
     case emergencyHotkeyCommand = "emergencyHotkey.command"
+    case selectionCorrectionEnabled = "selectionCorrection.enabled"
+    case selectionCorrectionClipboardFallback = "selectionCorrection.clipboardFallback"
+    case selectionCorrectionExcludedApps = "selectionCorrection.excludedApps"
+    case selectionCorrectionAllowsCloud = "selectionCorrection.allowsCloud"
     case firstLaunchAssistantCompleted = "onboarding.completed"
 }
