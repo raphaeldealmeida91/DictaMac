@@ -193,6 +193,73 @@ final class EmergencyWatchdogTests: XCTestCase {
     }
 }
 
+@MainActor
+final class SafeModeLauncherTests: XCTestCase {
+    override func tearDown() {
+        SafeModeState.setEnabled(false)
+        super.tearDown()
+    }
+
+    func testContinueNormallyDisablesSafeMode() throws {
+        let fixture = try makeFixture(response: .primary)
+        defer { fixture.cleanup() }
+
+        fixture.launcher.launch()
+
+        XCTAssertFalse(SafeModeState.isEnabled)
+        XCTAssertEqual(fixture.presenter.lastAlert?.primaryButton, "Continuer normalement")
+    }
+
+    func testStayInSafeModeKeepsSafeModeEnabled() throws {
+        let fixture = try makeFixture(response: .secondary)
+        defer { fixture.cleanup() }
+
+        fixture.launcher.launch()
+
+        XCTAssertTrue(SafeModeState.isEnabled)
+    }
+
+    private func makeFixture(response: UserAlertResponse) throws -> SafeModeLauncherFixture {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let manager = SafeModeManager(markerURL: directory.appendingPathComponent("running.marker"))
+        _ = try manager.detectAbnormalExitAndMarkRunning()
+        let presenter = SafeModeAlertPresenterSpy(response: response)
+        return SafeModeLauncherFixture(
+            launcher: SafeModeLauncher(manager: manager, alertPresenter: presenter),
+            presenter: presenter,
+            directory: directory
+        )
+    }
+}
+
+@MainActor
+private struct SafeModeLauncherFixture {
+    let launcher: SafeModeLauncher
+    let presenter: SafeModeAlertPresenterSpy
+    let directory: URL
+
+    func cleanup() {
+        try? FileManager.default.removeItem(at: directory)
+    }
+}
+
+@MainActor
+private final class SafeModeAlertPresenterSpy: UserAlertPresenting {
+    private let response: UserAlertResponse
+    private(set) var lastAlert: UserAlert?
+
+    init(response: UserAlertResponse) {
+        self.response = response
+    }
+
+    func present(_ alert: UserAlert) -> UserAlertResponse {
+        lastAlert = alert
+        return response
+    }
+}
+
 private final class TestEmergencyClock: @unchecked Sendable {
     var now: TimeInterval
     init(now: TimeInterval) { self.now = now }

@@ -67,6 +67,7 @@ final class PreviewCleanupModelState: LocalCleanupModelStateProviding {
 }
 
 actor PreviewCleanupModelManager: LocalCleanupModelManaging {
+    func activateConfiguredModel() {}
     func approveDownloadAndActivate() {}
     func cancelDownload() {}
     func unload(reason: String) {}

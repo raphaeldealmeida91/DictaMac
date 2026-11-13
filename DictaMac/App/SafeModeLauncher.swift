@@ -19,13 +19,12 @@ final class SafeModeLauncher {
         let response = alertPresenter.present(UserAlert(
             style: .warning,
             title: "DictaMac a démarré en mode sûr",
-            message: "La sortie précédente était anormale. Le nettoyage Rapide (règles), les modèles légers et l’absence de préchauffage LLM sont activés pour cette session.",
-            primaryButton: "Continuer",
-            secondaryButton: "Ouvrir le journal"
+            message: "La sortie précédente était anormale. Vous pouvez continuer normalement ou conserver le mode sûr, qui désactive la correction complète.",
+            primaryButton: "Continuer normalement",
+            secondaryButton: "Rester en mode sûr"
         ))
-        if response == .secondary,
-           let directory = try? PersistentDiagnosticLog.logsDirectoryURL() {
-            NSWorkspace.shared.open(directory)
+        if response == .primary {
+            SafeModeState.setEnabled(false)
         }
     }
 

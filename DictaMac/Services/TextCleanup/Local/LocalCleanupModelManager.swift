@@ -14,6 +14,7 @@ actor LocalCleanupModelManager: LocalTextGenerating {
     private let modelState: LocalCleanupModelState
     private let modelLoadingGate: any ModelLoadingGating
     private let diagnosticLog: any DiagnosticLogging
+    private let safeMode: any SafeModeControlling
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "LocalCleanupModel"
@@ -23,12 +24,14 @@ actor LocalCleanupModelManager: LocalTextGenerating {
         settings: any TextCleanupSettings & TextCleanupSettingsWriting,
         modelState: LocalCleanupModelState,
         modelLoadingGate: any ModelLoadingGating,
-        diagnosticLog: any DiagnosticLogging
+        diagnosticLog: any DiagnosticLogging,
+        safeMode: any SafeModeControlling = SafeModeState()
     ) {
         self.settings = settings
         self.modelState = modelState
         self.modelLoadingGate = modelLoadingGate
         self.diagnosticLog = diagnosticLog
+        self.safeMode = safeMode
     }
 
     var isReady: Bool { container != nil && isWarmedUp }
@@ -43,9 +46,24 @@ actor LocalCleanupModelManager: LocalTextGenerating {
     }
 
     func activateConfiguredModel() {
-        guard settings.configuredEngine == .local, settings.localDownloadApproved else { return }
+        guard !safeMode.isEnabled else {
+            reportInactive(SafeModeState.localCleanupUnavailableMessage, reason: "safe_mode")
+            return
+        }
+        guard settings.configuredEngine == .local else {
+            reportInactive("Moteur local non sélectionné", reason: "engine_not_local")
+            return
+        }
+        guard settings.localDownloadApproved else {
+            reportInactive("Téléchargement du modèle local non autorisé", reason: "download_not_approved")
+            return
+        }
         let requested = settings.configuredLocalModel
-        if container != nil, loadedModelID == requested, isWarmedUp { return }
+        if container != nil, loadedModelID == requested, isWarmedUp {
+            Task { @MainActor [modelState] in modelState.ready(model: requested) }
+            logger.info("local cleanup activation skipped reason=already_ready")
+            return
+        }
         activationTask?.cancel()
         activationTask = Task { [weak self] in await self?.downloadAndLoad(modelID: requested) }
     }
@@ -94,13 +112,27 @@ actor LocalCleanupModelManager: LocalTextGenerating {
     }
 
     private func downloadAndLoad(modelID: String) async {
+        if modelLoadingGate.isLoading {
+            await MainActor.run { modelState.waitingForTranscriptionModel() }
+            logger.info("local cleanup activation waiting reason=model_loading_gate_busy")
+        }
         do {
             try await modelLoadingGate.run { [weak self] in
                 await self?.downloadAndLoadWithoutCompetition(modelID: modelID)
             }
+        } catch is CancellationError {
+            activationTask = nil
+            await MainActor.run {
+                modelState.unloaded("Téléchargement annulé — reprise disponible")
+            }
         } catch {
             await MainActor.run { modelState.failed(error) }
         }
+    }
+
+    private func reportInactive(_ message: String, reason: String) {
+        Task { @MainActor [modelState] in modelState.unloaded(message) }
+        logger.info("local cleanup activation skipped reason=\(reason, privacy: .public)")
     }
 
     private func downloadAndLoadWithoutCompetition(modelID: String) async {

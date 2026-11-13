@@ -22,21 +22,41 @@ struct InfoCallout: View {
 
     let kind: Kind
     let message: String
+    let actionTitle: String?
+    let action: (() -> Void)?
+
+    init(
+        kind: Kind,
+        message: String,
+        actionTitle: String? = nil,
+        action: (() -> Void)? = nil
+    ) {
+        self.kind = kind
+        self.message = message
+        self.actionTitle = actionTitle
+        self.action = action
+    }
 
     var body: some View {
-        Label {
-            Text(message)
-                .font(Theme.Typography.description)
-        } icon: {
-            Image(systemName: kind.symbol)
-                .foregroundStyle(kind.tint)
+        HStack(spacing: Theme.Spacing.medium) {
+            Label {
+                Text(message)
+                    .font(Theme.Typography.description)
+            } icon: {
+                Image(systemName: kind.symbol)
+                    .foregroundStyle(kind.tint)
+            }
+            Spacer()
+            if let actionTitle, let action {
+                Button(actionTitle, action: action)
+                    .buttonStyle(SecondaryButtonStyle())
+            }
         }
         .padding(Theme.Spacing.medium)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(kind.tint.opacity(Theme.Border.standardOpacity), in: RoundedRectangle(
             cornerRadius: Theme.Radius.callout
         ))
-        .accessibilityElement(children: .combine)
     }
 }
 

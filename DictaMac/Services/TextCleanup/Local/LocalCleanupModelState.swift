@@ -27,6 +27,14 @@ final class LocalCleanupModelState: ObservableObject {
         hasError = false
     }
 
+    func waitingForTranscriptionModel() {
+        status = "En attente du chargement du modèle de transcription…"
+        downloadProgress = nil
+        isBusy = true
+        isReady = false
+        hasError = false
+    }
+
     func loaded(model: String) {
         status = "Modèle chargé : \(model) — pré-chauffage…"
         downloadProgress = nil

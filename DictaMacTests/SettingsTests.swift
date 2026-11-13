@@ -76,6 +76,75 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(cleanup.configuredLocalModel, StoredTextCleanupSettings.lightLocalModel)
     }
 
+    @MainActor
+    func testLocalModelActivationBlockedBySafeModePublishesExplicitStatus() async {
+        let state = LocalCleanupModelState()
+        let safeMode = TestSafeModeController(isEnabled: true)
+        let manager = LocalCleanupModelManager(
+            settings: TestCleanupSettings(),
+            modelState: state,
+            modelLoadingGate: TestIdleModelLoadingGate(),
+            diagnosticLog: TestDiagnosticLog(),
+            safeMode: safeMode
+        )
+
+        await manager.activateConfiguredModel()
+        await Task.yield()
+
+        XCTAssertEqual(state.status, SafeModeState.localCleanupUnavailableMessage)
+        XCTAssertFalse(state.isBusy)
+        XCTAssertFalse(state.hasError)
+    }
+
+    @MainActor
+    func testCleanupModelBadgeDistinguishesInactiveLoadingAndError() {
+        let inactive = makeCleanupSettingsViewModel(state: TestCleanupModelState())
+        let loading = makeCleanupSettingsViewModel(state: TestCleanupModelState(isBusy: true))
+        let error = makeCleanupSettingsViewModel(state: TestCleanupModelState(hasError: true))
+
+        XCTAssertEqual(inactive.modelBadge, .inactive)
+        XCTAssertEqual(loading.modelBadge, .loading)
+        XCTAssertEqual(error.modelBadge, .error)
+    }
+
+    @MainActor
+    func testExitSafeModeDisablesItAndRestartsActivation() async throws {
+        let safeMode = TestSafeModeController(isEnabled: true)
+        let manager = TestCleanupModelManager()
+        let viewModel = makeCleanupSettingsViewModel(
+            state: TestCleanupModelState(),
+            manager: manager,
+            safeMode: safeMode
+        )
+
+        viewModel.exitSafeMode()
+        try await Task.sleep(for: .milliseconds(20))
+
+        let activationCount = await manager.activationCount
+        XCTAssertFalse(safeMode.isEnabled)
+        XCTAssertFalse(viewModel.isSafeModeEnabled)
+        XCTAssertEqual(activationCount, 1)
+    }
+
+    @MainActor
+    func testBusyModelLoadingGatePublishesWaitingStatus() async throws {
+        let state = LocalCleanupModelState()
+        let manager = LocalCleanupModelManager(
+            settings: TestCleanupSettings(),
+            modelState: state,
+            modelLoadingGate: TestBusyModelLoadingGate(),
+            diagnosticLog: TestDiagnosticLog(),
+            safeMode: TestSafeModeController(isEnabled: false)
+        )
+
+        await manager.activateConfiguredModel()
+        try await Task.sleep(for: .milliseconds(20))
+
+        XCTAssertEqual(state.status, "En attente du chargement du modèle de transcription…")
+        XCTAssertTrue(state.isBusy)
+        await manager.cancelDownload()
+    }
+
     func testFrenchDecodingOptionsFavorDeterministicQuality() {
         let options = WhisperKitTranscriptionService.decodingOptions(
             language: "fr",
@@ -214,6 +283,120 @@ final class SettingsTests: XCTestCase {
             openKeyboardSettings: {}
         )
     }
+
+    @MainActor
+    private func makeCleanupSettingsViewModel(
+        state: TestCleanupModelState,
+        manager: TestCleanupModelManager = TestCleanupModelManager(),
+        safeMode: TestSafeModeController = TestSafeModeController(isEnabled: false)
+    ) -> TextCleanupSettingsViewModel {
+        TextCleanupSettingsViewModel(
+            store: InMemorySettingsStore(),
+            state: state,
+            manager: manager,
+            keyStore: PreviewAPIKeyStore(),
+            recommendedLocalModel: StoredTextCleanupSettings.defaultLocalModel,
+            isLowMemoryMac: false,
+            safeMode: safeMode
+        )
+    }
+}
+
+private final class TestSafeModeController: SafeModeControlling, @unchecked Sendable {
+    private let lock = NSLock()
+    private var enabled: Bool
+
+    init(isEnabled: Bool) {
+        enabled = isEnabled
+    }
+
+    var isEnabled: Bool { lock.withLock { enabled } }
+
+    func setEnabled(_ value: Bool) {
+        lock.withLock { enabled = value }
+    }
+}
+
+@MainActor
+private final class TestCleanupModelState: LocalCleanupModelStateProviding {
+    @Published var status: String
+    @Published var downloadProgress: Double?
+    @Published var isBusy: Bool
+    @Published var isReady: Bool
+    @Published var hasError: Bool
+
+    init(isBusy: Bool = false, isReady: Bool = false, hasError: Bool = false) {
+        status = "Test"
+        downloadProgress = nil
+        self.isBusy = isBusy
+        self.isReady = isReady
+        self.hasError = hasError
+    }
+}
+
+private actor TestCleanupModelManager: LocalCleanupModelManaging {
+    private(set) var activationCount = 0
+
+    func activateConfiguredModel() { activationCount += 1 }
+    func approveDownloadAndActivate() {}
+    func cancelDownload() {}
+    func unload(reason: String) {}
+}
+
+private struct TestCleanupSettings: TextCleanupSettings, TextCleanupSettingsWriting {
+    let configuredEngine = TextCleanupEngine.local
+    let isEnabled = true
+    let configuredModel = "test"
+    let configuredLocalModel = "test"
+    let cleanupStyle = CleanupStyle.correction
+    let removeIsolatedGenre = false
+    let localTimeout: TimeInterval = 1
+    let cloudTimeout: TimeInterval = 1
+    let localDownloadApproved = true
+
+    func migrate() {}
+    func approveLocalDownload() {}
+    func setEngine(_ engine: TextCleanupEngine) {}
+}
+
+private struct TestIdleModelLoadingGate: ModelLoadingGating {
+    let isLoading = false
+
+    func run<Value: Sendable>(
+        _ operation: @escaping @Sendable () async throws -> Value
+    ) async throws -> Value {
+        try await operation()
+    }
+}
+
+private struct TestBusyModelLoadingGate: ModelLoadingGating {
+    let isLoading = true
+
+    func run<Value: Sendable>(
+        _ operation: @escaping @Sendable () async throws -> Value
+    ) async throws -> Value {
+        try await Task.sleep(for: .seconds(10))
+        return try await operation()
+    }
+}
+
+private final class TestDiagnosticLog: DiagnosticLogging, @unchecked Sendable {
+    func stage(
+        _: DiagnosticStage,
+        phase _: String,
+        duration _: TimeInterval?,
+        audioDuration _: TimeInterval?,
+        segmentCount _: Int?
+    ) {}
+
+    func inputLost() {}
+    func emergencyRecovery(reason _: String) {}
+    func emergencyExitAndFlush(reason _: String) {}
+    func modelLoadCompleted(duration _: TimeInterval, reusedCompiledCache _: Bool) {}
+    func memory(context _: DiagnosticMemoryContext, bytes _: UInt64?) {}
+    func memoryPressure(critical _: Bool) {}
+    func mainThreadStall(duration _: TimeInterval) {}
+    func eventTapDisabled(reason _: String) {}
 }
 
 @MainActor

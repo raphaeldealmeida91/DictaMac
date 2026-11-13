@@ -1,13 +1,15 @@
 import SwiftUI
 
 struct StatusBadge: View {
-    enum Status {
+    enum Status: Equatable {
+        case inactive
         case ready
         case loading
         case error
 
         var label: String {
             switch self {
+            case .inactive: "Inactif"
             case .ready: "Prêt"
             case .loading: "Chargement"
             case .error: "Erreur"
@@ -16,6 +18,7 @@ struct StatusBadge: View {
 
         var symbol: String {
             switch self {
+            case .inactive: "pause.circle.fill"
             case .ready: "checkmark.circle.fill"
             case .loading: "clock.fill"
             case .error: "exclamationmark.circle.fill"
@@ -24,6 +27,7 @@ struct StatusBadge: View {
 
         var tint: Color {
             switch self {
+            case .inactive: .secondary
             case .ready: .accentColor
             case .loading: .secondary
             case .error: .red
@@ -46,6 +50,7 @@ struct StatusBadge: View {
 
 #Preview {
     HStack(spacing: Theme.Spacing.small) {
+        StatusBadge(status: .inactive)
         StatusBadge(status: .ready)
         StatusBadge(status: .loading)
         StatusBadge(status: .error)

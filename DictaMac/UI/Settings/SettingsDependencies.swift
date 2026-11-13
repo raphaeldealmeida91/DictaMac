@@ -52,6 +52,7 @@ protocol LocalCleanupModelStateProviding: ObservableObject where ObjectWillChang
 }
 
 protocol LocalCleanupModelManaging: Actor {
+    func activateConfiguredModel()
     func approveDownloadAndActivate()
     func cancelDownload()
     func unload(reason: String)

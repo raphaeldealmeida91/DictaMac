@@ -17,7 +17,8 @@ extension AppEnvironment {
         let watcher = makeSelectionWatcher(
             settings: settings.selectionCorrection,
             accessibilityReader: accessibilityReader,
-            pasteboard: pasteboard
+            pasteboard: pasteboard,
+            permissionReader: permissionReader
         )
         let service = makeSelectionCorrectionService(
             selectionSettings: settings.selectionCorrection,
@@ -33,7 +34,16 @@ extension AppEnvironment {
             watcher: watcher,
             service: service,
             presenter: presenter,
-            dictionary: settings.dictionary
+            dictionary: settings.dictionary,
+            activateCloud: {
+                settings.selectionCorrection.setAllowsCloud(true)
+                openSettings(section: .selectionCorrection)
+            },
+            loadLocalModel: {
+                SafeModeState.setEnabled(false)
+                Task { await localGenerator.approveDownloadAndActivate() }
+                openSettings(section: .textCleanup)
+            }
         )
         return SelectionBundle(watcher: watcher, correctionService: service, coordinator: coordinator)
     }
@@ -41,7 +51,8 @@ extension AppEnvironment {
     private static func makeSelectionWatcher(
         settings: StoredSelectionCorrectionSettings,
         accessibilityReader: any SelectedTextReading,
-        pasteboard: any PasteboardProviding
+        pasteboard: any PasteboardProviding,
+        permissionReader: any AccessibilityPermissionReading
     ) -> SelectionWatcher {
         SelectionWatcher(
             eventMonitor: GlobalSelectionEventMonitor(),
@@ -51,7 +62,8 @@ extension AppEnvironment {
                 sourceBundleIDProvider: { NSWorkspace.shared.frontmostApplication?.bundleIdentifier }
             ),
             settings: settings,
-            ownBundleID: Bundle.main.bundleIdentifier
+            ownBundleID: Bundle.main.bundleIdentifier,
+            permissionReader: permissionReader
         )
     }
 
@@ -72,8 +84,18 @@ extension AppEnvironment {
             selectionSettings: selectionSettings,
             cleanupSettings: cleanupSettings,
             localGenerator: localGenerator,
-            cloudGenerator: cloudGenerator
+            cloudGenerator: cloudGenerator,
+            apiKeyProvider: { try TextCleanupAPIKeyStore.load() },
+            activateLocalModel: { await localGenerator.activateConfiguredModel() }
         )
+    }
+
+    @MainActor
+    private static func openSettings(section: SettingsSection) {
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .openSettingsSection, object: section)
+        }
     }
 
     private static func makeSelectionPresenter(

@@ -24,7 +24,8 @@ final class TextCleanupSettingsViewModel: ObservableObject {
     @Published private(set) var modelStatus = ""
     @Published private(set) var downloadProgress: Double?
     @Published private(set) var modelIsBusy = false
-    @Published private(set) var modelBadge: StatusBadge.Status = .loading
+    @Published private(set) var modelBadge: StatusBadge.Status = .inactive
+    @Published private(set) var isSafeModeEnabled: Bool
 
     let isLowMemoryMac: Bool
     let localModelChoices = [
@@ -35,6 +36,7 @@ final class TextCleanupSettingsViewModel: ObservableObject {
     private let store: any SettingsStoring
     private let manager: any LocalCleanupModelManaging
     private let keyStore: any APIKeyStoring
+    private let safeMode: any SafeModeControlling
     private let readModelState: () -> (String, Double?, Bool, Bool, Bool)
     private var cancellables = Set<AnyCancellable>()
 
@@ -44,12 +46,15 @@ final class TextCleanupSettingsViewModel: ObservableObject {
         manager: any LocalCleanupModelManaging,
         keyStore: any APIKeyStoring,
         recommendedLocalModel: String,
-        isLowMemoryMac: Bool
+        isLowMemoryMac: Bool,
+        safeMode: any SafeModeControlling = SafeModeState()
     ) {
         self.store = store
         self.manager = manager
         self.keyStore = keyStore
+        self.safeMode = safeMode
         self.isLowMemoryMac = isLowMemoryMac
+        isSafeModeEnabled = safeMode.isEnabled
         engine = store.string(for: .textCleanupEngine).flatMap(TextCleanupEngine.init(rawValue:)) ?? .local
         cloudModel = store.string(for: .textCleanupModel) ?? StoredTextCleanupSettings.defaultModel
         localModel = store.string(for: .textCleanupLocalModel) ?? recommendedLocalModel
@@ -76,6 +81,12 @@ final class TextCleanupSettingsViewModel: ObservableObject {
 
     func cancelLocalModelDownload() {
         Task { await manager.cancelDownload() }
+    }
+
+    func exitSafeMode() {
+        safeMode.setEnabled(false)
+        isSafeModeEnabled = false
+        Task { await manager.activateConfiguredModel() }
     }
 
     func saveAPIKey() {
@@ -113,6 +124,12 @@ final class TextCleanupSettingsViewModel: ObservableObject {
         modelStatus = state.0
         downloadProgress = state.1
         modelIsBusy = state.2
-        modelBadge = state.4 ? .error : (state.3 ? .ready : .loading)
+        if state.4 {
+            modelBadge = .error
+        } else if state.3 {
+            modelBadge = .ready
+        } else {
+            modelBadge = state.2 ? .loading : .inactive
+        }
     }
 }

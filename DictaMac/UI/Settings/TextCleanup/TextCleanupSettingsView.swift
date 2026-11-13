@@ -10,6 +10,14 @@ struct TextCleanupSettingsView: View {
 
     var body: some View {
         SettingsSectionContainer(title: "Nettoyage du texte") {
+            if viewModel.isSafeModeEnabled {
+                InfoCallout(
+                    kind: .warning,
+                    message: SafeModeState.cleanupSuspendedMessage,
+                    actionTitle: "Quitter le mode sûr",
+                    action: viewModel.exitSafeMode
+                )
+            }
             SettingsCard(
                 title: "Moteur",
                 footer: "Choisissez le compromis entre rapidité, confidentialité et qualité."
