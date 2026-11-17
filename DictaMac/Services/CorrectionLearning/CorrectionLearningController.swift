@@ -32,7 +32,7 @@ final class CorrectionLearningController: ObservableObject {
         self.tracker = tracker
         self.detector = detector
         self.dateProvider = dateProvider
-        pendingProposal = repository.nextProposal()
+        pendingProposal = settings.isEnabled ? repository.nextProposal() : nil
         isEmpty = repository.entries().isEmpty
     }
 
@@ -58,7 +58,13 @@ final class CorrectionLearningController: ObservableObject {
 
     func setEnabled(_ enabled: Bool) {
         settings.setEnabled(enabled)
-        enabled ? start() : stop()
+        if enabled {
+            refreshState()
+            start()
+        } else {
+            stop()
+            pendingProposal = nil
+        }
     }
 
     func acceptPendingProposal() {
@@ -142,7 +148,7 @@ final class CorrectionLearningController: ObservableObject {
     }
 
     private func refreshState() {
-        pendingProposal = repository.nextProposal()
+        pendingProposal = settings.isEnabled ? repository.nextProposal() : nil
         isEmpty = repository.entries().isEmpty
         errorMessage = nil
     }

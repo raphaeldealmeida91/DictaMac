@@ -85,7 +85,9 @@ final class SelectionWatcher {
 
     private func read(_ event: SelectionMonitorEvent) {
         switch event {
-        case .selectionChanged: readSelection()
+        case .selectionChanged:
+            readSelection()
+            readFocusedText()
         case .textChanged: readFocusedText()
         }
     }

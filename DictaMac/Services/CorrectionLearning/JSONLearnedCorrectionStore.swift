@@ -29,6 +29,7 @@ final class JSONLearnedCorrectionStore: LearnedCorrectionStoring, @unchecked Sen
         try lock.withLock {
             let url = try storageURL()
             guard fileManager.fileExists(atPath: url.path) else { return [] }
+            try applySecurePermissions(to: url)
             return try JSONDecoder().decode(
                 [LearnedCorrectionEntry].self,
                 from: Data(contentsOf: url)
@@ -44,10 +45,7 @@ final class JSONLearnedCorrectionStore: LearnedCorrectionStoring, @unchecked Sen
                 withIntermediateDirectories: true
             )
             try JSONEncoder().encode(entries).write(to: url, options: .atomic)
-            try fileManager.setAttributes(
-                [.posixPermissions: Self.securePermissions],
-                ofItemAtPath: url.path
-            )
+            try applySecurePermissions(to: url)
         }
     }
 
@@ -69,5 +67,12 @@ final class JSONLearnedCorrectionStore: LearnedCorrectionStoring, @unchecked Sen
             in: .userDomainMask
         ).first else { throw StorageError.applicationSupportUnavailable }
         return baseURL.appendingPathComponent(directoryName, isDirectory: true)
+    }
+
+    private func applySecurePermissions(to url: URL) throws {
+        try fileManager.setAttributes(
+            [.posixPermissions: Self.securePermissions],
+            ofItemAtPath: url.path
+        )
     }
 }

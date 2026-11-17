@@ -34,6 +34,35 @@ final class CorrectionLearningTests: XCTestCase {
         ])
     }
 
+    func testDetectsCaseCorrectionAndRemovesSurroundingPunctuation() {
+        let replacements = CorrectionReplacementDetector().replacements(
+            from: "J'utilise dictamac chaque jour avec mon équipe",
+            in: "J'utilise DictaMac, chaque jour avec mon équipe"
+        )
+
+        XCTAssertEqual(replacements, [
+            CorrectionReplacement(dictated: "dictamac", corrected: "DictaMac")
+        ])
+    }
+
+    func testRejectsPunctuationOnlyChange() {
+        let replacements = CorrectionReplacementDetector().replacements(
+            from: "Bonjour équipe voici le compte rendu final",
+            in: "Bonjour équipe, voici le compte rendu final"
+        )
+
+        XCTAssertTrue(replacements.isEmpty)
+    }
+
+    func testRejectsAmbiguousCandidateContainingUnchangedDictation() {
+        let replacements = CorrectionReplacementDetector().replacements(
+            from: "Je prépare le de vie pour demain matin",
+            in: "Je prépare le de vie pour demain matin puis Je prépare le devis pour demain matin"
+        )
+
+        XCTAssertTrue(replacements.isEmpty)
+    }
+
     func testRejectsCompleteRewrite() {
         let detector = CorrectionReplacementDetector()
 
@@ -104,6 +133,26 @@ final class CorrectionLearningTests: XCTestCase {
         XCTAssertNil(repository.nextProposal())
     }
 
+    func testRefusedPairSurvivesRepositoryCapacityTrimming() throws {
+        let repository = LearnedCorrectionRepository(storage: MemoryLearnedCorrectionStorage())
+        let start = Date(timeIntervalSince1970: 1_000)
+        try repository.record(dictated: "de vie", corrected: "devis", at: start)
+        try repository.record(dictated: "de vie", corrected: "devis", at: start)
+        let refused = try XCTUnwrap(repository.nextProposal())
+        try repository.setStatus(.refused, for: refused.id)
+
+        for index in 0..<LearnedCorrectionRepository.maximumEntryCount {
+            try repository.record(
+                dictated: "erreur \(index)",
+                corrected: "correction \(index)",
+                at: start.addingTimeInterval(TimeInterval(index + 1))
+            )
+        }
+
+        XCTAssertEqual(repository.entries().count, LearnedCorrectionRepository.maximumEntryCount)
+        XCTAssertTrue(repository.entries().contains(where: { $0.id == refused.id }))
+    }
+
     func testJSONStorageUsesOwnerOnlyPermissions() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -166,6 +215,28 @@ final class CorrectionLearningTests: XCTestCase {
             DictionaryEntry(canonical: "devis", variants: ["de vie"])
         ])
         XCTAssertNil(controller.pendingProposal)
+    }
+
+    @MainActor
+    func testProposalStaysHiddenUntilLearningIsEnabled() throws {
+        let settings = TestCorrectionLearningSettings(isEnabled: false)
+        let repository = LearnedCorrectionRepository(storage: MemoryLearnedCorrectionStorage())
+        try repository.record(dictated: "de vie", corrected: "devis", at: Date())
+        try repository.record(dictated: "de vie", corrected: "devis", at: Date())
+        let controller = CorrectionLearningController(
+            settings: settings,
+            repository: repository,
+            dictionary: MemoryPersonalDictionary(),
+            watcher: makeWatcher(),
+            tracker: RecentDictationTracker(settings: settings)
+        )
+
+        XCTAssertNil(controller.pendingProposal)
+
+        controller.setEnabled(true)
+
+        XCTAssertEqual(controller.pendingProposal?.corrected, "devis")
+        controller.stop()
     }
 
     private var sampleEntry: LearnedCorrectionEntry {

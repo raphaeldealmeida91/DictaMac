@@ -166,6 +166,34 @@ final class SelectionWatcherTests: XCTestCase {
         watcher.stop()
     }
 
+    func testSelectionAlsoPublishesFocusedTextForCorrectionLearning() async throws {
+        let monitor = SelectionFakeEventMonitor()
+        let reader = SelectionFocusedTextFakeReader(
+            selection: validSnapshot("devis"),
+            focusedText: FocusedTextSnapshot(
+                text: "Je prépare le devis pour demain",
+                sourceBundleID: "com.example.Editor",
+                isSecure: false
+            )
+        )
+        let watcher = makeWatcher(monitor: monitor, accessibilityReader: reader)
+        let recorder = SelectionEventRecorder(stream: watcher.events())
+        watcher.start()
+
+        monitor.sendEvent()
+        try await Task.sleep(for: .milliseconds(50))
+
+        XCTAssertEqual(recorder.events, [
+            .selected(validSnapshot("devis")),
+            .focusedText(FocusedTextSnapshot(
+                text: "Je prépare le devis pour demain",
+                sourceBundleID: "com.example.Editor",
+                isSecure: false
+            ))
+        ])
+        watcher.stop()
+    }
+
     private func makeWatcher(
         monitor: SelectionFakeEventMonitor,
         accessibilityReader: any SelectedTextReading,
@@ -261,6 +289,21 @@ private final class SelectionFakeReader: SelectedTextReading {
         guard !results.isEmpty else { return nil }
         return results.removeFirst()
     }
+}
+
+@MainActor
+private final class SelectionFocusedTextFakeReader: SelectedTextReading, FocusedTextReading {
+    private let selection: SelectionSnapshot?
+    private let focusedText: FocusedTextSnapshot?
+
+    init(selection: SelectionSnapshot?, focusedText: FocusedTextSnapshot?) {
+        self.selection = selection
+        self.focusedText = focusedText
+    }
+
+    func readSelection() -> SelectionSnapshot? { selection }
+
+    func readFocusedText() -> FocusedTextSnapshot? { focusedText }
 }
 
 private struct SelectionFakeSettings: SelectionCorrectionSettings {

@@ -14,6 +14,7 @@ struct CorrectionReplacementDetector: Sendable {
         let sourceWords = words(in: dictated)
         let candidateWords = words(in: candidate)
         guard !sourceWords.isEmpty, !candidateWords.isEmpty, dictated != candidate else { return [] }
+        guard !containsUnchangedSource(sourceWords, in: candidateWords) else { return [] }
         return bestReplacements(from: dictated, sourceWordCount: sourceWords.count, in: candidateWords)
     }
 
@@ -37,13 +38,13 @@ struct CorrectionReplacementDetector: Sendable {
 
     private func replacement(for change: TextChange, source: String) -> CorrectionReplacement? {
         let dictated = (source as NSString).substring(with: change.range)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let corrected = change.replacement.trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: .correctionBoundaries)
+        let corrected = change.replacement.trimmingCharacters(in: .correctionBoundaries)
         let sourceCount = words(in: dictated).count
         let correctedCount = words(in: corrected).count
         guard (1...Constants.maximumReplacementWordCount).contains(sourceCount),
               (1...Constants.maximumReplacementWordCount).contains(correctedCount),
-              dictated.caseInsensitiveCompare(corrected) != .orderedSame else { return nil }
+              lexicalForm(dictated) != lexicalForm(corrected) else { return nil }
         return CorrectionReplacement(dictated: dictated, corrected: corrected)
     }
 
@@ -72,7 +73,7 @@ struct CorrectionReplacementDetector: Sendable {
         Array(text.folding(
             options: [.caseInsensitive, .diacriticInsensitive],
             locale: .current
-        ).filter(\.isLetter))
+        ).filter { $0.isLetter || $0.isNumber })
     }
 
     private func levenshteinDistance(_ lhs: [Character], _ rhs: [Character]) -> Int {
@@ -132,4 +133,25 @@ struct CorrectionReplacementDetector: Sendable {
     private func words(in text: String) -> [Substring] {
         text.split(whereSeparator: \.isWhitespace)
     }
+
+    private func containsUnchangedSource(
+        _ sourceWords: [Substring],
+        in candidateWords: [Substring]
+    ) -> Bool {
+        guard sourceWords.count <= candidateWords.count else { return false }
+        return (0...(candidateWords.count - sourceWords.count)).contains { start in
+            let candidateSlice = candidateWords[start..<(start + sourceWords.count)]
+            return zip(sourceWords, candidateSlice).allSatisfy { source, candidate in
+                lexicalForm(String(source)) == lexicalForm(String(candidate))
+            }
+        }
+    }
+
+    private func lexicalForm(_ text: String) -> String {
+        text.precomposedStringWithCanonicalMapping.filter { $0.isLetter || $0.isNumber }
+    }
+}
+
+private extension CharacterSet {
+    static let correctionBoundaries = alphanumerics.inverted
 }

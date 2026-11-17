@@ -63,13 +63,19 @@ final class LearnedCorrectionRepository: @unchecked Sendable {
     }
 
     private func trimToLimit() {
-        guard cachedEntries.count > Self.maximumEntryCount else { return }
-        cachedEntries.sort { $0.lastSeen > $1.lastSeen }
-        cachedEntries.removeLast(cachedEntries.count - Self.maximumEntryCount)
+        while cachedEntries.count > Self.maximumEntryCount {
+            guard let index = oldestReplaceableEntryIndex() else { return }
+            cachedEntries.remove(at: index)
+        }
+    }
+
+    private func oldestReplaceableEntryIndex() -> Int? {
+        cachedEntries.indices
+            .filter { cachedEntries[$0].status != .refused }
+            .min { cachedEntries[$0].lastSeen < cachedEntries[$1].lastSeen }
     }
 
     private static func matches(_ lhs: String, _ rhs: String) -> Bool {
-        lhs.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
-            == rhs.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+        lhs.precomposedStringWithCanonicalMapping == rhs.precomposedStringWithCanonicalMapping
     }
 }
