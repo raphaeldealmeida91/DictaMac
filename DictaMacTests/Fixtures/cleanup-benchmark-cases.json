@@ -1,0 +1,242 @@
+[
+  {
+    "id": "hesitation-01",
+    "raw": "euh je voudrais euh déplacer la réunion à demain matin",
+    "expected": "Je voudrais déplacer la réunion à demain matin.",
+    "usage": "other",
+    "tags": ["hésitation"],
+    "dictionary": []
+  },
+  {
+    "id": "hesitation-02",
+    "raw": "alors donc le dossier est enfin prêt pour être envoyé",
+    "expected": "Le dossier est enfin prêt à être envoyé.",
+    "usage": "document",
+    "tags": ["hésitation", "syntaxe"],
+    "dictionary": []
+  },
+  {
+    "id": "hesitation-03",
+    "raw": "hum je pense que que cette solution peut fonctionner",
+    "expected": "Je pense que cette solution peut fonctionner.",
+    "usage": "other",
+    "tags": ["hésitation", "répétition"],
+    "dictionary": []
+  },
+  {
+    "id": "hesitation-04",
+    "raw": "le résultat est genre vraiment vraiment satisfaisant",
+    "expected": "Le résultat est vraiment satisfaisant.",
+    "usage": "other",
+    "tags": ["hésitation", "répétition"],
+    "dictionary": []
+  },
+  {
+    "id": "hesitation-05",
+    "raw": "bon bah on peut peut-être commencer maintenant",
+    "expected": "On peut peut-être commencer maintenant.",
+    "usage": "messaging",
+    "tags": ["hésitation"],
+    "dictionary": []
+  },
+  {
+    "id": "autocorrection-01",
+    "raw": "on se retrouve lundi enfin non plutôt mardi après-midi",
+    "expected": "On se retrouve mardi après-midi.",
+    "usage": "messaging",
+    "tags": ["auto-correction"],
+    "dictionary": []
+  },
+  {
+    "id": "autocorrection-02",
+    "raw": "envoie le document à l'équipe commerciale pardon à l'équipe juridique",
+    "expected": "Envoie le document à l'équipe juridique.",
+    "usage": "email",
+    "tags": ["auto-correction"],
+    "dictionary": []
+  },
+  {
+    "id": "autocorrection-03",
+    "raw": "le bouton doit être bleu non vert foncé",
+    "expected": "Le bouton doit être vert foncé.",
+    "usage": "code",
+    "tags": ["auto-correction"],
+    "dictionary": []
+  },
+  {
+    "id": "autocorrection-04",
+    "raw": "publie la version stable enfin attends publie seulement la version candidate",
+    "expected": "Publie seulement la version candidate.",
+    "usage": "code",
+    "tags": ["auto-correction", "technique"],
+    "dictionary": []
+  },
+  {
+    "id": "autocorrection-05",
+    "raw": "je serai disponible le matin excuse-moi plutôt en fin de journée",
+    "expected": "Je serai disponible en fin de journée.",
+    "usage": "email",
+    "tags": ["auto-correction"],
+    "dictionary": []
+  },
+  {
+    "id": "enumeration-01",
+    "raw": "pour les courses il faut des pommes du riz du café et du savon",
+    "expected": "Pour les courses, il faut :\n- des pommes ;\n- du riz ;\n- du café ;\n- du savon.",
+    "usage": "document",
+    "tags": ["énumération"],
+    "dictionary": []
+  },
+  {
+    "id": "enumeration-02",
+    "raw": "les priorités sont premièrement corriger le crash deuxièmement écrire les tests et troisièmement préparer la livraison",
+    "expected": "Les priorités sont :\n1. corriger le crash ;\n2. écrire les tests ;\n3. préparer la livraison.",
+    "usage": "code",
+    "tags": ["énumération", "technique"],
+    "dictionary": []
+  },
+  {
+    "id": "enumeration-03",
+    "raw": "ordre du jour accueil présentation du prototype questions puis prochaines étapes",
+    "expected": "Ordre du jour :\n- accueil ;\n- présentation du prototype ;\n- questions ;\n- prochaines étapes.",
+    "usage": "document",
+    "tags": ["énumération"],
+    "dictionary": []
+  },
+  {
+    "id": "enumeration-04",
+    "raw": "avant de partir vérifie les fenêtres coupe la lumière ferme la porte et active l'alarme",
+    "expected": "Avant de partir :\n- vérifie les fenêtres ;\n- coupe la lumière ;\n- ferme la porte ;\n- active l'alarme.",
+    "usage": "other",
+    "tags": ["énumération"],
+    "dictionary": []
+  },
+  {
+    "id": "email-01",
+    "raw": "bonjour merci pour votre retour je vous confirme que le dossier sera prêt demain cordialement",
+    "expected": "Bonjour,\n\nMerci pour votre retour. Je vous confirme que le dossier sera prêt demain.\n\nCordialement,",
+    "usage": "email",
+    "tags": ["e-mail"],
+    "dictionary": []
+  },
+  {
+    "id": "email-02",
+    "raw": "bonjour pouvez-vous me transmettre la dernière version du contrat avant vendredi merci d'avance",
+    "expected": "Bonjour,\n\nPouvez-vous me transmettre la dernière version du contrat avant vendredi ?\n\nMerci d'avance.",
+    "usage": "email",
+    "tags": ["e-mail", "question"],
+    "dictionary": []
+  },
+  {
+    "id": "email-03",
+    "raw": "objet compte rendu de réunion bonjour vous trouverez ci-joint le compte rendu de notre réunion",
+    "expected": "Objet : compte rendu de réunion\n\nBonjour,\n\nVous trouverez ci-joint le compte rendu de notre réunion.",
+    "usage": "email",
+    "tags": ["e-mail", "structure"],
+    "dictionary": []
+  },
+  {
+    "id": "email-04",
+    "raw": "bonjour écrivez-moi à support@example.test si le problème persiste bonne journée",
+    "expected": "Bonjour,\n\nÉcrivez-moi à support@example.test si le problème persiste.\n\nBonne journée.",
+    "usage": "email",
+    "tags": ["e-mail", "adresse"],
+    "dictionary": []
+  },
+  {
+    "id": "message-01",
+    "raw": "salut je suis dans le métro j'arrive dans dix minutes",
+    "expected": "Salut, je suis dans le métro. J'arrive dans dix minutes.",
+    "usage": "messaging",
+    "tags": ["message-court"],
+    "dictionary": []
+  },
+  {
+    "id": "message-02",
+    "raw": "ok pas de souci je m'en occupe",
+    "expected": "OK, pas de souci, je m'en occupe.",
+    "usage": "messaging",
+    "tags": ["message-court"],
+    "dictionary": []
+  },
+  {
+    "id": "message-03",
+    "raw": "tu peux me rappeler quand tu as une minute stp",
+    "expected": "Tu peux me rappeler quand tu as une minute, s'il te plaît ?",
+    "usage": "messaging",
+    "tags": ["message-court", "abréviation"],
+    "dictionary": []
+  },
+  {
+    "id": "message-04",
+    "raw": "bien reçu merci beaucoup à demain",
+    "expected": "Bien reçu, merci beaucoup. À demain !",
+    "usage": "messaging",
+    "tags": ["message-court"],
+    "dictionary": []
+  },
+  {
+    "id": "technical-01",
+    "raw": "le build Swift échoue dans Xcode avec une erreur de concurrence stricte",
+    "expected": "Le build Swift échoue dans Xcode avec une erreur de concurrence stricte.",
+    "usage": "code",
+    "tags": ["termes-techniques"],
+    "dictionary": ["Swift", "Xcode"]
+  },
+  {
+    "id": "technical-02",
+    "raw": "ajoute un test unitaire pour CleanupBenchmarkRunner puis lance xcodebuild",
+    "expected": "Ajoute un test unitaire pour CleanupBenchmarkRunner, puis lance xcodebuild.",
+    "usage": "code",
+    "tags": ["termes-techniques"],
+    "dictionary": ["CleanupBenchmarkRunner", "xcodebuild"]
+  },
+  {
+    "id": "technical-03",
+    "raw": "l'API renvoie un JSON invalide quand la requête HTTP expire",
+    "expected": "L'API renvoie un JSON invalide quand la requête HTTP expire.",
+    "usage": "code",
+    "tags": ["termes-techniques"],
+    "dictionary": ["API", "JSON", "HTTP"]
+  },
+  {
+    "id": "technical-04",
+    "raw": "le modèle MLX doit rester local et ne faire aucun appel réseau",
+    "expected": "Le modèle MLX doit rester local et ne faire aucun appel réseau.",
+    "usage": "code",
+    "tags": ["termes-techniques"],
+    "dictionary": ["MLX"]
+  },
+  {
+    "id": "numbers-01",
+    "raw": "le devis s'élève à 1240,50 euros hors taxes avec une remise de 7 pour cent",
+    "expected": "Le devis s'élève à 1240,50 euros hors taxes, avec une remise de 7 pour cent.",
+    "usage": "document",
+    "tags": ["nombres"],
+    "dictionary": []
+  },
+  {
+    "id": "numbers-02",
+    "raw": "la réunion commence à 9 heures 30 et se termine à 11 heures 15 dans la salle 204",
+    "expected": "La réunion commence à 9 heures 30 et se termine à 11 heures 15 dans la salle 204.",
+    "usage": "other",
+    "tags": ["nombres"],
+    "dictionary": []
+  },
+  {
+    "id": "long-01",
+    "raw": "euh après avoir relu le rapport je pense que nous devrions conserver l'introduction mais raccourcir la deuxième partie ajouter les résultats de l'étude et déplacer la conclusion à la fin du document",
+    "expected": "Après avoir relu le rapport, je pense que nous devrions conserver l'introduction, mais raccourcir la deuxième partie, ajouter les résultats de l'étude et déplacer la conclusion à la fin du document.",
+    "usage": "document",
+    "tags": ["phrase-longue", "hésitation"],
+    "dictionary": []
+  },
+  {
+    "id": "long-02",
+    "raw": "pour résoudre le problème commence par reproduire le bug dans une branche séparée vérifie ensuite les journaux ajoute un test qui échoue applique la correction minimale puis confirme que toute la suite passe sans avertissement",
+    "expected": "Pour résoudre le problème, commence par reproduire le bug dans une branche séparée. Vérifie ensuite les journaux, ajoute un test qui échoue, applique la correction minimale, puis confirme que toute la suite passe sans avertissement.",
+    "usage": "code",
+    "tags": ["phrase-longue", "termes-techniques"],
+    "dictionary": []
+  }
+]

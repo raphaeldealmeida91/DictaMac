@@ -7,6 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CBB000000000000000000001 /* CleanupBenchmarkCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF000000000000000000001 /* CleanupBenchmarkCase.swift */; };
+		CBB000000000000000000002 /* CleanupBenchmarkMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF000000000000000000002 /* CleanupBenchmarkMetrics.swift */; };
+		CBB000000000000000000003 /* CleanupBenchmarkResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF000000000000000000003 /* CleanupBenchmarkResult.swift */; };
+		CBB000000000000000000004 /* CleanupBenchmarkModelGenerating.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF000000000000000000004 /* CleanupBenchmarkModelGenerating.swift */; };
+		CBB000000000000000000005 /* MLXCleanupBenchmarkGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF000000000000000000005 /* MLXCleanupBenchmarkGenerator.swift */; };
+		CBB000000000000000000006 /* CleanupBenchmarkRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF000000000000000000006 /* CleanupBenchmarkRunner.swift */; };
+		CBB000000000000000000007 /* CleanupBenchmarkMarkdownReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF000000000000000000007 /* CleanupBenchmarkMarkdownReport.swift */; };
+		CBB000000000000000000008 /* CleanupBenchmarkRunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF000000000000000000008 /* CleanupBenchmarkRunnerTests.swift */; };
+		CBB000000000000000000009 /* cleanup-benchmark-cases.json in Resources */ = {isa = PBXBuildFile; fileRef = CBF000000000000000000009 /* cleanup-benchmark-cases.json */; };
 		CLB000000000000000000001 /* FocusedTextSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF000000000000000000001 /* FocusedTextSnapshot.swift */; };
 		CLB000000000000000000002 /* FocusedTextReading.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF000000000000000000002 /* FocusedTextReading.swift */; };
 		CLB000000000000000000003 /* CorrectionLearningSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF000000000000000000003 /* CorrectionLearningSettings.swift */; };
@@ -292,6 +301,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		CBF000000000000000000001 /* CleanupBenchmarkCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupBenchmarkCase.swift; sourceTree = "<group>"; };
+		CBF000000000000000000002 /* CleanupBenchmarkMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupBenchmarkMetrics.swift; sourceTree = "<group>"; };
+		CBF000000000000000000003 /* CleanupBenchmarkResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupBenchmarkResult.swift; sourceTree = "<group>"; };
+		CBF000000000000000000004 /* CleanupBenchmarkModelGenerating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupBenchmarkModelGenerating.swift; sourceTree = "<group>"; };
+		CBF000000000000000000005 /* MLXCleanupBenchmarkGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLXCleanupBenchmarkGenerator.swift; sourceTree = "<group>"; };
+		CBF000000000000000000006 /* CleanupBenchmarkRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupBenchmarkRunner.swift; sourceTree = "<group>"; };
+		CBF000000000000000000007 /* CleanupBenchmarkMarkdownReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupBenchmarkMarkdownReport.swift; sourceTree = "<group>"; };
+		CBF000000000000000000008 /* CleanupBenchmarkRunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupBenchmarkRunnerTests.swift; sourceTree = "<group>"; };
+		CBF000000000000000000009 /* cleanup-benchmark-cases.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "cleanup-benchmark-cases.json"; sourceTree = "<group>"; };
 		CLF000000000000000000001 /* FocusedTextSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedTextSnapshot.swift; sourceTree = "<group>"; };
 		CLF000000000000000000002 /* FocusedTextReading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedTextReading.swift; sourceTree = "<group>"; };
 		CLF000000000000000000003 /* CorrectionLearningSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorrectionLearningSettings.swift; sourceTree = "<group>"; };
@@ -810,6 +828,7 @@
 		A4000000000000000000000F /* DictaMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				CBF000000000000000000008 /* CleanupBenchmarkRunnerTests.swift */,
 				CLF00000000000000000000E /* CorrectionLearningTests.swift */,
 				B60000000000000000000005 /* LocalModelLifecycleTests.swift */,
 				R40000000000000000000001 /* Fixtures */,
@@ -840,6 +859,7 @@
 		R40000000000000000000001 /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				CBF000000000000000000009 /* cleanup-benchmark-cases.json */,
 				R20000000000000000000002 /* dictation-cases.json */,
 			);
 			path = Fixtures;
@@ -861,6 +881,13 @@
 		A40000000000000000000010 /* Diagnostics */ = {
 			isa = PBXGroup;
 			children = (
+				CBF000000000000000000001 /* CleanupBenchmarkCase.swift */,
+				CBF000000000000000000002 /* CleanupBenchmarkMetrics.swift */,
+				CBF000000000000000000003 /* CleanupBenchmarkResult.swift */,
+				CBF000000000000000000004 /* CleanupBenchmarkModelGenerating.swift */,
+				CBF000000000000000000005 /* MLXCleanupBenchmarkGenerator.swift */,
+				CBF000000000000000000006 /* CleanupBenchmarkRunner.swift */,
+				CBF000000000000000000007 /* CleanupBenchmarkMarkdownReport.swift */,
 				A20000000000000000000012 /* DictationDiagnostics.swift */,
 				W20000000000000000000001 /* TextWordDiagnosticStage.swift */,
 				W20000000000000000000002 /* TextWordDiagnostics.swift */,
@@ -1249,6 +1276,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CBB000000000000000000009 /* cleanup-benchmark-cases.json in Resources */,
 				R10000000000000000000002 /* dictation-cases.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1260,6 +1288,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CBB000000000000000000001 /* CleanupBenchmarkCase.swift in Sources */,
+				CBB000000000000000000002 /* CleanupBenchmarkMetrics.swift in Sources */,
+				CBB000000000000000000003 /* CleanupBenchmarkResult.swift in Sources */,
+				CBB000000000000000000004 /* CleanupBenchmarkModelGenerating.swift in Sources */,
+				CBB000000000000000000005 /* MLXCleanupBenchmarkGenerator.swift in Sources */,
+				CBB000000000000000000006 /* CleanupBenchmarkRunner.swift in Sources */,
+				CBB000000000000000000007 /* CleanupBenchmarkMarkdownReport.swift in Sources */,
 				CLB000000000000000000001 /* FocusedTextSnapshot.swift in Sources */,
 				CLB000000000000000000002 /* FocusedTextReading.swift in Sources */,
 				CLB000000000000000000003 /* CorrectionLearningSettings.swift in Sources */,
@@ -1509,6 +1544,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CBB000000000000000000008 /* CleanupBenchmarkRunnerTests.swift in Sources */,
 				CLB00000000000000000000E /* CorrectionLearningTests.swift in Sources */,
 				B50000000000000000000005 /* LocalModelLifecycleTests.swift in Sources */,
 				X1000000000000000000000E /* SelectionCorrectionUITests.swift in Sources */,
@@ -1624,7 +1660,7 @@
 				ENABLE_APP_INTENTS_METADATA = NO;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
-				EXCLUDED_SOURCE_FILE_NAMES = "WhisperBenchmarkResult.swift WhisperBenchmarkRunner.swift WhisperBenchmarkState.swift";
+				EXCLUDED_SOURCE_FILE_NAMES = "CleanupBenchmarkCase.swift CleanupBenchmarkMarkdownReport.swift CleanupBenchmarkMetrics.swift CleanupBenchmarkModelGenerating.swift CleanupBenchmarkResult.swift CleanupBenchmarkRunner.swift MLXCleanupBenchmarkGenerator.swift WhisperBenchmarkResult.swift WhisperBenchmarkRunner.swift WhisperBenchmarkState.swift";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "DictaMac utilise le microphone pour transcrire votre dictée localement.";
