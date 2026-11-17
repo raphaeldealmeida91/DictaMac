@@ -301,6 +301,35 @@ final class SettingsTests: XCTestCase {
         XCTAssertNil(WhisperKitTranscriptionService.dictionaryPrompt(for: []))
     }
 
+    func testWhisperContextPromptKeepsOnlyLastTwentyWords() {
+        let words = (1...25).map { "mot\($0)" }.joined(separator: " ")
+        let context = DictationContext(
+            bundleID: nil,
+            applicationName: nil,
+            precedingText: words
+        )
+
+        XCTAssertEqual(
+            WhisperKitTranscriptionService.contextPrompt(for: context),
+            "Texte précédant immédiatement la dictée : "
+                + (6...25).map { "mot\($0)" }.joined(separator: " ")
+        )
+    }
+
+    func testWhisperPromptTokensAreLimitedAndKeepContextTail() {
+        let dictionaryTokens = Array(0..<300)
+        let contextTokens = Array(1_000..<1_100)
+
+        let result = WhisperKitTranscriptionService.limitedPromptTokens(
+            dictionaryTokens: dictionaryTokens,
+            contextTokens: contextTokens
+        )
+
+        XCTAssertEqual(result.count, 224)
+        XCTAssertEqual(Array(result.prefix(160)), Array(0..<160))
+        XCTAssertEqual(Array(result.suffix(64)), Array(1_036..<1_100))
+    }
+
     @MainActor
     func testFirstLaunchAssistantRequiresAuthorizationOrExplicitSkip() {
         let viewModel = makeFirstLaunchViewModel(store: InMemorySettingsStore())

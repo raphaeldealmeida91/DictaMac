@@ -30,6 +30,9 @@ extension AppEnvironment {
             audioRecorder: audioRecorder,
             overlayPresenter: DictationOverlayController(),
             feedbackSoundPlayer: SystemFeedbackSoundPlayer(settings: settings.feedback),
+            contextProvider: AccessibilityDictationContextProvider(
+                permissionReader: shared.permissionCache
+            ),
             recordingSessionFactory: makeRecordingFactory(
                 audioRecorder: audioRecorder,
                 settings: settings,
@@ -42,8 +45,7 @@ extension AppEnvironment {
             modelReadiness: models.transcriptionState,
             cancellationRegistry: emergency.cancellationHub,
             diagnosticLog: emergency.log,
-            activityModel: activity,
-            frontmostApplicationName: { NSWorkspace.shared.frontmostApplication?.localizedName }
+            activityModel: activity
         ))
     }
 

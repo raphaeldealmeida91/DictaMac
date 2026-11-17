@@ -15,7 +15,11 @@ private actor FakeTranscriptionService: TranscriptionService {
 
     func prepare() async throws {}
 
-    func transcribe(_ samples: [Float], language: String?) async throws -> String {
+    func transcribe(
+        _ samples: [Float],
+        language: String?,
+        context: DictationContext
+    ) async throws -> String {
         receivedSamples.append(samples)
         if let delay { try await ContinuousClock().sleep(for: delay) }
         guard !results.isEmpty else { return "" }

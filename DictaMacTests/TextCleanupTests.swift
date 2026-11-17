@@ -1,6 +1,51 @@
 import XCTest
 @testable import DictaMac
 
+final class DictationContextTests: XCTestCase {
+    func testPrecedingTextKeepsOnlyLastThreeHundredCharacters() {
+        let source = String(repeating: "a", count: 50) + String(repeating: "b", count: 300)
+
+        let context = DictationContext(
+            bundleID: nil,
+            applicationName: nil,
+            precedingText: source
+        )
+
+        XCTAssertEqual(context.precedingText, String(repeating: "b", count: 300))
+        XCTAssertEqual(context.precedingText.count, 300)
+    }
+
+    func testUsageCategoriesAreInferredFromApplicationIdentity() {
+        XCTAssertEqual(context(bundleID: "com.tinyspeck.slackmacgap").category, .messaging)
+        XCTAssertEqual(context(bundleID: "com.apple.mail").category, .email)
+        XCTAssertEqual(context(bundleID: "com.apple.iWork.Pages").category, .document)
+        XCTAssertEqual(context(bundleID: "com.apple.dt.Xcode").category, .code)
+        XCTAssertEqual(context(bundleID: "com.apple.Safari").category, .other)
+    }
+
+    func testLastTwentyWordsKeepsTheNearestCursorContext() {
+        let words = (1...25).map { "mot\($0)" }.joined(separator: " ")
+        let context = DictationContext(
+            bundleID: nil,
+            applicationName: nil,
+            precedingText: words
+        )
+
+        XCTAssertEqual(
+            context.lastTwentyWords,
+            (6...25).map { "mot\($0)" }.joined(separator: " ")
+        )
+    }
+
+    private func context(bundleID: String) -> DictationContext {
+        DictationContext(
+            bundleID: bundleID,
+            applicationName: nil,
+            precedingText: ""
+        )
+    }
+}
+
 final class TextCleanupPostProcessorTests: XCTestCase {
     private func process(
         raw: String,
@@ -97,6 +142,24 @@ final class CleanupPromptBuilderTests: XCTestCase {
         XCTAssertTrue(prompt.contains("conserve la formulation d’origine"))
     }
 
+    func testPromptContainsUsageContinuityAndExactDictionaryTerms() {
+        let context = DictationContext(
+            bundleID: "com.apple.MobileSMS",
+            applicationName: "Messages",
+            precedingText: "Je pense que"
+        )
+        let prompt = CleanupPromptBuilder().systemPrompt(
+            style: .correction,
+            dictionary: ["DictaMac", "SFM30"],
+            context: context
+        )
+
+        XCTAssertTrue(prompt.contains("Catégorie d’usage : messagerie instantanée"))
+        XCTAssertTrue(prompt.contains("<preceding_context>Je pense que</preceding_context>"))
+        XCTAssertTrue(prompt.contains("ne commence ni par une majuscule ni par un signe de ponctuation"))
+        XCTAssertTrue(prompt.contains("DictaMac, SFM30"))
+    }
+
     func testCleanupStylesProvideUserFacingExplanations() {
         XCTAssertTrue(CleanupStyle.correction.explanation.contains("sans modifier"))
         XCTAssertTrue(CleanupStyle.polished.explanation.contains("reformule"))
@@ -174,7 +237,11 @@ final class TextCleanupEngineRegistryTests: XCTestCase {
 private struct StubTextCleanupService: TextCleanupService {
     let output: String
 
-    func cleanup(_ text: String, dictionary: [String]) async throws -> String { output }
+    func cleanup(
+        _ text: String,
+        dictionary: [String],
+        context: DictationContext
+    ) async throws -> String { output }
 }
 
 final class FastRulesTextCleanupServiceTests: XCTestCase {
@@ -203,6 +270,17 @@ final class FastRulesTextCleanupServiceTests: XCTestCase {
     func testNormalizesWhitespaceAndPunctuationSpacing() { XCTAssertEqual(clean("  bonjour   ,  comment ça va ? "), "Bonjour, comment ça va ?") }
     func testKeepsExistingFinalPunctuation() { XCTAssertEqual(clean("bonjour !"), "Bonjour !") }
     func testAddsFinalPeriod() { XCTAssertEqual(clean("bonjour tout le monde"), "Bonjour tout le monde.") }
+    func testKeepsLowercaseWhenContinuingExistingSentence() {
+        let context = DictationContext(
+            bundleID: nil,
+            applicationName: nil,
+            precedingText: "Je crois que"
+        )
+        XCTAssertEqual(
+            FastRulesTextCleanupService.cleanup("cela fonctionne", context: context),
+            "cela fonctionne."
+        )
+    }
     func testEmptyInputStaysEmpty() { XCTAssertEqual(clean("   "), "") }
 
     func testThreeSecondSizedDictationLatency() {
@@ -352,6 +430,37 @@ final class CloudTextCleanupServiceTests: XCTestCase {
             // Expected.
         }
     }
+
+    func testContextIsOmittedUnlessCloudEngineIsExplicitlyConfigured() async throws {
+        let generator = FakeLocalGenerator(.output(raw))
+        let service = CloudTextCleanupService(
+            generator: generator,
+            settings: CloudPrivacyCleanupSettings(configuredEngine: .local)
+        )
+        let context = DictationContext(
+            bundleID: "com.apple.MobileSMS",
+            applicationName: "Messages",
+            precedingText: "CONTEXTE_CONFIDENTIEL"
+        )
+
+        _ = try await service.cleanup(raw, dictionary: [], context: context)
+
+        let messages = await generator.messages()
+        let prompt = try XCTUnwrap(messages.first?["content"])
+        XCTAssertFalse(prompt.contains("CONTEXTE_CONFIDENTIEL"))
+    }
+}
+
+private struct CloudPrivacyCleanupSettings: TextCleanupSettings {
+    let configuredEngine: TextCleanupEngine
+    let isEnabled = true
+    let configuredModel = ""
+    let configuredLocalModel = ""
+    let cleanupStyle = CleanupStyle.correction
+    let removeIsolatedGenre = true
+    let localTimeout: TimeInterval = 8
+    let cloudTimeout: TimeInterval = 8
+    let localDownloadApproved = false
 }
 
 private actor FakeLocalGenerator: LocalTextGenerating {

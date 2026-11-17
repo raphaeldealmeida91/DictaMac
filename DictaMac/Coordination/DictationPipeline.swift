@@ -19,6 +19,7 @@ enum DictationOutcome: Equatable, Sendable {
 @MainActor
 struct DictationPipelineSession {
     let transcriber: any SegmentedTranscribing
+    let context: DictationContext
     let audioDuration: TimeInterval
     let estimatedSegmentCount: Int
     let stopAudioDuration: TimeInterval
@@ -150,7 +151,8 @@ final class DictationPipeline: DictationPipelineRunning {
         wordDiagnostics?.recordWordCount(correctedText, stage: .dictionary)
         let deterministicText = FastRulesTextCleanupService.cleanup(
             correctedText,
-            removeIsolatedGenre: textCleanupSettings.removeIsolatedGenre
+            removeIsolatedGenre: textCleanupSettings.removeIsolatedGenre,
+            context: session.context
         )
         wordDiagnostics?.recordWordCount(deterministicText, stage: .deterministicRules)
         let cleanupStartedAt = ContinuousClock.now
@@ -242,18 +244,24 @@ final class DictationPipeline: DictationPipelineRunning {
         )
         let cleanupService = textCleanupService
         return try await instrumentedStage.run(.cleanup, context: context) {
-            try await self.performCleanup(rawText, dictionary: dictionary, service: cleanupService)
+            try await self.performCleanup(
+                rawText,
+                dictionary: dictionary,
+                context: session.context,
+                service: cleanupService
+            )
         }
     }
 
     private func performCleanup(
         _ text: String,
         dictionary: [String],
+        context: DictationContext,
         service: any TextCleanupService
     ) async throws -> (text: String, outcome: CleanupOutcome) {
         do {
             let cleaned = try await PipelineWatchdog.run(stage: "nettoyage") {
-                try await service.cleanup(text, dictionary: dictionary)
+                try await service.cleanup(text, dictionary: dictionary, context: context)
             }
             logger.info("Nettoyage du texte terminé")
             return (cleaned, .cleaned)
@@ -263,7 +271,8 @@ final class DictationPipeline: DictationPipelineRunning {
             logger.warning("Nettoyage IA indisponible, règles déterministes appliquées")
             let fallback = FastRulesTextCleanupService.cleanup(
                 text,
-                removeIsolatedGenre: textCleanupSettings.removeIsolatedGenre
+                removeIsolatedGenre: textCleanupSettings.removeIsolatedGenre,
+                context: context
             )
             return (fallback, cleanupOutcome(for: error))
         }

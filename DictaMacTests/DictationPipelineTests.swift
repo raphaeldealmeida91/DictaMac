@@ -120,6 +120,31 @@ final class DictationPipelineTests: XCTestCase {
         XCTAssertEqual(injector.insertedText, "Le devis est prêt.")
     }
 
+    func testPipelineForwardsCapturedContextToCleanup() async {
+        let cleanup = PipelineCleanupSpy()
+        let context = DictationContext(
+            bundleID: "com.apple.MobileSMS",
+            applicationName: "Messages",
+            precedingText: "Je voulais aussi"
+        )
+        let pipeline = makePipeline(
+            cleanupService: cleanup,
+            injector: PipelineFakeInjector(),
+            stageReporter: PipelineFakeStageReporter()
+        )
+
+        _ = await pipeline.run(
+            samples: [0.1],
+            session: makeSession(
+                transcriber: PipelineFakeTranscriber(),
+                context: context
+            )
+        )
+
+        let received = await cleanup.received()
+        XCTAssertEqual(received.context, context)
+    }
+
     func testModelPreparationFailureDoesNotStartTranscriptionStage() async {
         let stageReporter = PipelineFakeStageReporter()
         let injector = PipelineFakeInjector()
@@ -181,10 +206,12 @@ final class DictationPipelineTests: XCTestCase {
     }
 
     private func makeSession(
-        transcriber: any SegmentedTranscribing
+        transcriber: any SegmentedTranscribing,
+        context: DictationContext = .empty
     ) -> DictationPipelineSession {
         DictationPipelineSession(
             transcriber: transcriber,
+            context: context,
             audioDuration: 1,
             estimatedSegmentCount: 1,
             stopAudioDuration: 0.01,
@@ -253,7 +280,11 @@ private actor PreparationFailingTranscriber: SegmentedTranscribing {
 private actor FailingCleanupService: TextCleanupService {
     enum Failure: Error { case cleanup }
 
-    func cleanup(_ text: String, dictionary: [String]) async throws -> String {
+    func cleanup(
+        _ text: String,
+        dictionary: [String],
+        context: DictationContext
+    ) async throws -> String {
         throw Failure.cleanup
     }
 }
@@ -265,11 +296,19 @@ private actor SuccessfulCleanupService: TextCleanupService {
         self.output = output
     }
 
-    func cleanup(_ text: String, dictionary: [String]) async throws -> String { output }
+    func cleanup(
+        _ text: String,
+        dictionary: [String],
+        context: DictationContext
+    ) async throws -> String { output }
 }
 
 private actor ModelNotReadyCleanupService: TextCleanupService {
-    func cleanup(_ text: String, dictionary: [String]) async throws -> String {
+    func cleanup(
+        _ text: String,
+        dictionary: [String],
+        context: DictationContext
+    ) async throws -> String {
         throw LocalCleanupError.modelNotReady
     }
 }
@@ -277,15 +316,21 @@ private actor ModelNotReadyCleanupService: TextCleanupService {
 private actor PipelineCleanupSpy: TextCleanupService {
     private var text = ""
     private var dictionary: [String] = []
+    private var context = DictationContext.empty
 
-    func cleanup(_ text: String, dictionary: [String]) async throws -> String {
+    func cleanup(
+        _ text: String,
+        dictionary: [String],
+        context: DictationContext
+    ) async throws -> String {
         self.text = text
         self.dictionary = dictionary
+        self.context = context
         return text
     }
 
-    func received() -> (text: String, dictionary: [String]) {
-        (text, dictionary)
+    func received() -> (text: String, dictionary: [String], context: DictationContext) {
+        (text, dictionary, context)
     }
 }
 

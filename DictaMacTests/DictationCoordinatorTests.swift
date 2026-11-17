@@ -18,6 +18,21 @@ final class DictationCoordinatorTests: XCTestCase {
         XCTAssertEqual(fixture.overlay.events.last, .hidden)
     }
 
+    func testContextIsCapturedBeforeRecordingAndPassedToPipeline() async {
+        let fixture = Fixture()
+
+        fixture.hotkey.press()
+
+        XCTAssertEqual(fixture.contextProvider.captureCount, 1)
+        XCTAssertTrue(fixture.contextProvider.capturedBeforeAudioStart)
+        XCTAssertEqual(fixture.sessionFactory.receivedContext, fixture.contextProvider.context)
+
+        fixture.hotkey.release()
+        await fixture.waitUntilIdle()
+
+        XCTAssertEqual(fixture.pipeline.receivedContext, fixture.contextProvider.context)
+    }
+
     func testCancellationDuringRecordingStopsWithoutPipeline() {
         let fixture = Fixture()
 
@@ -153,16 +168,19 @@ private final class Fixture {
     let overlay = FakeOverlayPresenter()
     let pipeline = FakePipeline()
     let stageReporter = FakeStageReporter()
+    let contextProvider: FakeDictationContextProvider
     let sessionFactory: FakeRecordingSessionFactory
     let coordinator: DictationCoordinator
 
     init(modelIsReady: Bool = true, modelProgress: Double? = nil) {
+        contextProvider = FakeDictationContextProvider(audio: audio)
         sessionFactory = FakeRecordingSessionFactory(audio: audio)
         coordinator = DictationCoordinator(dependencies: DictationCoordinatorDependencies(
             hotkeyProvider: hotkey,
             audioRecorder: audio,
             overlayPresenter: overlay,
             feedbackSoundPlayer: FakeFeedbackSoundPlayer(),
+            contextProvider: contextProvider,
             recordingSessionFactory: sessionFactory,
             pipeline: pipeline,
             stageReporter: stageReporter,
@@ -173,8 +191,7 @@ private final class Fixture {
             ),
             cancellationRegistry: FakeCancellationRegistry(),
             diagnosticLog: PersistentDiagnosticLog(),
-            activityModel: AppActivityModel(),
-            frontmostApplicationName: { "Tests" }
+            activityModel: AppActivityModel()
         ))
     }
 
@@ -246,14 +263,17 @@ private actor FakeSegmentedTranscriber: SegmentedTranscribing {
 private final class FakeRecordingSessionFactory: RecordingSessionBuilding {
     private let audio: FakeAudioRecorder
     private var maximumDurationHandler: (@MainActor () -> Void)?
+    private(set) var receivedContext: DictationContext?
 
     init(audio: FakeAudioRecorder) {
         self.audio = audio
     }
 
     func makeSession(
+        context: DictationContext,
         onMaximumDuration: @escaping @MainActor () -> Void
     ) -> any RecordingSessionManaging {
+        receivedContext = context
         maximumDurationHandler = onMaximumDuration
         return RecordingSession(
             audioRecorder: audio,
@@ -272,6 +292,7 @@ private final class FakeRecordingSessionFactory: RecordingSessionBuilding {
 @MainActor
 private final class FakePipeline: DictationPipelineRunning {
     private(set) var runCount = 0
+    private(set) var receivedContext: DictationContext?
     var outcome = DictationOutcome.inserted
 
     func run(
@@ -279,8 +300,31 @@ private final class FakePipeline: DictationPipelineRunning {
         session: DictationPipelineSession
     ) async -> DictationOutcome {
         runCount += 1
+        receivedContext = session.context
         _ = session.beginInjection()
         return outcome
+    }
+}
+
+@MainActor
+private final class FakeDictationContextProvider: DictationContextProviding {
+    let context = DictationContext(
+        bundleID: "com.apple.MobileSMS",
+        applicationName: "Messages",
+        precedingText: "On se retrouve à"
+    )
+    private let audio: FakeAudioRecorder
+    private(set) var captureCount = 0
+    private(set) var capturedBeforeAudioStart = false
+
+    init(audio: FakeAudioRecorder) {
+        self.audio = audio
+    }
+
+    func currentContext() -> DictationContext {
+        captureCount += 1
+        capturedBeforeAudioStart = audio.startCount == 0
+        return context
     }
 }
 

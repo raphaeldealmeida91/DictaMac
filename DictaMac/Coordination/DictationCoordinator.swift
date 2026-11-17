@@ -27,6 +27,7 @@ final class DictationCoordinator: DictationCoordinating {
     private let audioRecorder: any AudioRecording
     private let overlayPresenter: any OverlayPresenting
     private let feedbackSoundPlayer: any FeedbackSoundPlaying
+    private let contextProvider: any DictationContextProviding
     private let recordingSessionFactory: any RecordingSessionBuilding
     private let pipeline: any DictationPipelineRunning
     private let stageReporter: any DictationStageReporting
@@ -35,7 +36,6 @@ final class DictationCoordinator: DictationCoordinating {
     private let cancellationRegistry: any EmergencyCancellationRegistering
     private let diagnosticLog: any DiagnosticLogging
     private let activityModel: AppActivityModel
-    private let frontmostApplicationName: () -> String?
     private var sessionPolicy = DictationSessionPolicy()
     private var activeGeneration: Int?
     private var recordingSession: (any RecordingSessionManaging)?
@@ -44,6 +44,7 @@ final class DictationCoordinator: DictationCoordinating {
     private var emergencyObserver: NSObjectProtocol?
     private var rejectedPressIsActive = false
     private var targetApplication = Constants.unknownApplication
+    private var activeContext = DictationContext.empty
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "Dictation"
@@ -54,6 +55,7 @@ final class DictationCoordinator: DictationCoordinating {
         audioRecorder = dependencies.audioRecorder
         overlayPresenter = dependencies.overlayPresenter
         feedbackSoundPlayer = dependencies.feedbackSoundPlayer
+        contextProvider = dependencies.contextProvider
         recordingSessionFactory = dependencies.recordingSessionFactory
         pipeline = dependencies.pipeline
         stageReporter = dependencies.stageReporter
@@ -62,7 +64,6 @@ final class DictationCoordinator: DictationCoordinating {
         cancellationRegistry = dependencies.cancellationRegistry
         diagnosticLog = dependencies.diagnosticLog
         activityModel = dependencies.activityModel
-        frontmostApplicationName = dependencies.frontmostApplicationName
         bindEvents()
     }
 
@@ -123,10 +124,12 @@ final class DictationCoordinator: DictationCoordinating {
         }
         stageReporter.report(.recording, phase: "begin", context: StageContext())
         ProcessMemoryDiagnostics.logFootprint(.dictationStarted, diagnosticLog: diagnosticLog)
-        let session = makeRecordingSession()
+        let context = contextProvider.currentContext()
+        logger.info("Contexte de dictée capturé, longueur=\(context.precedingText.count)")
+        let session = makeRecordingSession(context: context)
         do {
             try session.start()
-            try activate(session)
+            try activate(session, context: context)
         } catch {
             session.cancel()
             stageReporter.report(.recording, phase: "error", context: StageContext())
@@ -151,21 +154,27 @@ final class DictationCoordinator: DictationCoordinating {
         return "Chargement du modèle… \(Int((progress * 100).rounded())) %"
     }
 
-    private func makeRecordingSession() -> any RecordingSessionManaging {
-        recordingSessionFactory.makeSession { [weak self] in
+    private func makeRecordingSession(
+        context: DictationContext
+    ) -> any RecordingSessionManaging {
+        recordingSessionFactory.makeSession(context: context) { [weak self] in
             self?.finishForMaximumDuration()
         }
     }
 
-    private func activate(_ session: any RecordingSessionManaging) throws {
+    private func activate(
+        _ session: any RecordingSessionManaging,
+        context: DictationContext
+    ) throws {
         guard let generation = sessionPolicy.beginRecording() else {
             throw CancellationError()
         }
         synchronizeActivity()
         recordingSession = session
         activeGeneration = generation
+        activeContext = context
         stageReporter.setRuntimeIdle(false)
-        targetApplication = frontmostApplicationName() ?? Constants.unknownApplication
+        targetApplication = context.applicationName ?? Constants.unknownApplication
         overlayPresenter.showRecording()
         feedbackSoundPlayer.playStart()
         refreshEmergencyCancellationHandlers()
@@ -240,6 +249,7 @@ final class DictationCoordinator: DictationCoordinating {
     ) -> DictationPipelineSession {
         DictationPipelineSession(
             transcriber: result.transcriber,
+            context: activeContext,
             audioDuration: result.duration,
             estimatedSegmentCount: estimatedSegmentCount(for: result.duration),
             stopAudioDuration: Self.seconds(releaseInstant.duration(to: .now)),
@@ -341,6 +351,8 @@ final class DictationCoordinator: DictationCoordinating {
         recordingSession = nil
         pipelineTask = nil
         activeGeneration = nil
+        activeContext = .empty
+        targetApplication = Constants.unknownApplication
         stageReporter.setRuntimeIdle(true)
         refreshEmergencyCancellationHandlers()
     }

@@ -33,6 +33,7 @@ protocol RecordingSessionManaging: AnyObject {
 @MainActor
 protocol RecordingSessionBuilding: AnyObject {
     func makeSession(
+        context: DictationContext,
         onMaximumDuration: @escaping @MainActor () -> Void
     ) -> any RecordingSessionManaging
 }
@@ -177,6 +178,7 @@ final class DefaultRecordingSessionFactory: RecordingSessionBuilding {
     }
 
     func makeSession(
+        context: DictationContext,
         onMaximumDuration: @escaping @MainActor () -> Void
     ) -> any RecordingSessionManaging {
         wordDiagnostics.beginWordDiagnostics()
@@ -185,6 +187,7 @@ final class DefaultRecordingSessionFactory: RecordingSessionBuilding {
             transcriber: SegmentedTranscriber(
                 transcriptionService: transcriptionService,
                 language: transcriptionSettings.configuredLanguage,
+                context: context,
                 wordDiagnostics: wordDiagnostics
             ),
             maximumDuration: recordingSettings.maximumDuration,

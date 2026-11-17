@@ -159,6 +159,9 @@
 		F1000000000000000000000D /* DictationModelPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000D /* DictationModelPreparer.swift */; };
 		F1000000000000000000000E /* DictationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000E /* DictationCoordinatorTests.swift */; };
 		F1000000000000000000000F /* DictationPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000F /* DictationPipelineTests.swift */; };
+		CXT100000000000000000001 /* DictationContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = CXT200000000000000000001 /* DictationContext.swift */; };
+		CXT100000000000000000002 /* DictationContextProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = CXT200000000000000000002 /* DictationContextProviding.swift */; };
+		CXT100000000000000000003 /* AccessibilityDictationContextProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CXT200000000000000000003 /* AccessibilityDictationContextProvider.swift */; };
 		G10000000000000000000001 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = G20000000000000000000001 /* AppEnvironment.swift */; };
 		G10000000000000000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = G20000000000000000000002 /* AppDelegate.swift */; };
 		G10000000000000000000003 /* UserAlertPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = G20000000000000000000003 /* UserAlertPresenting.swift */; };
@@ -422,6 +425,9 @@
 		F2000000000000000000000D /* DictationModelPreparer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationModelPreparer.swift; sourceTree = "<group>"; };
 		F2000000000000000000000E /* DictationCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationCoordinatorTests.swift; sourceTree = "<group>"; };
 		F2000000000000000000000F /* DictationPipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationPipelineTests.swift; sourceTree = "<group>"; };
+		CXT200000000000000000001 /* DictationContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationContext.swift; sourceTree = "<group>"; };
+		CXT200000000000000000002 /* DictationContextProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationContextProviding.swift; sourceTree = "<group>"; };
+		CXT200000000000000000003 /* AccessibilityDictationContextProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityDictationContextProvider.swift; sourceTree = "<group>"; };
 		G20000000000000000000001 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		G20000000000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		G20000000000000000000003 /* UserAlertPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAlertPresenting.swift; sourceTree = "<group>"; };
@@ -695,6 +701,7 @@
 		A4000000000000000000000B /* Coordination */ = {
 			isa = PBXGroup;
 			children = (
+				CXT200000000000000000001 /* DictationContext.swift */,
 				X2000000000000000000000A /* SelectionCorrectionCoordinator.swift */,
 				A20000000000000000000008 /* DictationCoordinator.swift */,
 				A20000000000000000000017 /* DictationSessionPolicy.swift */,
@@ -882,6 +889,7 @@
 		O40000000000000000000001 /* Selection */ = {
 			isa = PBXGroup;
 			children = (
+				CXT200000000000000000003 /* AccessibilityDictationContextProvider.swift */,
 				O20000000000000000000001 /* SelectionSnapshot.swift */,
 				O20000000000000000000002 /* SelectedTextReading.swift */,
 				O20000000000000000000003 /* SelectionEvent.swift */,
@@ -921,6 +929,7 @@
 		F40000000000000000000001 /* Protocols */ = {
 			isa = PBXGroup;
 			children = (
+				CXT200000000000000000002 /* DictationContextProviding.swift */,
 				F20000000000000000000001 /* HotkeyProviding.swift */,
 				F20000000000000000000002 /* AudioRecording.swift */,
 				F20000000000000000000003 /* OverlayPresenting.swift */,
@@ -1189,6 +1198,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CXT100000000000000000001 /* DictationContext.swift in Sources */,
+				CXT100000000000000000002 /* DictationContextProviding.swift in Sources */,
+				CXT100000000000000000003 /* AccessibilityDictationContextProvider.swift in Sources */,
 				B50000000000000000000001 /* Local/LocalModelInactivityPolicy.swift in Sources */,
 				B50000000000000000000002 /* Local/InactivityClock.swift in Sources */,
 				B50000000000000000000003 /* LocalModelInactivityDelay.swift in Sources */,

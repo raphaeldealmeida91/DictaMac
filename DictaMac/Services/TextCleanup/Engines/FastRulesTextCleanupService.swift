@@ -7,11 +7,23 @@ struct FastRulesTextCleanupService: TextCleanupService {
         self.settings = settings
     }
 
-    func cleanup(_ text: String, dictionary: [String]) async throws -> String {
-        Self.cleanup(text, removeIsolatedGenre: settings.removeIsolatedGenre)
+    func cleanup(
+        _ text: String,
+        dictionary: [String],
+        context: DictationContext
+    ) async throws -> String {
+        Self.cleanup(
+            text,
+            removeIsolatedGenre: settings.removeIsolatedGenre,
+            context: context
+        )
     }
 
-    static func cleanup(_ text: String, removeIsolatedGenre: Bool = true) -> String {
+    static func cleanup(
+        _ text: String,
+        removeIsolatedGenre: Bool = true,
+        context: DictationContext = .empty
+    ) -> String {
         var value = text
             .replacingOccurrences(of: #"[\t\r ]+"#, with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -21,7 +33,10 @@ struct FastRulesTextCleanupService: TextCleanupService {
         value = RepeatedSequenceRemover.remove(from: value)
         let repeatedWord = #"(?i)\b([\p{L}\p{M}]+(?:['’][\p{L}\p{M}]+)?)\b(?:\s+\1\b){2,}"#
         value = replacing(repeatedWord, in: value, with: "$1")
-        value = PunctuationNormalizer.normalize(value)
+        value = PunctuationNormalizer.normalize(
+            value,
+            capitalizeInitial: !context.continuesSentence
+        )
         guard !value.isEmpty else { return value }
 
         if let last = value.last, !".!?…".contains(last) {

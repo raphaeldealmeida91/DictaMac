@@ -6,6 +6,7 @@ struct DictationCoordinatorDependencies {
     let audioRecorder: any AudioRecording
     let overlayPresenter: any OverlayPresenting
     let feedbackSoundPlayer: any FeedbackSoundPlaying
+    let contextProvider: any DictationContextProviding
     let recordingSessionFactory: any RecordingSessionBuilding
     let pipeline: any DictationPipelineRunning
     let stageReporter: any DictationStageReporting
@@ -14,5 +15,4 @@ struct DictationCoordinatorDependencies {
     let cancellationRegistry: any EmergencyCancellationRegistering
     let diagnosticLog: any DiagnosticLogging
     let activityModel: AppActivityModel
-    let frontmostApplicationName: () -> String?
 }

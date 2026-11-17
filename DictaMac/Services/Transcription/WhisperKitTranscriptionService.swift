@@ -4,6 +4,11 @@ import OSLog
 import WhisperKit
 
 actor WhisperKitTranscriptionService: TranscriptionService {
+    private enum PromptLimits {
+        static let maximumTokenCount = 224
+        static let reservedContextTokenCount = 64
+    }
+
     private enum AudioGuard {
         static let sampleRate = 16_000
         static let minimumDuration: TimeInterval = 0.25
@@ -89,7 +94,11 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         ProcessMemoryDiagnostics.logFootprint(.whisperUnloaded, diagnosticLog: diagnosticLog)
     }
 
-    func transcribe(_ samples: [Float], language: String?) async throws -> String {
+    func transcribe(
+        _ samples: [Float],
+        language: String?,
+        context: DictationContext
+    ) async throws -> String {
         guard Self.containsAudibleSpeech(samples) else {
             logger.info("transcription skipped reason=short_or_silent samples=\(samples.count)")
             return ""
@@ -105,7 +114,8 @@ actor WhisperKitTranscriptionService: TranscriptionService {
             whisperKit,
             samples: samples,
             language: language,
-            dictionary: personalDictionary.entries().map(\.canonical)
+            dictionary: personalDictionary.entries().map(\.canonical),
+            context: context
         )
     }
 
@@ -113,22 +123,46 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         _ whisperKit: WhisperKit,
         samples: [Float],
         language: String?,
-        dictionary: [String]
+        dictionary: [String],
+        context: DictationContext
     ) async throws -> String {
         let options = Self.decodingOptions(
             language: language,
-            promptTokens: promptTokens(for: dictionary, whisperKit: whisperKit)
+            promptTokens: promptTokens(
+                for: dictionary,
+                context: context,
+                whisperKit: whisperKit
+            )
         )
         let results = try await whisperKit.transcribe(audioArray: samples, decodeOptions: options)
         return WhisperTranscriptionTextCleaner.clean(results.map(\.text).joined(separator: " "))
     }
 
-    private func promptTokens(for dictionary: [String], whisperKit: WhisperKit) -> [Int]? {
-        guard let prompt = Self.dictionaryPrompt(for: dictionary),
-              let tokenizer = whisperKit.tokenizer else { return nil }
-        let tokens = tokenizer.encode(text: prompt)
-            .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
+    private func promptTokens(
+        for dictionary: [String],
+        context: DictationContext,
+        whisperKit: WhisperKit
+    ) -> [Int]? {
+        guard let tokenizer = whisperKit.tokenizer else { return nil }
+        let dictionaryTokens = encoded(
+            Self.dictionaryPrompt(for: dictionary),
+            tokenizer: tokenizer
+        )
+        let contextTokens = encoded(
+            Self.contextPrompt(for: context),
+            tokenizer: tokenizer
+        )
+        let tokens = Self.limitedPromptTokens(
+            dictionaryTokens: dictionaryTokens,
+            contextTokens: contextTokens
+        )
         return tokens.isEmpty ? nil : tokens
+    }
+
+    private func encoded(_ prompt: String?, tokenizer: any WhisperTokenizer) -> [Int] {
+        guard let prompt else { return [] }
+        return tokenizer.encode(text: prompt)
+            .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
     }
 
     static func decodingOptions(language: String?, promptTokens: [Int]?) -> DecodingOptions {
@@ -161,6 +195,26 @@ actor WhisperKitTranscriptionService: TranscriptionService {
         }
         let beginning = terms.dropLast().joined(separator: ", ")
         return "La dictée peut contenir notamment \(beginning) et \(last)."
+    }
+
+    static func contextPrompt(for context: DictationContext) -> String? {
+        let words = context.lastTwentyWords
+        guard !words.isEmpty else { return nil }
+        return "Texte précédant immédiatement la dictée : \(words)"
+    }
+
+    static func limitedPromptTokens(
+        dictionaryTokens: [Int],
+        contextTokens: [Int]
+    ) -> [Int] {
+        let reservedContextCount = min(
+            contextTokens.count,
+            PromptLimits.reservedContextTokenCount
+        )
+        let dictionaryBudget = PromptLimits.maximumTokenCount - reservedContextCount
+        let selectedDictionary = dictionaryTokens.prefix(dictionaryBudget)
+        let contextBudget = PromptLimits.maximumTokenCount - selectedDictionary.count
+        return Array(selectedDictionary) + Array(contextTokens.suffix(contextBudget))
     }
 
     static func containsAudibleSpeech(_ samples: [Float]) -> Bool {
@@ -276,7 +330,8 @@ actor WhisperKitTranscriptionService: TranscriptionService {
             kit,
             samples: Array(repeating: 0, count: 16_000),
             language: "fr",
-            dictionary: []
+            dictionary: [],
+            context: .empty
         )
         let seconds = Self.seconds(start.duration(to: .now))
         logger.info("whisper warmup duration=\(seconds, format: .fixed(precision: 3))s audio=1.000s")

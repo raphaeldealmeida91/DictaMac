@@ -56,6 +56,7 @@ actor SegmentedTranscriber {
 
     private let transcriptionService: any TranscriptionService
     private let language: String?
+    private let context: DictationContext
     private let configuration: Configuration
     private let wordDiagnostics: (any TextWordDiagnosticsRecording)?
     private var audio: [Float] = []
@@ -77,11 +78,13 @@ actor SegmentedTranscriber {
     init(
         transcriptionService: any TranscriptionService,
         language: String?,
+        context: DictationContext = .empty,
         configuration: Configuration = .standard,
         wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil
     ) {
         self.transcriptionService = transcriptionService
         self.language = language
+        self.context = context
         self.configuration = configuration
         self.wordDiagnostics = wordDiagnostics
     }
@@ -167,8 +170,12 @@ actor SegmentedTranscriber {
                 let start = ContinuousClock.now
                 do {
                     let operation: @Sendable () async throws -> String = {
-                        [transcriptionService, language, finalSamples] in
-                        try await transcriptionService.transcribe(finalSamples, language: language)
+                        [transcriptionService, language, context, finalSamples] in
+                        try await transcriptionService.transcribe(
+                            finalSamples,
+                            language: language,
+                            context: context
+                        )
                     }
                     let text = try await operation()
                     let elapsed = Self.seconds(start.duration(to: .now))
@@ -293,7 +300,11 @@ actor SegmentedTranscriber {
 
             let start = ContinuousClock.now
             do {
-                let text = try await transcriptionService.transcribe(samples, language: language)
+                let text = try await transcriptionService.transcribe(
+                    samples,
+                    language: language,
+                    context: context
+                )
                 let elapsed = Self.seconds(start.duration(to: .now))
                 await recordRawWhisper(text, index: index)
                 segments.append(TranscribedSegment(index: index, text: text))
@@ -317,7 +328,11 @@ actor SegmentedTranscriber {
     private func transcribeCompleteAudio(reason: String) async throws -> String {
         try Task.checkCancellation()
         let start = ContinuousClock.now
-        let text = try await transcriptionService.transcribe(audio, language: language)
+        let text = try await transcriptionService.transcribe(
+            audio,
+            language: language,
+            context: context
+        )
         rawWordCounts.removeAll()
         await recordRawWhisper(text, index: 0)
         let elapsed = Self.seconds(start.duration(to: .now))

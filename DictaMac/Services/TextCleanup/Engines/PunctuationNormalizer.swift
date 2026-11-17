@@ -4,7 +4,7 @@ struct PunctuationNormalizer {
     private static let spokenEllipsisMarker = "\u{E000}"
     private static let punctuation = CharacterSet(charactersIn: ",.;:!?")
 
-    static func normalize(_ text: String) -> String {
+    static func normalize(_ text: String, capitalizeInitial: Bool = true) -> String {
         var value = preservingSpokenEllipsis(in: text)
         value = replacing(#"[\t\r\n ]+"#, in: value, with: " ")
         value = replacing(#"\.{3,}|…"#, in: value, with: ".")
@@ -12,7 +12,7 @@ struct PunctuationNormalizer {
         value = collapsingPunctuationRuns(in: value)
         value = convertingQuotationMarks(in: value)
         value = applyingFrenchSpacing(to: value)
-        value = capitalizingSentences(in: value)
+        value = capitalizingSentences(in: value, capitalizeInitial: capitalizeInitial)
         return restoringSpokenEllipsis(in: value)
     }
 
@@ -61,9 +61,12 @@ struct PunctuationNormalizer {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private static func capitalizingSentences(in text: String) -> String {
+    private static func capitalizingSentences(
+        in text: String,
+        capitalizeInitial: Bool
+    ) -> String {
         var result = ""
-        var shouldCapitalize = true
+        var shouldCapitalize = capitalizeInitial
         for character in text {
             if character.isLetter, shouldCapitalize {
                 result.append(contentsOf: String(character).uppercased())

@@ -23,21 +23,29 @@ actor LocalTextCleanupService: TextCleanupService {
         self.wordDiagnostics = wordDiagnostics
     }
 
-    func cleanup(_ text: String, dictionary: [String]) async throws -> String {
+    func cleanup(
+        _ text: String,
+        dictionary: [String],
+        context: DictationContext
+    ) async throws -> String {
         guard TextCleanupPostProcessor.shouldClean(text) else {
             logger.info("cleanup engine=local decision=fast-rules reason=under-two-words")
-            return FastRulesTextCleanupService.cleanup(text)
+            return FastRulesTextCleanupService.cleanup(text, context: context)
         }
         try await generator.prepare()
-        return try await generateCleanup(for: text, dictionary: dictionary)
+        return try await generateCleanup(for: text, dictionary: dictionary, context: context)
     }
 
-    private func generateCleanup(for text: String, dictionary: [String]) async throws -> String {
+    private func generateCleanup(
+        for text: String,
+        dictionary: [String],
+        context: DictationContext
+    ) async throws -> String {
         let start = ContinuousClock.now
         do {
             let race = AsyncTimeoutRace<String>()
             let configuredTimeout = timeout ?? .milliseconds(Int64(settings.localTimeout * 1_000))
-            let messages = messages(for: text, dictionary: dictionary)
+            let messages = messages(for: text, dictionary: dictionary, context: context)
             let candidate = try await race.run(timeout: configuredTimeout) { [generator] in
                 try await generator.generate(text: text, messages: messages, maxTokens: .max)
             }
@@ -70,11 +78,16 @@ actor LocalTextCleanupService: TextCleanupService {
         }
     }
 
-    private func messages(for text: String, dictionary: [String]) -> [[String: String]] {
+    private func messages(
+        for text: String,
+        dictionary: [String],
+        context: DictationContext
+    ) -> [[String: String]] {
         [
             ["role": "system", "content": promptBuilder.systemPrompt(
                 style: settings.cleanupStyle,
-                dictionary: dictionary
+                dictionary: dictionary,
+                context: context
             )],
             ["role": "user", "content": "<dictation>\(text)</dictation>"]
         ]

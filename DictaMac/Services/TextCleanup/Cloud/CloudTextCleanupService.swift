@@ -41,14 +41,23 @@ actor CloudTextCleanupService: TextCleanupService {
         self.wordDiagnostics = wordDiagnostics
     }
 
-    func cleanup(_ text: String, dictionary: [String]) async throws -> String {
+    func cleanup(
+        _ text: String,
+        dictionary: [String],
+        context: DictationContext
+    ) async throws -> String {
         guard TextCleanupPostProcessor.shouldClean(text) else {
             logger.info("cleanup engine=cloud decision=fast-rules reason=under-two-words")
-            return FastRulesTextCleanupService.cleanup(text)
+            return FastRulesTextCleanupService.cleanup(text, context: context)
         }
         let start = ContinuousClock.now
+        let requestContext = settings.configuredEngine == .cloud ? context : .empty
         do {
-            let candidate = try await requestCleanup(text, dictionary: dictionary)
+            let candidate = try await requestCleanup(
+                text,
+                dictionary: dictionary,
+                context: requestContext
+            )
             return try processed(raw: text, candidate: candidate, dictionary: dictionary, start: start)
         } catch is CancellationError {
             logger.info("cleanup fallback engine=cloud reason=cancelled")
@@ -64,21 +73,30 @@ actor CloudTextCleanupService: TextCleanupService {
         }
     }
 
-    private func requestCleanup(_ text: String, dictionary: [String]) async throws -> String {
+    private func requestCleanup(
+        _ text: String,
+        dictionary: [String],
+        context: DictationContext
+    ) async throws -> String {
         let candidate = try await generator.generate(
             text: text,
-            messages: messages(for: text, dictionary: dictionary),
+            messages: messages(for: text, dictionary: dictionary, context: context),
             maxTokens: .max
         )
         await wordDiagnostics?.recordWordCount(candidate, stage: .llmRaw)
         return candidate
     }
 
-    private func messages(for text: String, dictionary: [String]) -> [[String: String]] {
+    private func messages(
+        for text: String,
+        dictionary: [String],
+        context: DictationContext
+    ) -> [[String: String]] {
         [
             ["role": "system", "content": promptBuilder.systemPrompt(
                 style: settings.cleanupStyle,
-                dictionary: dictionary
+                dictionary: dictionary,
+                context: context
             )],
             ["role": "user", "content": "<dictation>\(text)</dictation>"]
         ]
