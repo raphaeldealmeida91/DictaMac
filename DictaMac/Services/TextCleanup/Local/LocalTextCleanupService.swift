@@ -6,6 +6,7 @@ actor LocalTextCleanupService: TextCleanupService {
     private let settings: any TextCleanupSettings
     private let timeout: Duration?
     private let promptBuilder: CleanupPromptBuilder
+    private let validator: DictationCleanupValidator
     private let wordDiagnostics: (any TextWordDiagnosticsRecording)?
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "DictaMac", category: "TextCleanup")
 
@@ -14,12 +15,14 @@ actor LocalTextCleanupService: TextCleanupService {
         settings: any TextCleanupSettings = StoredTextCleanupSettings(),
         timeout: Duration? = nil,
         promptBuilder: CleanupPromptBuilder = CleanupPromptBuilder(),
+        validator: DictationCleanupValidator = DictationCleanupValidator(),
         wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil
     ) {
         self.generator = generator
         self.settings = settings
         self.timeout = timeout
         self.promptBuilder = promptBuilder
+        self.validator = validator
         self.wordDiagnostics = wordDiagnostics
     }
 
@@ -50,14 +53,14 @@ actor LocalTextCleanupService: TextCleanupService {
                 try await generator.generate(text: text, messages: messages, maxTokens: .max)
             }
             await wordDiagnostics?.recordWordCount(candidate, stage: .llmRaw)
-            let decision = TextCleanupPostProcessor.process(
-                raw: text,
-                candidate: candidate,
-                style: settings.cleanupStyle,
-                dictionary: dictionary
-            )
+            let decision = validatedDecision(raw: text, candidate: candidate, dictionary: dictionary)
             logDuration(since: start, decision: decision)
-            return try validatedText(from: decision)
+            return validatedText(
+                from: decision,
+                original: text,
+                candidateLength: candidate.count,
+                context: context
+            )
         } catch is CancellationError {
             logger.info("cleanup fallback engine=local reason=cancelled")
             throw CancellationError()
@@ -68,13 +71,37 @@ actor LocalTextCleanupService: TextCleanupService {
         }
     }
 
-    private func validatedText(from decision: CleanupDecision) throws -> String {
+    private func validatedDecision(
+        raw: String,
+        candidate: String,
+        dictionary: [String]
+    ) -> CleanupDecision {
+        switch validator.validate(original: raw, candidate: candidate, dictionary: dictionary) {
+        case .accepted(let cleaned):
+            return .cleaned(cleaned)
+        case .rejected(let reason):
+            return .fallback(reason: reason.rawValue)
+        }
+    }
+
+    private func validatedText(
+        from decision: CleanupDecision,
+        original: String,
+        candidateLength: Int,
+        context: DictationContext
+    ) -> String {
         switch decision {
         case .cleaned(let cleaned):
             return cleaned
         case .fallback(let reason):
-            logger.warning("cleanup rejected: \(reason, privacy: .private)")
-            throw TextCleanupError.outputRejected(reason: reason)
+            logger.warning(
+                "cleanup rejected reason=\(reason, privacy: .public) input_length=\(original.count) output_length=\(candidateLength)"
+            )
+            return FastRulesTextCleanupService.cleanup(
+                original,
+                removeIsolatedGenre: settings.removeIsolatedGenre,
+                context: context
+            )
         }
     }
 

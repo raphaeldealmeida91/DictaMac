@@ -2,7 +2,9 @@ import AppKit
 
 @MainActor
 final class GlobalSelectionEventMonitor: SelectionEventMonitoring {
-    private static let arrowKeyCodes: Set<UInt16> = [123, 124, 125, 126]
+    private static let selectionNavigationKeyCodes: Set<UInt16> = [
+        115, 116, 119, 121, 123, 124, 125, 126
+    ]
     private static let selectAllKeyCode: UInt16 = 0
 
     private var continuation: AsyncStream<Void>.Continuation?
@@ -68,8 +70,9 @@ final class GlobalSelectionEventMonitor: SelectionEventMonitoring {
 
     private func isSelectionShortcut(_ event: MonitoredEvent) -> Bool {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-        let shiftArrow = modifiers.contains(.shift) && Self.arrowKeyCodes.contains(event.keyCode)
+        let shiftNavigation = modifiers.contains(.shift)
+            && Self.selectionNavigationKeyCodes.contains(event.keyCode)
         let selectAll = modifiers.contains(.command) && event.keyCode == Self.selectAllKeyCode
-        return shiftArrow || selectAll
+        return shiftNavigation || selectAll
     }
 }

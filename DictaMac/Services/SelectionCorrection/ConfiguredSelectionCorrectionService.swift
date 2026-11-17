@@ -61,7 +61,10 @@ actor ConfiguredSelectionCorrectionService: SelectionCorrectionService {
         let engine = await engineStatus()
         logger.info("engine selected engine=\(engine.rawValue, privacy: .public) length=\(text.count)")
         let modelAlreadyLoaded = await localGenerator.isReady
-        if engine == .local { try await localGenerator.prepare() }
+        if engine == .local {
+            if !modelAlreadyLoaded { await activateLocalModel() }
+            try await localGenerator.prepare()
+        }
         let inferenceStartedAt = ContinuousClock.now
         let candidate = try await candidate(for: text, dictionary: dictionary, engine: engine)
         let inferenceFinishedAt = ContinuousClock.now
@@ -100,7 +103,7 @@ actor ConfiguredSelectionCorrectionService: SelectionCorrectionService {
             return .cloud
         }
         guard !safeMode.isEnabled else { return .rulesOnly }
-        if cleanupSettings.configuredEngine == .local, cleanupSettings.localDownloadApproved {
+        if cleanupSettings.localDownloadApproved {
             return .local
         }
         return .rulesOnly
@@ -112,8 +115,7 @@ actor ConfiguredSelectionCorrectionService: SelectionCorrectionService {
 
     func prepare() async {
         let isReady = await localGenerator.isReady
-        guard cleanupSettings.configuredEngine == .local,
-              cleanupSettings.localDownloadApproved,
+        guard cleanupSettings.localDownloadApproved,
               !isReady else { return }
         await activateLocalModel()
     }

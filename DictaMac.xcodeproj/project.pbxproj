@@ -164,6 +164,7 @@
 		CXT100000000000000000003 /* AccessibilityDictationContextProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CXT200000000000000000003 /* AccessibilityDictationContextProvider.swift */; };
 		G10000000000000000000001 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = G20000000000000000000001 /* AppEnvironment.swift */; };
 		G10000000000000000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = G20000000000000000000002 /* AppDelegate.swift */; };
+		G1000000000000000000000F /* ApplicationPresence.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000000000000000000000F /* ApplicationPresence.swift */; };
 		G10000000000000000000003 /* UserAlertPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = G20000000000000000000003 /* UserAlertPresenting.swift */; };
 		G10000000000000000000004 /* MemoryPressureMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = G20000000000000000000004 /* MemoryPressureMonitor.swift */; };
 		G10000000000000000000005 /* SafeModeLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = G20000000000000000000005 /* SafeModeLauncher.swift */; };
@@ -223,6 +224,8 @@
 		T10000000000000000000007 /* DictionaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T20000000000000000000007 /* DictionaryTests.swift */; };
 		U10000000000000000000001 /* CleanupStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = U20000000000000000000001 /* CleanupStyle.swift */; };
 		U10000000000000000000002 /* CleanupPromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = U20000000000000000000002 /* CleanupPromptBuilder.swift */; };
+		U10000000000000000000003 /* CleanupPromptExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = U20000000000000000000003 /* CleanupPromptExample.swift */; };
+		U10000000000000000000004 /* DictationCleanupValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = U20000000000000000000004 /* DictationCleanupValidator.swift */; };
 		V10000000000000000000001 /* DictionaryEntryDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = V20000000000000000000001 /* DictionaryEntryDraft.swift */; };
 		V10000000000000000000002 /* DictionaryFileManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = V20000000000000000000002 /* DictionaryFileManaging.swift */; };
 		V10000000000000000000003 /* JSONDictionaryFileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = V20000000000000000000003 /* JSONDictionaryFileManager.swift */; };
@@ -430,6 +433,7 @@
 		CXT200000000000000000003 /* AccessibilityDictationContextProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityDictationContextProvider.swift; sourceTree = "<group>"; };
 		G20000000000000000000001 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		G20000000000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		G2000000000000000000000F /* ApplicationPresence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationPresence.swift; sourceTree = "<group>"; };
 		G20000000000000000000003 /* UserAlertPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAlertPresenting.swift; sourceTree = "<group>"; };
 		G20000000000000000000004 /* MemoryPressureMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryPressureMonitor.swift; sourceTree = "<group>"; };
 		G20000000000000000000005 /* SafeModeLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeModeLauncher.swift; sourceTree = "<group>"; };
@@ -489,6 +493,8 @@
 		T20000000000000000000007 /* DictionaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryTests.swift; sourceTree = "<group>"; };
 		U20000000000000000000001 /* CleanupStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupStyle.swift; sourceTree = "<group>"; };
 		U20000000000000000000002 /* CleanupPromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupPromptBuilder.swift; sourceTree = "<group>"; };
+		U20000000000000000000003 /* CleanupPromptExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupPromptExample.swift; sourceTree = "<group>"; };
+		U20000000000000000000004 /* DictationCleanupValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationCleanupValidator.swift; sourceTree = "<group>"; };
 		V20000000000000000000001 /* DictionaryEntryDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryEntryDraft.swift; sourceTree = "<group>"; };
 		V20000000000000000000002 /* DictionaryFileManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryFileManaging.swift; sourceTree = "<group>"; };
 		V20000000000000000000003 /* JSONDictionaryFileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONDictionaryFileManager.swift; sourceTree = "<group>"; };
@@ -588,6 +594,7 @@
 				G2000000000000000000000E /* AppEnvironment+Dictation.swift */,
 				O2000000000000000000000C /* AppEnvironment+Selection.swift */,
 				G20000000000000000000002 /* AppDelegate.swift */,
+				G2000000000000000000000F /* ApplicationPresence.swift */,
 				G20000000000000000000003 /* UserAlertPresenting.swift */,
 				G20000000000000000000004 /* MemoryPressureMonitor.swift */,
 				G20000000000000000000005 /* SafeModeLauncher.swift */,
@@ -743,6 +750,8 @@
 				B60000000000000000000002 /* Local/InactivityClock.swift */,
 				A2000000000000000000000D /* TextCleanupService.swift */,
 				U20000000000000000000002 /* CleanupPromptBuilder.swift */,
+				U20000000000000000000003 /* CleanupPromptExample.swift */,
+				U20000000000000000000004 /* DictationCleanupValidator.swift */,
 				A2000000000000000000000E /* Local/LocalTextCleanupService.swift */,
 				E20000000000000000000001 /* TextCleanupEngine.swift */,
 				E20000000000000000000002 /* Engines/FastRulesTextCleanupService.swift */,
@@ -1294,6 +1303,8 @@
 				T10000000000000000000005 /* StoredPersonalDictionary.swift in Sources */,
 				T10000000000000000000006 /* DictionaryCorrector.swift in Sources */,
 				U10000000000000000000002 /* CleanupPromptBuilder.swift in Sources */,
+				U10000000000000000000003 /* CleanupPromptExample.swift in Sources */,
+				U10000000000000000000004 /* DictationCleanupValidator.swift in Sources */,
 				E10000000000000000000004 /* TextCleanupPostProcessor.swift in Sources */,
 				E10000000000000000000005 /* Cloud/TextCleanupError.swift in Sources */,
 				E10000000000000000000006 /* Cloud/TextCleanupAPIKeyStore.swift in Sources */,
@@ -1354,6 +1365,7 @@
 				G1000000000000000000000D /* AppEnvironment+Cleanup.swift in Sources */,
 				G1000000000000000000000E /* AppEnvironment+Dictation.swift in Sources */,
 				G10000000000000000000002 /* AppDelegate.swift in Sources */,
+				G1000000000000000000000F /* ApplicationPresence.swift in Sources */,
 				G10000000000000000000003 /* UserAlertPresenting.swift in Sources */,
 				G10000000000000000000004 /* MemoryPressureMonitor.swift in Sources */,
 				G10000000000000000000005 /* SafeModeLauncher.swift in Sources */,

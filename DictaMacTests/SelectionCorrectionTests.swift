@@ -93,7 +93,7 @@ final class ConfiguredSelectionCorrectionServiceTests: XCTestCase {
         XCTAssertEqual(correction, .unchanged(original))
     }
 
-    func testCloudRequiresExplicitPermission() async throws {
+    func testLocalCorrectionDoesNotDependOnDictationCleanupEngine() async throws {
         let original = "Les enfant jouent dans le jardin."
         let local = CorrectionFakeGenerator(output: "Les enfants jouent dans le jardin.")
         let cloud = CorrectionFakeGenerator(output: "Les jeunes jouent dans le jardin.")
@@ -103,8 +103,8 @@ final class ConfiguredSelectionCorrectionServiceTests: XCTestCase {
         let engine = await service.engineStatus()
         let cloudCallCount = await cloud.callCount
 
-        XCTAssertEqual(engine, .rulesOnly)
-        XCTAssertEqual(correction, .unchanged(original))
+        XCTAssertEqual(engine, .local)
+        XCTAssertEqual(correction.corrected, "Les enfants jouent dans le jardin.")
         XCTAssertEqual(cloudCallCount, 0)
     }
 

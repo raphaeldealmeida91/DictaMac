@@ -115,31 +115,129 @@ final class TextCleanupPostProcessorTests: XCTestCase {
     }
 }
 
+final class DictationCleanupValidatorTests: XCTestCase {
+    private let validator = DictationCleanupValidator()
+    private let original = "Merci de confirmer la livraison prévue demain matin à l’entrepôt central."
+
+    func testRejectsEmptyOutput() {
+        XCTAssertEqual(validator.validate(original: original, candidate: "  "), .rejected(.emptyOutput))
+    }
+
+    func testRejectsOutputMoreThanThirtyPercentLonger() {
+        let candidate = original + String(repeating: " ajout", count: 8)
+
+        XCTAssertEqual(
+            validator.validate(original: original, candidate: candidate),
+            .rejected(.excessiveLength)
+        )
+    }
+
+    func testRejectsLossOfTooManySignificantWords() {
+        XCTAssertEqual(
+            validator.validate(original: original, candidate: "Merci de confirmer demain."),
+            .rejected(.significantWordLoss)
+        )
+    }
+
+    func testRejectsIntroducedUnrelatedPreamble() {
+        let candidate = "Voici le texte : \(original)"
+
+        XCTAssertEqual(
+            validator.validate(original: original, candidate: candidate),
+            .rejected(.unrelatedPreamble)
+        )
+    }
+
+    func testRejectsIntroducedAssistantAnswer() {
+        let candidate = "Bien sûr : \(original)"
+
+        XCTAssertEqual(
+            validator.validate(original: original, candidate: candidate),
+            .rejected(.assistantAnswer)
+        )
+    }
+
+    func testRejectsAnswerGeneratedFromDictatedQuestion() {
+        let raw = "Quelle est la date prévue pour la livraison du dossier ?"
+        let candidate = "La livraison du dossier est prévue mardi prochain."
+
+        XCTAssertEqual(
+            validator.validate(original: raw, candidate: candidate),
+            .rejected(.assistantAnswer)
+        )
+    }
+
+    func testRejectsMissingNumber() {
+        let raw = "Confirme la livraison de 12 cartons demain matin."
+        let candidate = "Confirme la livraison des cartons demain matin."
+
+        XCTAssertEqual(
+            validator.validate(original: raw, candidate: candidate),
+            .rejected(.missingNumber)
+        )
+    }
+
+    func testRejectsMissingURL() {
+        let raw = "Consulte https://example.com puis confirme la livraison."
+        let candidate = "Consulte le site puis confirme la livraison."
+
+        XCTAssertEqual(
+            validator.validate(original: raw, candidate: candidate),
+            .rejected(.missingURL)
+        )
+    }
+
+    func testRejectsChangedDictionaryTerm() {
+        let raw = "Le ticket DictaMac concerne la livraison de demain."
+        let candidate = "Le ticket Dictamac concerne la livraison de demain."
+
+        XCTAssertEqual(
+            validator.validate(original: raw, candidate: candidate, dictionary: ["DictaMac"]),
+            .rejected(.dictionaryTerm)
+        )
+    }
+
+    func testRejectsIntroducedEllipsis() {
+        let candidate = "Merci de confirmer la livraison prévue demain matin à l’entrepôt central…"
+
+        XCTAssertEqual(
+            validator.validate(original: original, candidate: candidate),
+            .rejected(.introducedEllipsis)
+        )
+    }
+
+    func testAcceptsConservativeAutoCorrection() {
+        let raw = "On se voit lundi, enfin non, plutôt mardi à 14 heures."
+        let candidate = "On se voit mardi à 14 heures."
+
+        XCTAssertEqual(validator.validate(original: raw, candidate: candidate), .accepted(candidate))
+    }
+}
+
 final class CleanupPromptBuilderTests: XCTestCase {
-    func testPolishedPromptContainsEditorialRulesAndSMSExample() {
+    func testPolishedPromptContainsStructuredRules() {
         let prompt = CleanupPromptBuilder().systemPrompt(
             style: .polished,
             dictionary: ["SFM30", "ChatGPT"]
         )
 
-        XCTAssertTrue(prompt.contains("TOUTES les fautes"))
-        XCTAssertTrue(prompt.contains("abréviations et le langage SMS"))
-        XCTAssertTrue(prompt.contains("français naturel et poli"))
+        XCTAssertTrue(prompt.contains("RÔLE"))
+        XCTAssertTrue(prompt.contains("RÈGLES STRICTES"))
+        XCTAssertTrue(prompt.contains("MISE EN FORME"))
+        XCTAssertTrue(prompt.contains("Ne réponds jamais"))
+        XCTAssertTrue(prompt.contains("N’ajoute aucune information"))
         XCTAssertTrue(prompt.contains("Conserve strictement le sens"))
         XCTAssertTrue(prompt.contains("tutoiement ou le vouvoiement"))
-        XCTAssertTrue(prompt.contains("SFM30, devis et Prazo Elevator"))
-        XCTAssertTrue(prompt.contains("N’ajoute aucune information"))
-        XCTAssertTrue(prompt.contains("ne réponds pas au texte"))
-        XCTAssertTrue(prompt.contains("S’il est déjà correct, ne le modifie presque pas"))
-        XCTAssertTrue(prompt.contains("<dictation>salut tkt stp envoie moi le devis SFM30 de Prazo Elevator pr demain merci</dictation>"))
-        XCTAssertTrue(prompt.contains("Salut, ne t’inquiète pas. S’il te plaît, envoie-moi le devis SFM30 de Prazo Elevator pour demain. Merci."))
+        XCTAssertTrue(prompt.contains("espace insécable fine"))
+        XCTAssertTrue(prompt.contains("sous forme de liste"))
+        XCTAssertTrue(prompt.contains("paragraphes cohérents"))
         XCTAssertTrue(prompt.contains("SFM30, ChatGPT"))
     }
 
     func testCorrectionPromptLimitsRephrasingToNecessaryChanges() {
         let prompt = CleanupPromptBuilder().systemPrompt(style: .correction, dictionary: [])
-        XCTAssertTrue(prompt.contains("Reformule uniquement lorsque c’est nécessaire"))
-        XCTAssertTrue(prompt.contains("conserve la formulation d’origine"))
+        XCTAssertTrue(prompt.contains("Conserve la formulation d’origine"))
+        XCTAssertTrue(prompt.contains("ne reformule que ce qui est indispensable"))
     }
 
     func testPromptContainsUsageContinuityAndExactDictionaryTerms() {
@@ -160,9 +258,29 @@ final class CleanupPromptBuilderTests: XCTestCase {
         XCTAssertTrue(prompt.contains("DictaMac, SFM30"))
     }
 
+    func testAutoCorrectionFewShotIsRendered() { assertPromptContainsExample(named: "auto-correction") }
+    func testEnumerationFewShotIsRendered() { assertPromptContainsExample(named: "énumération") }
+    func testEmailFewShotIsRendered() { assertPromptContainsExample(named: "e-mail") }
+    func testChatFewShotIsRendered() { assertPromptContainsExample(named: "message de chat") }
+    func testTechnicalTermsFewShotIsRendered() { assertPromptContainsExample(named: "termes techniques") }
+    func testContinuationFewShotIsRendered() { assertPromptContainsExample(named: "continuité") }
+    func testHesitationFewShotIsRendered() { assertPromptContainsExample(named: "hésitations et répétitions") }
+
     func testCleanupStylesProvideUserFacingExplanations() {
         XCTAssertTrue(CleanupStyle.correction.explanation.contains("sans modifier"))
         XCTAssertTrue(CleanupStyle.polished.explanation.contains("reformule"))
+    }
+
+    private func assertPromptContainsExample(named name: String) {
+        guard let example = CleanupPromptExample.all.first(where: { $0.name == name }) else {
+            return XCTFail("Exemple absent : \(name)")
+        }
+        let prompt = CleanupPromptBuilder().systemPrompt(style: .polished, dictionary: [])
+        XCTAssertTrue(prompt.contains("<dictation>\(example.input)</dictation>"))
+        XCTAssertTrue(prompt.contains(example.output))
+        if let precedingContext = example.precedingContext {
+            XCTAssertTrue(prompt.contains("<preceding_context>\(precedingContext)</preceding_context>"))
+        }
     }
 }
 
@@ -467,11 +585,13 @@ private actor FakeLocalGenerator: LocalTextGenerating {
     enum Behavior: Sendable { case output(String), delayed(Duration, String) }
     let behavior: Behavior
     private var receivedMessages: [[String: String]] = []
+    private var callCount = 0
     var isReady: Bool { true }
 
     init(_ behavior: Behavior) { self.behavior = behavior }
 
     func generate(text: String, messages: [[String: String]], maxTokens: Int) async throws -> String {
+        callCount += 1
         receivedMessages = messages
         switch behavior {
         case .output(let value): return value
@@ -482,6 +602,7 @@ private actor FakeLocalGenerator: LocalTextGenerating {
     }
 
     func messages() -> [[String: String]] { receivedMessages }
+    func generationCount() -> Int { callCount }
 }
 
 final class LocalTextCleanupServiceTests: XCTestCase {
@@ -514,18 +635,33 @@ final class LocalTextCleanupServiceTests: XCTestCase {
         }
     }
 
-    func testRejectedOutputIsReported() async throws {
+    func testRejectedOutputFallsBackToFastRules() async throws {
         let service = LocalTextCleanupService(
             generator: FakeLocalGenerator(.output(String(repeating: "hallucination ", count: 20)))
         )
-        do {
-            _ = try await service.cleanup(raw)
-            XCTFail("Expected rejection")
-        } catch TextCleanupError.outputRejected {
-            // Expected.
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
+
+        let result = try await service.cleanup(raw)
+
+        XCTAssertEqual(result, FastRulesTextCleanupService.cleanup(raw))
+    }
+
+    func testOneWordPhraseUsesFastRulesWithoutCallingModel() async throws {
+        let generator = FakeLocalGenerator(.output("Réponse inattendue"))
+        let service = LocalTextCleanupService(generator: generator)
+
+        let result = try await service.cleanup("merci")
+        let generationCount = await generator.generationCount()
+
+        XCTAssertEqual(result, "Merci.")
+        XCTAssertEqual(generationCount, 0)
+    }
+
+    func testShortQuestionFallsBackWithoutChangingItsMeaning() async throws {
+        let service = LocalTextCleanupService(generator: FakeLocalGenerator(.output("Bien sûr : tout va bien.")))
+
+        let result = try await service.cleanup("ça va ?")
+
+        XCTAssertEqual(result, "Ça va ?")
     }
 
     func testCanonicalDictionaryTermsAreProvidedToLocalModel() async throws {

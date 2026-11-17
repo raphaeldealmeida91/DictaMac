@@ -38,6 +38,13 @@ struct GeneralSettingsView: View {
                     .frame(width: Theme.Settings.controlWidth)
                 }
                 Divider()
+                SettingsRow(
+                    title: "Afficher dans le Dock",
+                    description: "Rend DictaMac visible dans « Forcer à quitter » (⌥⌘⎋) en cas de blocage."
+                ) {
+                    Toggle("", isOn: $viewModel.showsInDock).labelsHidden()
+                }
+                Divider()
                 SettingsRow(title: "Lancer à l’ouverture de session", description: viewModel.launchAtLoginStatus) {
                     Toggle("", isOn: Binding(
                         get: { viewModel.launchAtLoginEnabled },

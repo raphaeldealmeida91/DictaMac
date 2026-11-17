@@ -19,7 +19,7 @@ final class SelectionWatcher {
     private var monitoringTask: Task<Void, Never>?
     private var debounceTask: Task<Void, Never>?
     private var continuation: AsyncStream<SelectionEvent>.Continuation?
-    private var lastText: String?
+    private var hasSelection = false
     private(set) var latestDetectionInstant: ContinuousClock.Instant?
 
     init(
@@ -93,8 +93,7 @@ final class SelectionWatcher {
             clearSelectionIfNeeded()
             return
         }
-        guard snapshot.text != lastText else { return }
-        lastText = snapshot.text
+        hasSelection = true
         continuation?.yield(.selected(snapshot))
     }
 
@@ -116,8 +115,8 @@ final class SelectionWatcher {
     }
 
     private func clearSelectionIfNeeded() {
-        guard lastText != nil else { return }
-        lastText = nil
+        guard hasSelection else { return }
+        hasSelection = false
         continuation?.yield(.cleared)
     }
 }

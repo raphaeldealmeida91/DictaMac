@@ -4,6 +4,12 @@ import Foundation
 @MainActor
 final class GeneralSettingsViewModel: ObservableObject {
     @Published var feedbackSoundsEnabled: Bool { didSet { persist(.bool(feedbackSoundsEnabled), .feedbackSoundsEnabled) } }
+    @Published var showsInDock: Bool {
+        didSet {
+            persist(.bool(showsInDock), .appShowsInDock)
+            applyDockPresence(showsInDock)
+        }
+    }
     @Published var historyEnabled: Bool { didSet { persist(.bool(historyEnabled), .historyEnabled) } }
     @Published var maximumRecordingDuration: Double {
         didSet { persist(.double(maximumRecordingDuration), .recordingMaximumDuration) }
@@ -19,6 +25,7 @@ final class GeneralSettingsViewModel: ObservableObject {
     let recordingDurationRange = StoredRecordingSettings.allowedRange
     let versionDescription: String
     private let store: any SettingsStoring
+    private let applyDockPresence: @MainActor (Bool) -> Void
     private let setLaunchAtLogin: (Bool) -> Void
     private let refreshLaunchAtLogin: () -> Void
     private let clearStoredHistory: () throws -> Void
@@ -29,9 +36,12 @@ final class GeneralSettingsViewModel: ObservableObject {
         store: any SettingsStoring,
         launchAtLogin: Launch,
         history: History,
-        versionInfo: AppVersionInfo = .current
+        versionInfo: AppVersionInfo = .current,
+        applyDockPresence: @escaping @MainActor (Bool) -> Void = { ApplicationPresence.apply(showsInDock: $0) }
     ) {
         self.store = store
+        self.applyDockPresence = applyDockPresence
+        showsInDock = store.bool(for: .appShowsInDock) ?? ApplicationPresence.defaultShowsInDock
         feedbackSoundsEnabled = store.bool(for: .feedbackSoundsEnabled) ?? true
         historyEnabled = store.bool(for: .historyEnabled) ?? StoredHistorySettings.defaultEnabled
         maximumRecordingDuration = StoredRecordingSettings.clamped(

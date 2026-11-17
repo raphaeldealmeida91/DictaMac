@@ -88,7 +88,7 @@ extension AppEnvironment {
             localGenerator: localGenerator,
             cloudGenerator: cloudGenerator,
             apiKeyProvider: { try TextCleanupAPIKeyStore.load() },
-            activateLocalModel: { await localGenerator.activateConfiguredModel() }
+            activateLocalModel: { await localGenerator.activateConfiguredModelForSelectionCorrection() }
         )
     }
 

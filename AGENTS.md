@@ -6,7 +6,7 @@ WhisperKit et le texte obtenu est collé dans l'application qui était au premie
 
 Contraintes du projet :
 - Swift 5.9 ou plus récent, SwiftUI et AppKit, macOS 14 ou plus récent, Apple Silicon.
-- L'application reste sans icône dans le Dock et s'utilise depuis la barre de menus.
+- L'application s'utilise depuis la barre de menus. Par défaut elle apparaît aussi dans le Dock (politique `.regular`) pour rester listée dans « Forcer à quitter » ; le réglage Général « Afficher dans le Dock » permet de revenir à `.accessory`.
 - Les services substituables sont exposés derrière des protocoles afin de rester testables.
 - Utiliser `os.Logger`/`OSLog` pour les journaux ; ne jamais journaliser le texte dicté ni les secrets.
 - Aucun force-unwrap dans le code de production.

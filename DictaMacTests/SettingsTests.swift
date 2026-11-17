@@ -289,6 +289,35 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(version.description, "Version 1.0 (build 42)")
     }
 
+    @MainActor
+    func testGeneralSettingsShowsInDockByDefault() {
+        let viewModel = GeneralSettingsViewModel(
+            store: InMemorySettingsStore(),
+            launchAtLogin: PreviewLaunchAtLoginManager(),
+            history: PreviewHistoryManager(),
+            applyDockPresence: { _ in }
+        )
+
+        XCTAssertTrue(viewModel.showsInDock)
+    }
+
+    @MainActor
+    func testGeneralSettingsPersistsAndAppliesDockPresence() {
+        let store = InMemorySettingsStore()
+        var appliedValues: [Bool] = []
+        let viewModel = GeneralSettingsViewModel(
+            store: store,
+            launchAtLogin: PreviewLaunchAtLoginManager(),
+            history: PreviewHistoryManager(),
+            applyDockPresence: { appliedValues.append($0) }
+        )
+
+        viewModel.showsInDock = false
+
+        XCTAssertEqual(store.bool(for: .appShowsInDock), false)
+        XCTAssertEqual(appliedValues, [false])
+    }
+
     func testDictionaryPromptUsesCanonicalTermsInNaturalSentence() {
         let prompt = WhisperKitTranscriptionService.dictionaryPrompt(
             for: ["SFM30", "Prazo Elevator", "devis", "ChatGPT"]

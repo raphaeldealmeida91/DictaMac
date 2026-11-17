@@ -1,7 +1,6 @@
 import Foundation
 
 struct SelectionPolicy: Sendable {
-    static let minimumWordCount = 2
     static let maximumCharacterCount = 2_000
 
     private let excludedBundleIDs: Set<String>
@@ -15,7 +14,7 @@ struct SelectionPolicy: Sendable {
     func accepts(_ snapshot: SelectionSnapshot) -> Bool {
         guard !snapshot.isSecure,
               snapshot.text.count <= Self.maximumCharacterCount,
-              wordCount(in: snapshot.text) >= Self.minimumWordCount else {
+              !snapshot.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return false
         }
         return accepts(bundleID: snapshot.sourceBundleID)
@@ -24,9 +23,5 @@ struct SelectionPolicy: Sendable {
     private func accepts(bundleID: String?) -> Bool {
         guard let bundleID else { return true }
         return bundleID != ownBundleID && !excludedBundleIDs.contains(bundleID)
-    }
-
-    private func wordCount(in text: String) -> Int {
-        text.split(whereSeparator: \Character.isWhitespace).count
     }
 }

@@ -3,6 +3,12 @@ import XCTest
 @testable import DictaMac
 
 final class SelectionPolicyTests: XCTestCase {
+    func testAcceptsSingleWordFromAllowedApplication() {
+        let policy = SelectionPolicy(excludedBundleIDs: [], ownBundleID: "com.example.DictaMac")
+
+        XCTAssertTrue(policy.accepts(snapshot(text: "mot", bundleID: "com.example.Editor")))
+    }
+
     func testAcceptsTwoWordsFromAllowedApplication() {
         let policy = SelectionPolicy(excludedBundleIDs: [], ownBundleID: "com.example.DictaMac")
 
@@ -16,7 +22,7 @@ final class SelectionPolicyTests: XCTestCase {
         )
         let longText = String(repeating: "a", count: SelectionPolicy.maximumCharacterCount + 1) + " mot"
 
-        XCTAssertFalse(policy.accepts(snapshot(text: "unique", bundleID: nil)))
+        XCTAssertFalse(policy.accepts(snapshot(text: "   ", bundleID: nil)))
         XCTAssertFalse(policy.accepts(snapshot(text: longText, bundleID: nil)))
         XCTAssertFalse(policy.accepts(snapshot(text: "champ secret", bundleID: nil, isSecure: true)))
         XCTAssertFalse(policy.accepts(snapshot(text: "texte valide", bundleID: "com.example.Secret")))
@@ -58,6 +64,15 @@ final class AccessibilitySelectedTextReaderTests: XCTestCase {
 
         XCTAssertNil(reader.readSelection())
         XCTAssertEqual(queryCount, 0)
+    }
+
+    func testEmptyAccessibilitySelectionIsIgnored() {
+        let reader = AccessibilitySelectedTextReader(
+            permissionReader: FakeAccessibilityPermissionReader(isAuthorized: true),
+            selectionQuery: { ("", nil, "com.example.Editor", false) }
+        )
+
+        XCTAssertNil(reader.readSelection())
     }
 }
 
@@ -125,7 +140,7 @@ final class SelectionWatcherTests: XCTestCase {
         monitor.sendEvent()
         try await Task.sleep(for: .milliseconds(50))
 
-        XCTAssertEqual(recorder.events, [.selected(snapshot), .cleared])
+        XCTAssertEqual(recorder.events, [.selected(snapshot), .selected(snapshot), .cleared])
         watcher.stop()
     }
 

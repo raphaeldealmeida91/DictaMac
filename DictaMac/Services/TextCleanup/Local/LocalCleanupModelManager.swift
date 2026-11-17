@@ -54,11 +54,19 @@ actor LocalCleanupModelManager: LocalTextGenerating {
     }
 
     func activateConfiguredModel() {
+        activateConfiguredModel(requiresSelectedEngine: true)
+    }
+
+    func activateConfiguredModelForSelectionCorrection() {
+        activateConfiguredModel(requiresSelectedEngine: false)
+    }
+
+    private func activateConfiguredModel(requiresSelectedEngine: Bool) {
         guard !safeMode.isEnabled else {
             reportInactive(SafeModeState.localCleanupUnavailableMessage, reason: "safe_mode")
             return
         }
-        guard settings.configuredEngine == .local else {
+        guard !requiresSelectedEngine || settings.configuredEngine == .local else {
             reportInactive("Moteur local non sélectionné", reason: "engine_not_local")
             return
         }
@@ -77,14 +85,14 @@ actor LocalCleanupModelManager: LocalTextGenerating {
 
     func prepare() async throws {
         guard !isReady else { return }
-        activateConfiguredModel()
+        activateConfiguredModelForSelectionCorrection()
         await activationTask?.value
         guard isReady else { throw LocalCleanupError.modelNotReady }
     }
 
     func approveDownloadAndActivate() {
         settings.approveLocalDownload()
-        activateConfiguredModel()
+        activateConfiguredModelForSelectionCorrection()
     }
 
     func cancelDownload() {

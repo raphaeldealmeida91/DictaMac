@@ -35,7 +35,7 @@ final class AccessibilitySelectedTextReader: SelectedTextReading, SecureSelectio
             didEncounterSecureField = true
             return nil
         }
-        guard let text = result.text else { return nil }
+        guard let text = result.text, !text.isEmpty else { return nil }
         return SelectionSnapshot(
             text: text,
             screenRect: result.screenRect,
@@ -78,7 +78,9 @@ final class AccessibilitySelectedTextReader: SelectedTextReading, SecureSelectio
     }
 
     private static func copiedString(attribute: String, from element: AXUIElement) -> String? {
-        copiedValue(attribute: attribute, from: element) as? String
+        let value = copiedValue(attribute: attribute, from: element)
+        if let string = value as? String { return string }
+        return (value as? NSAttributedString)?.string
     }
 
     private static func copiedValue(attribute: String, from element: AXUIElement) -> CFTypeRef? {
