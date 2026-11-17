@@ -69,7 +69,6 @@ final class SelectionCorrectionCoordinator {
     func stop() {
         eventTask?.cancel()
         eventTask = nil
-        watcher.stop()
         clearActiveSuggestion()
     }
 
@@ -78,6 +77,8 @@ final class SelectionCorrectionCoordinator {
         case .selected(let snapshot):
             logger.info("selection event received length=\(snapshot.text.count)")
             correct(snapshot)
+        case .focusedText:
+            break
         case .cleared: clearActiveSuggestion()
         }
     }

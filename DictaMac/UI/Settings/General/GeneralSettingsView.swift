@@ -69,6 +69,23 @@ struct GeneralSettingsView: View {
             }
 
             SettingsCard(
+                title: "Corrections apprises",
+                footer: "Les corrections restent sur ce Mac et ne sont jamais journalisées ni envoyées au cloud."
+            ) {
+                SettingsRow(
+                    title: "Apprendre de mes corrections",
+                    description: "Repère les corrections courtes faites dans les 60 secondes après une dictée."
+                ) {
+                    Toggle("", isOn: $viewModel.correctionLearningEnabled).labelsHidden()
+                }
+                Divider()
+                SettingsRow(title: "Données enregistrées", description: viewModel.correctionLearningError) {
+                    Button("Effacer", role: .destructive, action: viewModel.clearCorrections)
+                        .disabled(viewModel.learnedCorrectionsAreEmpty)
+                }
+            }
+
+            SettingsCard(
                 title: "Arrêt d’urgence",
                 footer: "Maintenez les modificateurs choisis. Sans sélection, ⌃⌥⌘ reste le raccourci de secours."
             ) {

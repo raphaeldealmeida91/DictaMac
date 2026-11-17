@@ -183,6 +183,28 @@ final class DictationPipelineTests: XCTestCase {
         ])
     }
 
+    func testTracksInjectedTextAndTargetApplicationForLearning() async {
+        let tracker = PipelineCorrectionTrackerSpy()
+        let context = DictationContext(
+            bundleID: "com.example.Editor",
+            applicationName: "Editor"
+        )
+        let pipeline = makePipeline(
+            cleanupService: SuccessfulCleanupService(output: "Texte final."),
+            injector: PipelineFakeInjector(),
+            stageReporter: PipelineFakeStageReporter(),
+            correctionTracker: tracker
+        )
+
+        _ = await pipeline.run(
+            samples: [0.1],
+            session: makeSession(transcriber: PipelineFakeTranscriber(), context: context)
+        )
+
+        XCTAssertEqual(tracker.text, "Texte final.")
+        XCTAssertEqual(tracker.targetBundleID, "com.example.Editor")
+    }
+
     private func makePipeline(
         cleanupService: any TextCleanupService,
         injector: PipelineFakeInjector,
@@ -190,6 +212,7 @@ final class DictationPipelineTests: XCTestCase {
         historyRecorder: PipelineFakeHistoryRecorder = PipelineFakeHistoryRecorder(),
         personalDictionary: any PersonalDictionary = PipelinePersonalDictionary(entries: []),
         wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil,
+        correctionTracker: (any DictationCorrectionTracking)? = nil,
         settings: any TextCleanupSettings = PipelineCleanupSettings()
     ) -> DictationPipeline {
         DictationPipeline(
@@ -201,7 +224,8 @@ final class DictationPipelineTests: XCTestCase {
             metricsRecorder: PipelineFakeMetricsRecorder(),
             stageReporter: stageReporter,
             modelRecovery: PipelineFakeRecovery(),
-            wordDiagnostics: wordDiagnostics
+            wordDiagnostics: wordDiagnostics,
+            correctionTracker: correctionTracker
         )
     }
 
@@ -428,5 +452,16 @@ private final class PipelineWordDiagnosticsSpy: TextWordDiagnosticsRecording {
 
     func recordWordCount(_ count: Int, stage: TextWordDiagnosticStage, segmentIndex: Int?) {
         stages.append(stage)
+    }
+}
+
+@MainActor
+private final class PipelineCorrectionTrackerSpy: DictationCorrectionTracking {
+    private(set) var text: String?
+    private(set) var targetBundleID: String?
+
+    func recordInjectedText(_ text: String, targetBundleID: String?) {
+        self.text = text
+        self.targetBundleID = targetBundleID
     }
 }

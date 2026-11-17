@@ -84,6 +84,7 @@ final class DictationPipeline: DictationPipelineRunning {
     private let instrumentedStage: InstrumentedStage
     private let modelRecovery: any PipelineModelRecovering
     private let wordDiagnostics: (any TextWordDiagnosticsRecording)?
+    private let correctionTracker: (any DictationCorrectionTracking)?
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "DictaMac",
         category: "DictationPipeline"
@@ -98,7 +99,8 @@ final class DictationPipeline: DictationPipelineRunning {
         metricsRecorder: any DictationMetricsRecording,
         stageReporter: any DictationStageReporting,
         modelRecovery: any PipelineModelRecovering,
-        wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil
+        wordDiagnostics: (any TextWordDiagnosticsRecording)? = nil,
+        correctionTracker: (any DictationCorrectionTracking)? = nil
     ) {
         self.textCleanupService = textCleanupService
         self.textCleanupSettings = textCleanupSettings
@@ -109,12 +111,19 @@ final class DictationPipeline: DictationPipelineRunning {
         self.instrumentedStage = InstrumentedStage(reporter: stageReporter)
         self.modelRecovery = modelRecovery
         self.wordDiagnostics = wordDiagnostics
+        self.correctionTracker = correctionTracker
     }
 
     func run(samples: [Float], session: DictationPipelineSession) async -> DictationOutcome {
         do {
             let processed = try await processText(samples: samples, session: session)
             let injection = try await inject(processed.value, processed: processed, session: session)
+            if injection.outcome == .pasted {
+                correctionTracker?.recordInjectedText(
+                    processed.value,
+                    targetBundleID: session.context.bundleID
+                )
+            }
             recordHistory(processed, targetApplication: session.targetApplication)
             recordMetrics(processed: processed, injectionDuration: injection.duration, session: session)
             return outcome(for: processed, injectionOutcome: injection.outcome)

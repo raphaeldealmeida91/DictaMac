@@ -18,7 +18,7 @@ final class SelectionWatcher {
     )
     private var monitoringTask: Task<Void, Never>?
     private var debounceTask: Task<Void, Never>?
-    private var continuation: AsyncStream<SelectionEvent>.Continuation?
+    private var continuations: [UUID: AsyncStream<SelectionEvent>.Continuation] = [:]
     private var hasSelection = false
     private(set) var latestDetectionInstant: ContinuousClock.Instant?
 
@@ -42,8 +42,11 @@ final class SelectionWatcher {
 
     func events() -> AsyncStream<SelectionEvent> {
         AsyncStream { continuation in
-            self.continuation?.finish()
-            self.continuation = continuation
+            let identifier = UUID()
+            continuations[identifier] = continuation
+            continuation.onTermination = { [weak self] _ in
+                Task { @MainActor in self?.continuations.removeValue(forKey: identifier) }
+            }
         }
     }
 
@@ -52,10 +55,9 @@ final class SelectionWatcher {
         logger.info("accessibility authorized=\(self.permissionReader?.isAccessibilityAuthorized ?? false)")
         let monitoredEvents = eventMonitor.events()
         monitoringTask = Task { [weak self] in
-            for await _ in monitoredEvents {
+            for await event in monitoredEvents {
                 guard !Task.isCancelled else { return }
-                self?.logger.info("raw selection event received")
-                self?.scheduleRead(detectedAt: .now)
+                self?.scheduleRead(event, detectedAt: .now)
             }
         }
     }
@@ -70,15 +72,29 @@ final class SelectionWatcher {
         clearSelectionIfNeeded()
     }
 
-    private func scheduleRead(detectedAt: ContinuousClock.Instant) {
+    private func scheduleRead(_ event: SelectionMonitorEvent, detectedAt: ContinuousClock.Instant) {
         debounceTask?.cancel()
         latestDetectionInstant = detectedAt
         let delay = debounceDuration
         debounceTask = Task { [weak self] in
             try? await Task.sleep(for: delay)
             guard !Task.isCancelled else { return }
-            self?.readSelection()
+            self?.read(event)
         }
+    }
+
+    private func read(_ event: SelectionMonitorEvent) {
+        switch event {
+        case .selectionChanged: readSelection()
+        case .textChanged: readFocusedText()
+        }
+    }
+
+    private func readFocusedText() {
+        guard let reader = accessibilityReader as? any FocusedTextReading,
+              let snapshot = reader.readFocusedText(),
+              !snapshot.isSecure else { return }
+        yield(.focusedText(snapshot))
     }
 
     private func readSelection() {
@@ -94,7 +110,7 @@ final class SelectionWatcher {
             return
         }
         hasSelection = true
-        continuation?.yield(.selected(snapshot))
+        yield(.selected(snapshot))
     }
 
     private func safeClipboardFallback() -> SelectionSnapshot? {
@@ -117,6 +133,10 @@ final class SelectionWatcher {
     private func clearSelectionIfNeeded() {
         guard hasSelection else { return }
         hasSelection = false
-        continuation?.yield(.cleared)
+        yield(.cleared)
+    }
+
+    private func yield(_ event: SelectionEvent) {
+        continuations.values.forEach { $0.yield(event) }
     }
 }

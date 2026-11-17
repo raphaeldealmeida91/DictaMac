@@ -2,7 +2,7 @@ import AppKit
 import ApplicationServices
 
 @MainActor
-final class AccessibilitySelectedTextReader: SelectedTextReading, SecureSelectionDetecting {
+final class AccessibilitySelectedTextReader: SelectedTextReading, SecureSelectionDetecting, FocusedTextReading {
     typealias SelectionResult = (
         text: String?,
         screenRect: CGRect?,
@@ -10,19 +10,29 @@ final class AccessibilitySelectedTextReader: SelectedTextReading, SecureSelectio
         isSecure: Bool
     )
     typealias SelectionQuery = @MainActor () -> SelectionResult?
+    typealias FocusedTextQuery = @MainActor () -> FocusedTextSnapshot?
 
     static let messagingTimeout: Float = 0.2
+    static let focusedTextRadius = 5_000
 
     private let permissionReader: any AccessibilityPermissionReading
     private let selectionQuery: SelectionQuery
+    private let focusedTextQuery: FocusedTextQuery
     private(set) var didEncounterSecureField = false
 
     init(
         permissionReader: any AccessibilityPermissionReading,
-        selectionQuery: @escaping SelectionQuery = AccessibilitySelectedTextReader.querySelection
+        selectionQuery: @escaping SelectionQuery = AccessibilitySelectedTextReader.querySelection,
+        focusedTextQuery: @escaping FocusedTextQuery = AccessibilitySelectedTextReader.queryFocusedText
     ) {
         self.permissionReader = permissionReader
         self.selectionQuery = selectionQuery
+        self.focusedTextQuery = focusedTextQuery
+    }
+
+    func readFocusedText() -> FocusedTextSnapshot? {
+        guard permissionReader.isAccessibilityAuthorized else { return nil }
+        return focusedTextQuery()
     }
 
     func readSelection() -> SelectionSnapshot? {
@@ -57,6 +67,38 @@ final class AccessibilitySelectedTextReader: SelectedTextReading, SecureSelectio
         return makeResult(from: focusedElement)
     }
 
+    private static func queryFocusedText() -> FocusedTextSnapshot? {
+        let systemElement = AXUIElementCreateSystemWide()
+        AXUIElementSetMessagingTimeout(systemElement, messagingTimeout)
+        guard let focusedElement = copiedElement(
+            attribute: kAXFocusedUIElementAttribute,
+            from: systemElement
+        ) else { return nil }
+        AXUIElementSetMessagingTimeout(focusedElement, messagingTimeout)
+        let sourceBundleID = sourceBundleID(for: focusedElement)
+        let subrole = copiedString(attribute: kAXSubroleAttribute, from: focusedElement)
+        guard subrole != kAXSecureTextFieldSubrole as String else {
+            return FocusedTextSnapshot(text: "", sourceBundleID: sourceBundleID, isSecure: true)
+        }
+        guard let text = copiedString(attribute: kAXValueAttribute, from: focusedElement),
+              !text.isEmpty else { return nil }
+        return FocusedTextSnapshot(
+            text: focusedExcerpt(text, from: focusedElement),
+            sourceBundleID: sourceBundleID,
+            isSecure: false
+        )
+    }
+
+    private static func focusedExcerpt(_ text: String, from element: AXUIElement) -> String {
+        let value = text as NSString
+        guard let range = copiedRange(attribute: kAXSelectedTextRangeAttribute, from: element) else {
+            return value.substring(to: min(value.length, focusedTextRadius * 2))
+        }
+        let lowerBound = max(0, range.location - focusedTextRadius)
+        let upperBound = min(value.length, NSMaxRange(range) + focusedTextRadius)
+        return value.substring(with: NSRange(location: lowerBound, length: upperBound - lowerBound))
+    }
+
     private static func makeResult(from element: AXUIElement) -> SelectionResult {
         let subrole = copiedString(attribute: kAXSubroleAttribute, from: element)
         let secureSubrole = kAXSecureTextFieldSubrole as String
@@ -81,6 +123,16 @@ final class AccessibilitySelectedTextReader: SelectedTextReading, SecureSelectio
         let value = copiedValue(attribute: attribute, from: element)
         if let string = value as? String { return string }
         return (value as? NSAttributedString)?.string
+    }
+
+    private static func copiedRange(attribute: String, from element: AXUIElement) -> NSRange? {
+        guard let value = copiedValue(attribute: attribute, from: element),
+              CFGetTypeID(value) == AXValueGetTypeID() else { return nil }
+        let axValue = unsafeDowncast(value, to: AXValue.self)
+        guard AXValueGetType(axValue) == .cfRange else { return nil }
+        var range = CFRange()
+        guard AXValueGetValue(axValue, .cfRange, &range) else { return nil }
+        return NSRange(location: range.location, length: range.length)
     }
 
     private static func copiedValue(attribute: String, from element: AXUIElement) -> CFTypeRef? {

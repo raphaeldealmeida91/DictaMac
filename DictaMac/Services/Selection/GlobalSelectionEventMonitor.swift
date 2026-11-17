@@ -7,7 +7,7 @@ final class GlobalSelectionEventMonitor: SelectionEventMonitoring {
     ]
     private static let selectAllKeyCode: UInt16 = 0
 
-    private var continuation: AsyncStream<Void>.Continuation?
+    private var continuation: AsyncStream<SelectionMonitorEvent>.Continuation?
     private var monitor: Any?
     private var observedDrag = false
 
@@ -25,9 +25,9 @@ final class GlobalSelectionEventMonitor: SelectionEventMonitoring {
         }
     }
 
-    func events() -> AsyncStream<Void> {
+    func events() -> AsyncStream<SelectionMonitorEvent> {
         stop()
-        let stream = AsyncStream<Void> { continuation in
+        let stream = AsyncStream<SelectionMonitorEvent> { continuation in
             self.continuation = continuation
         }
         installMonitor()
@@ -59,10 +59,10 @@ final class GlobalSelectionEventMonitor: SelectionEventMonitoring {
         case .leftMouseDragged:
             observedDrag = true
         case .leftMouseUp:
-            if observedDrag || event.clickCount >= 2 { continuation?.yield() }
+            if observedDrag || event.clickCount >= 2 { continuation?.yield(.selectionChanged) }
             observedDrag = false
         case .keyUp:
-            if isSelectionShortcut(event) { continuation?.yield() }
+            continuation?.yield(isSelectionShortcut(event) ? .selectionChanged : .textChanged)
         default:
             break
         }

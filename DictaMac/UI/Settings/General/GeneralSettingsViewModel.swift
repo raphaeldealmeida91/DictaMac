@@ -11,6 +11,12 @@ final class GeneralSettingsViewModel: ObservableObject {
         }
     }
     @Published var historyEnabled: Bool { didSet { persist(.bool(historyEnabled), .historyEnabled) } }
+    @Published var correctionLearningEnabled: Bool {
+        didSet {
+            persist(.bool(correctionLearningEnabled), .correctionLearningEnabled)
+            setCorrectionLearningEnabled(correctionLearningEnabled)
+        }
+    }
     @Published var maximumRecordingDuration: Double {
         didSet { persist(.double(maximumRecordingDuration), .recordingMaximumDuration) }
     }
@@ -21,6 +27,8 @@ final class GeneralSettingsViewModel: ObservableObject {
     @Published private(set) var launchAtLoginStatus: String?
     @Published private(set) var historyIsEmpty = true
     @Published private(set) var historyError: String?
+    @Published private(set) var learnedCorrectionsAreEmpty = true
+    @Published private(set) var correctionLearningError: String?
 
     let recordingDurationRange = StoredRecordingSettings.allowedRange
     let versionDescription: String
@@ -29,13 +37,17 @@ final class GeneralSettingsViewModel: ObservableObject {
     private let setLaunchAtLogin: (Bool) -> Void
     private let refreshLaunchAtLogin: () -> Void
     private let clearStoredHistory: () throws -> Void
-    private let readServiceState: () -> (Bool, String?, Bool)
+    private let setCorrectionLearningEnabled: (Bool) -> Void
+    private let clearLearnedCorrections: () -> Void
+    private let readServiceState: () -> (Bool, String?, Bool, Bool, String?)
     private var cancellables = Set<AnyCancellable>()
 
     init<Launch: LaunchAtLoginManaging, History: HistoryManaging>(
         store: any SettingsStoring,
         launchAtLogin: Launch,
         history: History,
+        correctionLearning: CorrectionLearningController? = nil,
+        setCorrectionLearningEnabled: @escaping (Bool) -> Void = { _ in },
         versionInfo: AppVersionInfo = .current,
         applyDockPresence: @escaping @MainActor (Bool) -> Void = { ApplicationPresence.apply(showsInDock: $0) }
     ) {
@@ -44,6 +56,7 @@ final class GeneralSettingsViewModel: ObservableObject {
         showsInDock = store.bool(for: .appShowsInDock) ?? ApplicationPresence.defaultShowsInDock
         feedbackSoundsEnabled = store.bool(for: .feedbackSoundsEnabled) ?? true
         historyEnabled = store.bool(for: .historyEnabled) ?? StoredHistorySettings.defaultEnabled
+        correctionLearningEnabled = store.bool(for: .correctionLearningEnabled) ?? false
         maximumRecordingDuration = StoredRecordingSettings.clamped(
             store.double(for: .recordingMaximumDuration) ?? StoredRecordingSettings.defaultMaximumDuration
         )
@@ -54,9 +67,20 @@ final class GeneralSettingsViewModel: ObservableObject {
         setLaunchAtLogin = launchAtLogin.setEnabled
         refreshLaunchAtLogin = launchAtLogin.refresh
         clearStoredHistory = history.clear
-        readServiceState = { (launchAtLogin.isEnabled, launchAtLogin.statusMessage, history.entries.isEmpty) }
+        self.setCorrectionLearningEnabled = setCorrectionLearningEnabled
+        clearLearnedCorrections = { correctionLearning?.clear() }
+        readServiceState = {
+            (
+                launchAtLogin.isEnabled,
+                launchAtLogin.statusMessage,
+                history.entries.isEmpty,
+                correctionLearning?.isEmpty ?? true,
+                correctionLearning?.errorMessage
+            )
+        }
         observe(launchAtLogin.objectWillChange)
         observe(history.objectWillChange)
+        if let correctionLearning { observe(correctionLearning.objectWillChange) }
         synchronizeServiceState()
     }
 
@@ -80,6 +104,11 @@ final class GeneralSettingsViewModel: ObservableObject {
         synchronizeServiceState()
     }
 
+    func clearCorrections() {
+        clearLearnedCorrections()
+        synchronizeServiceState()
+    }
+
     private func persist(_ value: SettingsValue, _ key: SettingsKey) {
         store.set(value, for: key)
     }
@@ -100,5 +129,7 @@ final class GeneralSettingsViewModel: ObservableObject {
         launchAtLoginEnabled = state.0
         launchAtLoginStatus = state.1
         historyIsEmpty = state.2
+        learnedCorrectionsAreEmpty = state.3
+        correctionLearningError = state.4
     }
 }

@@ -6,6 +6,7 @@ struct MenuBarContent: View {
     @ObservedObject private var transcriptionState: TranscriptionModelState
     @ObservedObject private var cleanupState: LocalCleanupModelState
     @ObservedObject private var history: TranscriptionHistoryStore
+    @ObservedObject private var correctionLearning: CorrectionLearningController
     @State private var copiedEntryID: UUID?
     @State private var addedDictionaryTerm: String?
     private let textCleanupSettings: any TextCleanupSettings
@@ -16,6 +17,7 @@ struct MenuBarContent: View {
         transcriptionState = environment.transcriptionState
         cleanupState = environment.cleanupModelState
         history = environment.history
+        correctionLearning = environment.correctionLearningController
         textCleanupSettings = environment.textCleanupSettings
         personalDictionary = environment.personalDictionary
     }
@@ -23,6 +25,10 @@ struct MenuBarContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.large) {
             header
+            if correctionLearning.pendingProposal != nil {
+                Divider()
+                learnedCorrectionSection
+            }
             Divider()
             historySection
             Divider()
@@ -31,6 +37,29 @@ struct MenuBarContent: View {
         .padding(Theme.Spacing.large)
         .frame(width: Theme.MenuBar.width)
         .background(.regularMaterial)
+    }
+
+    @ViewBuilder
+    private var learnedCorrectionSection: some View {
+        if let proposal = correctionLearning.pendingProposal {
+            VStack(alignment: .leading, spacing: Theme.Spacing.small) {
+                Text("Correction fréquente")
+                    .font(Theme.Typography.sectionTitle)
+                Text("« \(proposal.dictated) » → « \(proposal.corrected) »")
+                    .font(Theme.Typography.description)
+                    .lineLimit(2)
+                HStack {
+                    Button("Ajouter au dictionnaire") {
+                        correctionLearning.acceptPendingProposal()
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    Button("Ignorer") {
+                        correctionLearning.refusePendingProposal()
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
     }
 
     private var header: some View {

@@ -7,6 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CLB000000000000000000001 /* FocusedTextSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF000000000000000000001 /* FocusedTextSnapshot.swift */; };
+		CLB000000000000000000002 /* FocusedTextReading.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF000000000000000000002 /* FocusedTextReading.swift */; };
+		CLB000000000000000000003 /* CorrectionLearningSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF000000000000000000003 /* CorrectionLearningSettings.swift */; };
+		CLB000000000000000000004 /* StoredCorrectionLearningSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF000000000000000000004 /* StoredCorrectionLearningSettings.swift */; };
+		CLB000000000000000000005 /* LearnedCorrectionEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF000000000000000000005 /* LearnedCorrectionEntry.swift */; };
+		CLB000000000000000000006 /* LearnedCorrectionStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF000000000000000000006 /* LearnedCorrectionStoring.swift */; };
+		CLB000000000000000000007 /* JSONLearnedCorrectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF000000000000000000007 /* JSONLearnedCorrectionStore.swift */; };
+		CLB000000000000000000008 /* LearnedCorrectionRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF000000000000000000008 /* LearnedCorrectionRepository.swift */; };
+		CLB000000000000000000009 /* CorrectionReplacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF000000000000000000009 /* CorrectionReplacement.swift */; };
+		CLB00000000000000000000A /* CorrectionReplacementDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF00000000000000000000A /* CorrectionReplacementDetector.swift */; };
+		CLB00000000000000000000B /* CorrectionLearningController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF00000000000000000000B /* CorrectionLearningController.swift */; };
+		CLB00000000000000000000C /* RecentDictationTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF00000000000000000000C /* RecentDictationTracker.swift */; };
+		CLB00000000000000000000D /* DictationCorrectionTracking.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF00000000000000000000D /* DictationCorrectionTracking.swift */; };
+		CLB00000000000000000000E /* CorrectionLearningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF00000000000000000000E /* CorrectionLearningTests.swift */; };
+		CLB00000000000000000000F /* SelectionMonitorEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLF00000000000000000000F /* SelectionMonitorEvent.swift */; };
 		B50000000000000000000001 /* Local/LocalModelInactivityPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60000000000000000000001 /* Local/LocalModelInactivityPolicy.swift */; };
 		B50000000000000000000002 /* Local/InactivityClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60000000000000000000002 /* Local/InactivityClock.swift */; };
 		B50000000000000000000003 /* LocalModelInactivityDelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60000000000000000000003 /* LocalModelInactivityDelay.swift */; };
@@ -277,6 +292,21 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		CLF000000000000000000001 /* FocusedTextSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedTextSnapshot.swift; sourceTree = "<group>"; };
+		CLF000000000000000000002 /* FocusedTextReading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedTextReading.swift; sourceTree = "<group>"; };
+		CLF000000000000000000003 /* CorrectionLearningSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorrectionLearningSettings.swift; sourceTree = "<group>"; };
+		CLF000000000000000000004 /* StoredCorrectionLearningSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredCorrectionLearningSettings.swift; sourceTree = "<group>"; };
+		CLF000000000000000000005 /* LearnedCorrectionEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearnedCorrectionEntry.swift; sourceTree = "<group>"; };
+		CLF000000000000000000006 /* LearnedCorrectionStoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearnedCorrectionStoring.swift; sourceTree = "<group>"; };
+		CLF000000000000000000007 /* JSONLearnedCorrectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONLearnedCorrectionStore.swift; sourceTree = "<group>"; };
+		CLF000000000000000000008 /* LearnedCorrectionRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearnedCorrectionRepository.swift; sourceTree = "<group>"; };
+		CLF000000000000000000009 /* CorrectionReplacement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorrectionReplacement.swift; sourceTree = "<group>"; };
+		CLF00000000000000000000A /* CorrectionReplacementDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorrectionReplacementDetector.swift; sourceTree = "<group>"; };
+		CLF00000000000000000000B /* CorrectionLearningController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorrectionLearningController.swift; sourceTree = "<group>"; };
+		CLF00000000000000000000C /* RecentDictationTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentDictationTracker.swift; sourceTree = "<group>"; };
+		CLF00000000000000000000D /* DictationCorrectionTracking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationCorrectionTracking.swift; sourceTree = "<group>"; };
+		CLF00000000000000000000E /* CorrectionLearningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorrectionLearningTests.swift; sourceTree = "<group>"; };
+		CLF00000000000000000000F /* SelectionMonitorEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionMonitorEvent.swift; sourceTree = "<group>"; };
 		B60000000000000000000001 /* Local/LocalModelInactivityPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Local/LocalModelInactivityPolicy.swift; sourceTree = "<group>"; };
 		B60000000000000000000002 /* Local/InactivityClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Local/InactivityClock.swift; sourceTree = "<group>"; };
 		B60000000000000000000003 /* LocalModelInactivityDelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelInactivityDelay.swift; sourceTree = "<group>"; };
@@ -632,6 +662,7 @@
 				T40000000000000000000001 /* Dictionary */,
 				O40000000000000000000001 /* Selection */,
 				Y40000000000000000000001 /* SelectionCorrection */,
+				CLG000000000000000000001 /* CorrectionLearning */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -779,6 +810,7 @@
 		A4000000000000000000000F /* DictaMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				CLF00000000000000000000E /* CorrectionLearningTests.swift */,
 				B60000000000000000000005 /* LocalModelLifecycleTests.swift */,
 				R40000000000000000000001 /* Fixtures */,
 				R20000000000000000000001 /* DictationCaseTests.swift */,
@@ -891,6 +923,8 @@
 				D2000000000000000000000E /* StoredEmergencyHotkeySettings.swift */,
 				O2000000000000000000000A /* SelectionCorrectionSettings.swift */,
 				O2000000000000000000000B /* StoredSelectionCorrectionSettings.swift */,
+				CLF000000000000000000003 /* CorrectionLearningSettings.swift */,
+				CLF000000000000000000004 /* StoredCorrectionLearningSettings.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -909,6 +943,9 @@
 				O20000000000000000000008 /* GlobalSelectionEventMonitor.swift */,
 				O20000000000000000000009 /* SelectionWatcher.swift */,
 				O2000000000000000000000E /* SecureSelectionDetecting.swift */,
+				CLF000000000000000000001 /* FocusedTextSnapshot.swift */,
+				CLF000000000000000000002 /* FocusedTextReading.swift */,
+				CLF00000000000000000000F /* SelectionMonitorEvent.swift */,
 			);
 			path = Selection;
 			sourceTree = "<group>";
@@ -935,6 +972,21 @@
 			path = SelectionCorrection;
 			sourceTree = "<group>";
 		};
+		CLG000000000000000000001 /* CorrectionLearning */ = {
+			isa = PBXGroup;
+			children = (
+				CLF000000000000000000005 /* LearnedCorrectionEntry.swift */,
+				CLF000000000000000000006 /* LearnedCorrectionStoring.swift */,
+				CLF000000000000000000007 /* JSONLearnedCorrectionStore.swift */,
+				CLF000000000000000000008 /* LearnedCorrectionRepository.swift */,
+				CLF000000000000000000009 /* CorrectionReplacement.swift */,
+				CLF00000000000000000000A /* CorrectionReplacementDetector.swift */,
+				CLF00000000000000000000B /* CorrectionLearningController.swift */,
+				CLF00000000000000000000C /* RecentDictationTracker.swift */,
+			);
+			path = CorrectionLearning;
+			sourceTree = "<group>";
+		};
 		F40000000000000000000001 /* Protocols */ = {
 			isa = PBXGroup;
 			children = (
@@ -946,6 +998,7 @@
 				F20000000000000000000005 /* DictationHistoryRecording.swift */,
 				F20000000000000000000006 /* DictationMetricsRecording.swift */,
 				F20000000000000000000007 /* DictationStageReporting.swift */,
+				CLF00000000000000000000D /* DictationCorrectionTracking.swift */,
 			);
 			path = Protocols;
 			sourceTree = "<group>";
@@ -1207,6 +1260,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CLB000000000000000000001 /* FocusedTextSnapshot.swift in Sources */,
+				CLB000000000000000000002 /* FocusedTextReading.swift in Sources */,
+				CLB000000000000000000003 /* CorrectionLearningSettings.swift in Sources */,
+				CLB000000000000000000004 /* StoredCorrectionLearningSettings.swift in Sources */,
+				CLB000000000000000000005 /* LearnedCorrectionEntry.swift in Sources */,
+				CLB000000000000000000006 /* LearnedCorrectionStoring.swift in Sources */,
+				CLB000000000000000000007 /* JSONLearnedCorrectionStore.swift in Sources */,
+				CLB000000000000000000008 /* LearnedCorrectionRepository.swift in Sources */,
+				CLB000000000000000000009 /* CorrectionReplacement.swift in Sources */,
+				CLB00000000000000000000A /* CorrectionReplacementDetector.swift in Sources */,
+				CLB00000000000000000000B /* CorrectionLearningController.swift in Sources */,
+				CLB00000000000000000000C /* RecentDictationTracker.swift in Sources */,
+				CLB00000000000000000000D /* DictationCorrectionTracking.swift in Sources */,
+				CLB00000000000000000000F /* SelectionMonitorEvent.swift in Sources */,
 				CXT100000000000000000001 /* DictationContext.swift in Sources */,
 				CXT100000000000000000002 /* DictationContextProviding.swift in Sources */,
 				CXT100000000000000000003 /* AccessibilityDictationContextProvider.swift in Sources */,
@@ -1442,6 +1509,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CLB00000000000000000000E /* CorrectionLearningTests.swift in Sources */,
 				B50000000000000000000005 /* LocalModelLifecycleTests.swift in Sources */,
 				X1000000000000000000000E /* SelectionCorrectionUITests.swift in Sources */,
 				O1000000000000000000000D /* SelectionTests.swift in Sources */,

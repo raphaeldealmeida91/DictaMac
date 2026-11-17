@@ -7,6 +7,7 @@ extension AppEnvironment {
         emergency: EmergencyBundle,
         cleanupService: any TextCleanupService,
         activity: AppActivityModel,
+        correctionLearningTracker: any DictationCorrectionTracking,
         shared: SharedServices
     ) -> DictationCoordinator {
         let audioRecorder = AudioRecorder(
@@ -23,7 +24,8 @@ extension AppEnvironment {
             personalDictionary: settings.dictionary,
             models: models,
             reporter: reporter,
-            permissionCache: shared.permissionCache
+            permissionCache: shared.permissionCache,
+            correctionLearningTracker: correctionLearningTracker
         )
         return DictationCoordinator(dependencies: DictationCoordinatorDependencies(
             hotkeyProvider: makeHotkey(settings: settings.emergency, emergency: emergency),
@@ -55,7 +57,8 @@ extension AppEnvironment {
         personalDictionary: any PersonalDictionary,
         models: ModelBundle,
         reporter: any DictationStageReporting,
-        permissionCache: any AccessibilityPermissionReading
+        permissionCache: any AccessibilityPermissionReading,
+        correctionLearningTracker: any DictationCorrectionTracking
     ) -> DictationPipeline {
         let recovery = DefaultPipelineModelRecovery {
             await models.localManager.unload(reason: "Modèle déchargé après timeout")
@@ -70,7 +73,8 @@ extension AppEnvironment {
             metricsRecorder: models.diagnostics,
             stageReporter: reporter,
             modelRecovery: recovery,
-            wordDiagnostics: models.diagnostics
+            wordDiagnostics: models.diagnostics,
+            correctionTracker: correctionLearningTracker
         )
     }
 

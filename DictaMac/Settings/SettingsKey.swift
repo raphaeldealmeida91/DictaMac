@@ -29,6 +29,7 @@ enum SettingsKey: String, Sendable {
     case selectionCorrectionClipboardFallback = "selectionCorrection.clipboardFallback"
     case selectionCorrectionExcludedApps = "selectionCorrection.excludedApps"
     case selectionCorrectionAllowsCloud = "selectionCorrection.allowsCloud"
+    case correctionLearningEnabled = "correctionLearning.enabled"
     case appShowsInDock = "app.showsInDock"
     case firstLaunchAssistantCompleted = "onboarding.completed"
 }

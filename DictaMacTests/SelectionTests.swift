@@ -231,9 +231,9 @@ private final class SelectionFakePasteboard: PasteboardProviding {
 
 @MainActor
 private final class SelectionFakeEventMonitor: SelectionEventMonitoring {
-    private var continuation: AsyncStream<Void>.Continuation?
+    private var continuation: AsyncStream<SelectionMonitorEvent>.Continuation?
 
-    func events() -> AsyncStream<Void> {
+    func events() -> AsyncStream<SelectionMonitorEvent> {
         AsyncStream { continuation in self.continuation = continuation }
     }
 
@@ -243,7 +243,7 @@ private final class SelectionFakeEventMonitor: SelectionEventMonitoring {
     }
 
     func sendEvent() {
-        continuation?.yield()
+        continuation?.yield(.selectionChanged)
     }
 }
 

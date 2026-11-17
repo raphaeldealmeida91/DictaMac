@@ -18,6 +18,7 @@ final class AppEnvironment {
     let selectionCorrectionSettings: StoredSelectionCorrectionSettings
     let selectionWatcher: SelectionWatcher
     let selectionCorrectionService: any SelectionCorrectionService
+    let correctionLearningController: CorrectionLearningController
     let personalDictionary: StoredPersonalDictionary
     let localModelManager: LocalCleanupModelManager
     let transcriptionService: WhisperKitTranscriptionService
@@ -51,6 +52,7 @@ final class AppEnvironment {
         selectionCorrectionSettings = composition.settings.selectionCorrection
         selectionWatcher = composition.selectionWatcher
         selectionCorrectionService = composition.selectionCorrectionService
+        correctionLearningController = composition.correctionLearningController
         selectionCorrectionCoordinator = composition.selectionCorrectionCoordinator
         personalDictionary = composition.settings.dictionary
         localModelManager = composition.models.localManager
@@ -87,6 +89,7 @@ final class AppEnvironment {
         if selectionCorrectionSettings.isEnabled {
             selectionCorrectionCoordinator.start()
         }
+        correctionLearningController.start()
     }
 
     func stop() {
@@ -95,6 +98,8 @@ final class AppEnvironment {
         emergencyWatchdog.stop()
         coordinator.stop()
         selectionCorrectionCoordinator.stop()
+        correctionLearningController.stop()
+        selectionWatcher.stop()
         safeModeLauncher.terminate()
     }
 
@@ -107,6 +112,18 @@ final class AppEnvironment {
             selectionCorrectionCoordinator.start()
         } else {
             selectionCorrectionCoordinator.stop()
+            stopSelectionWatcherIfUnused()
         }
+    }
+
+    func setCorrectionLearningEnabled(_ enabled: Bool) {
+        correctionLearningController.setEnabled(enabled)
+        if !enabled { stopSelectionWatcherIfUnused() }
+    }
+
+    private func stopSelectionWatcherIfUnused() {
+        guard !selectionCorrectionSettings.isEnabled,
+              !correctionLearningController.isEnabled else { return }
+        selectionWatcher.stop()
     }
 }

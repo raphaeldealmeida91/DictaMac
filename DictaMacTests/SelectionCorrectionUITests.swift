@@ -345,13 +345,13 @@ private func suggestion(for text: String) -> SelectionCorrection {
 
 @MainActor
 private final class CoordinatorEventMonitor: SelectionEventMonitoring {
-    private var continuation: AsyncStream<Void>.Continuation?
+    private var continuation: AsyncStream<SelectionMonitorEvent>.Continuation?
 
-    func events() -> AsyncStream<Void> {
+    func events() -> AsyncStream<SelectionMonitorEvent> {
         AsyncStream { continuation = $0 }
     }
 
-    func send() { continuation?.yield(()) }
+    func send() { continuation?.yield(.selectionChanged) }
     func stop() { continuation?.finish() }
 }
 

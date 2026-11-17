@@ -5,12 +5,14 @@ extension AppEnvironment {
         let watcher: SelectionWatcher
         let correctionService: any SelectionCorrectionService
         let coordinator: SelectionCorrectionCoordinator
+        let correctionLearningController: CorrectionLearningController
     }
 
     static func makeSelectionBundle(
         settings: SettingsBundle,
         permissionReader: any AccessibilityPermissionReading,
         localGenerator: LocalCleanupModelManager,
+        correctionLearningTracker: RecentDictationTracker,
         diagnosticLog: any DiagnosticLogging
     ) -> SelectionBundle {
         let pasteboard = GeneralPasteboardProvider()
@@ -47,7 +49,19 @@ extension AppEnvironment {
             },
             diagnosticLog: diagnosticLog
         )
-        return SelectionBundle(watcher: watcher, correctionService: service, coordinator: coordinator)
+        let correctionLearningController = CorrectionLearningController(
+            settings: settings.correctionLearning,
+            repository: LearnedCorrectionRepository(storage: JSONLearnedCorrectionStore()),
+            dictionary: settings.dictionary,
+            watcher: watcher,
+            tracker: correctionLearningTracker
+        )
+        return SelectionBundle(
+            watcher: watcher,
+            correctionService: service,
+            coordinator: coordinator,
+            correctionLearningController: correctionLearningController
+        )
     }
 
     private static func makeSelectionWatcher(

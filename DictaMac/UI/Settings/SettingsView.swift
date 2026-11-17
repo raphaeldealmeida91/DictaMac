@@ -16,7 +16,9 @@ struct SettingsView: View {
         generalViewModel = GeneralSettingsViewModel(
             store: environment.settingsStore,
             launchAtLogin: environment.launchAtLogin,
-            history: environment.history
+            history: environment.history,
+            correctionLearning: environment.correctionLearningController,
+            setCorrectionLearningEnabled: environment.setCorrectionLearningEnabled
         )
         transcriptionViewModel = TranscriptionSettingsViewModel(
             store: environment.settingsStore,

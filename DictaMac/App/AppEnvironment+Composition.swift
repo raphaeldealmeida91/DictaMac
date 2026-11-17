@@ -15,6 +15,7 @@ extension AppEnvironment {
         let emergency: StoredEmergencyHotkeySettings
         let history: StoredHistorySettings
         let selectionCorrection: StoredSelectionCorrectionSettings
+        let correctionLearning: StoredCorrectionLearningSettings
         let dictionary: StoredPersonalDictionary
 
         init(store: any SettingsStoring) {
@@ -25,6 +26,7 @@ extension AppEnvironment {
             emergency = StoredEmergencyHotkeySettings(store: store)
             history = StoredHistorySettings(store: store)
             selectionCorrection = StoredSelectionCorrectionSettings(store: store)
+            correctionLearning = StoredCorrectionLearningSettings(store: store)
             dictionary = StoredPersonalDictionary(
                 storage: JSONDictionaryStore(settingsStore: store)
             )
@@ -47,6 +49,7 @@ extension AppEnvironment {
         let selectionWatcher: SelectionWatcher
         let selectionCorrectionService: any SelectionCorrectionService
         let selectionCorrectionCoordinator: SelectionCorrectionCoordinator
+        let correctionLearningController: CorrectionLearningController
         #if DEBUG
         let benchmarkState: WhisperBenchmarkState
         #endif
@@ -62,6 +65,7 @@ extension AppEnvironment {
             emergency: EmergencyBundle,
             lifecycle: LifecycleBundle,
             coordinator: DictationCoordinator,
+            correctionLearningTracker: RecentDictationTracker,
             activity: AppActivityModel
         ) {
             self.settingsStore = settingsStore
@@ -80,11 +84,13 @@ extension AppEnvironment {
                 settings: settings,
                 permissionReader: shared.permissionCache,
                 localGenerator: models.localManager,
+                correctionLearningTracker: correctionLearningTracker,
                 diagnosticLog: shared.diagnosticLog
             )
             selectionWatcher = selection.watcher
             selectionCorrectionService = selection.correctionService
             selectionCorrectionCoordinator = selection.coordinator
+            correctionLearningController = selection.correctionLearningController
             #if DEBUG
             benchmarkState = WhisperBenchmarkState(runner: WhisperBenchmarkRunner(
                 settings: settings.transcription,
@@ -115,12 +121,16 @@ extension AppEnvironment {
             wordDiagnostics: models.diagnostics
         )
         let activity = AppActivityModel()
+        let correctionLearningTracker = RecentDictationTracker(
+            settings: settings.correctionLearning
+        )
         let coordinator = makeCoordinator(
             settings: settings,
             models: models,
             emergency: emergency,
             cleanupService: cleanup,
             activity: activity,
+            correctionLearningTracker: correctionLearningTracker,
             shared: shared
         )
         return Composition(
@@ -133,6 +143,7 @@ extension AppEnvironment {
             emergency: emergency,
             lifecycle: lifecycle,
             coordinator: coordinator,
+            correctionLearningTracker: correctionLearningTracker,
             activity: activity
         )
     }
